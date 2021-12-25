@@ -46,7 +46,7 @@ from mo_json import (
     datetime2unix,
     python_type_to_json_type,
     quote,
-    python_type_to_json_type_code,
+    python_type_to_json_type_key,
 )
 from mo_json.encoder import (
     COLON,
@@ -367,7 +367,7 @@ def typed_encode(value, sub_schema, path, net_new_properties, buffer):
                 # ALLOW PRIMITIVE MULTIVALUES
                 value = [v for v in value if v != None]
                 types = list(set(
-                    python_type_to_json_type_code[v.__class__] for v in value
+                    python_type_to_json_type_key[v.__class__] for v in value
                 ))
                 if len(types) == 0:  # HANDLE LISTS WITH Nones IN THEM
                     append(buffer, "{")

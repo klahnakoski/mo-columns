@@ -349,15 +349,3 @@ json_type_to_code = {
     T_ARRAY: _A,
 }
 
-python_type_to_json_type_code = {
-    int: _N,
-    text: _S,
-    float: _N,
-    Decimal: _N,
-    bool: _B,
-    NullType: _J,
-    none_type: _J,
-    Date: _N,
-    datetime: _N,
-    date: _N,
-}
