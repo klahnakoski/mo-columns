@@ -14,19 +14,6 @@ from mo_future import text, none_type
 from mo_json.types import _B, _I, _N, _T, _S, _J
 from mo_times import Date
 
-python_type_to_json_type_key = {
-    bool: _B,
-    int: _I,
-    float: _N,
-    Decimal: _N,
-    Date: _T,
-    datetime: _T,
-    date: _T,
-    text: _S,
-    NullType: _J,
-    none_type: _J,
-}
-
 json_type_key_to_sql_type = {
     _B: "TINYINT",
     _I: "INTEGER",

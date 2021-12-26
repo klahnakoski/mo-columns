@@ -338,7 +338,7 @@ if PY2:
 for k, v in items(_python_type_to_json_type):
     _python_type_to_json_type[k.__name__] = v
 
-json_type_to_code = {
+json_type_to_key = {
     T_IS_NULL: _J,
     T_BOOLEAN: _B,
     T_INTEGER: _I,
@@ -347,5 +347,18 @@ json_type_to_code = {
     T_INTERVAL: _D,
     T_TEXT: _S,
     T_ARRAY: _A,
+}
+
+python_type_to_json_type_key = {
+    bool: _B,
+    int: _I,
+    float: _N,
+    Decimal: _N,
+    Date: _T,
+    datetime: _T,
+    date: _T,
+    text: _S,
+    NullType: _J,
+    none_type: _J,
 }
 

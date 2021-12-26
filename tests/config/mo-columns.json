@@ -1,0 +1,14 @@
+{
+	"use": "mo-columns",
+	"db":{
+		"name": "testing",
+		"upgrade": false,
+		"load_functions": true
+	},
+	"constants": {
+		"jx_sqlite.sqlite.DEBUG": true
+	},
+	"debug": {
+		"trace":true
+	}
+}
