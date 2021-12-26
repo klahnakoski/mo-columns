@@ -10,56 +10,44 @@
 
 from __future__ import absolute_import, division, unicode_literals
 
-from unittest import skip, skipIf
+from unittest import skipIf
 
 from jx_base.expressions import NULL
-from mo_dots import to_data
 from mo_json import null
 from tests.test_jx import BaseTestCase, TEST_TABLE, global_settings
 
 
 class TestEdge1(BaseTestCase):
-
     def test_no_select(self):
         test = {
             "data": simple_test_data,
-            "query": {
-                "from": TEST_TABLE,
-                "edges": ["a"]
-            },
+            "query": {"from": TEST_TABLE, "edges": ["a"]},
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
                     {"a": "b", "count": 2},
                     {"a": "c", "count": 3},
-                    {"a": NULL, "count": 1}
-                ]},
+                    {"a": NULL, "count": 1},
+                ],
+            },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a", "count"],
-                "data": [
-                    ["b", 2],
-                    ["c", 3],
-                    [NULL, 1]
-                ]
+                "data": [["b", 2], ["c", 3], [NULL, 1]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "a",
-                        "allowNulls": True,
-                        "domain": {
-                            "type": "set",
-                            "key": "value",
-                            "partitions": [{"value": "b"}, {"value": "c"}]
-                        }
-                    }
-                ],
-                "data": {
-                    "count": [2, 3, 1]
-                }
-            }
+                "edges": [{
+                    "name": "a",
+                    "allowNulls": True,
+                    "domain": {
+                        "type": "set",
+                        "key": "value",
+                        "partitions": [{"value": "b"}, {"value": "c"}],
+                    },
+                }],
+                "data": {"count": [2, 3, 1]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -70,41 +58,34 @@ class TestEdge1(BaseTestCase):
             "query": {
                 "from": TEST_TABLE,
                 "select": {"aggregate": "count"},
-                "edges": ["a"]
+                "edges": ["a"],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
                     {"a": "b", "count": 2},
                     {"a": "c", "count": 3},
-                    {"a": NULL, "count": 1}
-                ]},
+                    {"a": NULL, "count": 1},
+                ],
+            },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a", "count"],
-                "data": [
-                    ["b", 2],
-                    ["c", 3],
-                    [NULL, 1]
-                ]
+                "data": [["b", 2], ["c", 3], [NULL, 1]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "a",
-                        "allowNulls": True,
-                        "domain": {
-                            "type": "set",
-                            "key": "value",
-                            "partitions": [{"value": "b"}, {"value": "c"}]
-                        }
-                    }
-                ],
-                "data": {
-                    "count": [2, 3, 1]
-                }
-            }
+                "edges": [{
+                    "name": "a",
+                    "allowNulls": True,
+                    "domain": {
+                        "type": "set",
+                        "key": "value",
+                        "partitions": [{"value": "b"}, {"value": "c"}],
+                    },
+                }],
+                "data": {"count": [2, 3, 1]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -116,41 +97,34 @@ class TestEdge1(BaseTestCase):
             "query": {
                 "from": TEST_TABLE,
                 "select": {"name": "count_a", "value": "a", "aggregate": "count"},
-                "edges": ["a"]
+                "edges": ["a"],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
                     {"a": "b", "count_a": 2},
                     {"a": "c", "count_a": 3},
-                    {"count_a": 0}
-                ]},
+                    {"count_a": 0},
+                ],
+            },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a", "count_a"],
-                "data": [
-                    ["b", 2],
-                    ["c", 3],
-                    [NULL, 0]
-                ]
+                "data": [["b", 2], ["c", 3], [NULL, 0]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "a",
-                        "allowNulls": True,
-                        "domain": {
-                            "type": "set",
-                            "key": "value",
-                            "partitions": [{"value": "b"}, {"value": "c"}]
-                        }
-                    }
-                ],
-                "data": {
-                    "count_a": [2, 3, 0]
-                }
-            }
+                "edges": [{
+                    "name": "a",
+                    "allowNulls": True,
+                    "domain": {
+                        "type": "set",
+                        "key": "value",
+                        "partitions": [{"value": "b"}, {"value": "c"}],
+                    },
+                }],
+                "data": {"count_a": [2, 3, 0]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -162,44 +136,36 @@ class TestEdge1(BaseTestCase):
             "query": {
                 "from": TEST_TABLE,
                 "select": {"name": "count_v", "value": "v", "aggregate": "count"},
-                "edges": ["a"]
+                "edges": ["a"],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
                     {"a": "b", "count_v": 1},
                     {"a": "c", "count_v": 3},
-                    {"count_v": 1}
-                ]},
+                    {"count_v": 1},
+                ],
+            },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a", "count_v"],
-                "data": [
-                    ["b", 1],
-                    ["c", 3],
-                    [NULL, 1]
-                ]
+                "data": [["b", 1], ["c", 3], [NULL, 1]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "a",
-                        "allowNulls": True,
-                        "domain": {
-                            "type": "set",
-                            "key": "value",
-                            "partitions": [{"value": "b"}, {"value": "c"}]
-                        }
-                    }
-                ],
-                "data": {
-                    "count_v": [1, 3, 1]
-                }
-            }
+                "edges": [{
+                    "name": "a",
+                    "allowNulls": True,
+                    "domain": {
+                        "type": "set",
+                        "key": "value",
+                        "partitions": [{"value": "b"}, {"value": "c"}],
+                    },
+                }],
+                "data": {"count_v": [1, 3, 1]},
+            },
         }
         self.utils.execute_tests(test)
-
 
     def test_sum_default(self):
         test = {
@@ -211,46 +177,44 @@ class TestEdge1(BaseTestCase):
                 {"v": 3},
                 {"a": "b"},
                 {"a": "c", "v": 7},
-                {"a": "c", "v": 11}
+                {"a": "c", "v": 11},
             ],
             "query": {
                 "from": TEST_TABLE,
-                "select": {"name": "sum_v", "value": "v", "aggregate": "sum", "default": -1},
-                "edges": ["a"]
+                "select": {
+                    "name": "sum_v",
+                    "value": "v",
+                    "aggregate": "sum",
+                    "default": -1,
+                },
+                "edges": ["a"],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
                     {"a": "b", "sum_v": -1},
                     {"a": "c", "sum_v": 31},
-                    {"sum_v": 3}
-                ]},
+                    {"sum_v": 3},
+                ],
+            },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a", "sum_v"],
-                "data": [
-                    ["b", -1],
-                    ["c", 31],
-                    [NULL, 3]
-                ]
+                "data": [["b", -1], ["c", 31], [NULL, 3]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "a",
-                        "allowNulls": True,
-                        "domain": {
-                            "type": "set",
-                            "key": "value",
-                            "partitions": [{"value": "b"}, {"value": "c"}]
-                        }
-                    }
-                ],
-                "data": {
-                    "sum_v": [-1, 31, 3]
-                }
-            }
+                "edges": [{
+                    "name": "a",
+                    "allowNulls": True,
+                    "domain": {
+                        "type": "set",
+                        "key": "value",
+                        "partitions": [{"value": "b"}, {"value": "c"}],
+                    },
+                }],
+                "data": {"sum_v": [-1, 31, 3]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -263,44 +227,36 @@ class TestEdge1(BaseTestCase):
                 "from": TEST_TABLE,
                 "select": [
                     {"name": "count", "value": "v", "aggregate": "count"},
-                    {"name": "avg", "value": "v", "aggregate": "average"}
+                    {"name": "avg", "value": "v", "aggregate": "average"},
                 ],
-                "edges": ["a"]
+                "edges": ["a"],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
                     {"a": "b", "count": 1, "avg": 2},
                     {"a": "c", "count": 3, "avg": 31 / 3},
-                    {"count": 1, "avg": 3}
-                ]},
+                    {"count": 1, "avg": 3},
+                ],
+            },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a", "count", "avg"],
-                "data": [
-                    ["b", 1, 2],
-                    ["c", 3, 31 / 3],
-                    [NULL, 1, 3]
-                ]
+                "data": [["b", 1, 2], ["c", 3, 31 / 3], [NULL, 1, 3]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "a",
-                        "allowNulls": True,
-                        "domain": {
-                            "type": "set",
-                            "key": "value",
-                            "partitions": [{"value": "b"}, {"value": "c"}]
-                        }
-                    }
-                ],
-                "data": {
-                    "count": [1, 3, 1],
-                    "avg": [2, 31 / 3, 3]
-                }
-            }
+                "edges": [{
+                    "name": "a",
+                    "allowNulls": True,
+                    "domain": {
+                        "type": "set",
+                        "key": "value",
+                        "partitions": [{"value": "b"}, {"value": "c"}],
+                    },
+                }],
+                "data": {"count": [1, 3, 1], "avg": [2, 31 / 3, 3]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -313,9 +269,9 @@ class TestEdge1(BaseTestCase):
                 "from": TEST_TABLE,
                 "select": [
                     {"name": "v", "value": "v", "aggregate": "sum"},
-                    {"name": "d", "value": "b.d", "aggregate": "sum"}
+                    {"name": "d", "value": "b.d", "aggregate": "sum"},
                 ],
-                "edges": ["b.r"]
+                "edges": ["b.r"],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -324,8 +280,9 @@ class TestEdge1(BaseTestCase):
                     {"v": 15, "d": 6, "b": {"r": "b"}},
                     {"v": 24, "d": 6, "b": {"r": "c"}},
                     {"v": 33, "d": 6, "b": {"r": "d"}},
-                    {"v": 13, "d": 3}
-                ]},
+                    {"v": 13, "d": 3},
+                ],
+            },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["v", "d", "b.r"],
@@ -334,30 +291,29 @@ class TestEdge1(BaseTestCase):
                     [15, 6, "b"],
                     [24, 6, "c"],
                     [33, 6, "d"],
-                    [13, 3, NULL]
-                ]
+                    [13, 3, NULL],
+                ],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "b.r",
-                        "allowNulls": True,
-                        "domain": {
-                            "type": "set",
-                            "key": "value",
-                            "partitions": [{"value": "a"}, {"value": "b"}, {"value": "c"}, {"value": "d"}]
-                        }
-                    }
-                ],
-                "data": {
-                    "v": [6, 15, 24, 33, 13],
-                    "d": [6, 6, 6, 6, 3, NULL]
-                }
-            }
+                "edges": [{
+                    "name": "b.r",
+                    "allowNulls": True,
+                    "domain": {
+                        "type": "set",
+                        "key": "value",
+                        "partitions": [
+                            {"value": "a"},
+                            {"value": "b"},
+                            {"value": "c"},
+                            {"value": "d"},
+                        ],
+                    },
+                }],
+                "data": {"v": [6, 15, 24, 33, 13], "d": [6, 6, 6, 6, 3, NULL]},
+            },
         }
         self.utils.execute_tests(test)
-
 
     def test_select_4(self):
         test = {
@@ -368,9 +324,9 @@ class TestEdge1(BaseTestCase):
                 "from": TEST_TABLE,
                 "select": [
                     {"name": "v", "value": "v", "aggregate": "min"},
-                    {"name": "d", "value": "b.d", "aggregate": "max"}
+                    {"name": "d", "value": "b.d", "aggregate": "max"},
                 ],
-                "edges": ["b.r"]
+                "edges": ["b.r"],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -379,8 +335,9 @@ class TestEdge1(BaseTestCase):
                     {"v": 4, "d": 3, "b": {"r": "b"}},
                     {"v": 7, "d": 3, "b": {"r": "c"}},
                     {"v": 10, "d": 3, "b": {"r": "d"}},
-                    {"v": 13, "d": 3}
-                ]},
+                    {"v": 13, "d": 3},
+                ],
+            },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["v", "d", "b.r"],
@@ -389,31 +346,34 @@ class TestEdge1(BaseTestCase):
                     [4, 3, "b"],
                     [7, 3, "c"],
                     [10, 3, "d"],
-                    [13, 3, NULL]
-                ]
+                    [13, 3, NULL],
+                ],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "b.r",
-                        "allowNulls": True,
-                        "domain": {
-                            "type": "set",
-                            "key": "value",
-                            "partitions": [{"value": "a"}, {"value": "b"}, {"value": "c"}, {"value": "d"}]
-                        }
-                    }
-                ],
-                "data": {
-                    "v": [1, 4, 7, 10, 13],
-                    "d": [3, 3, 3, 3, 3, NULL]
-                }
-            }
+                "edges": [{
+                    "name": "b.r",
+                    "allowNulls": True,
+                    "domain": {
+                        "type": "set",
+                        "key": "value",
+                        "partitions": [
+                            {"value": "a"},
+                            {"value": "b"},
+                            {"value": "c"},
+                            {"value": "d"},
+                        ],
+                    },
+                }],
+                "data": {"v": [1, 4, 7, 10, 13], "d": [3, 3, 3, 3, 3, NULL]},
+            },
         }
         self.utils.execute_tests(test)
 
-    @skipIf(global_settings.use in ('sqlite', 'elasticsearch'), "deal with nested table as value")
+    @skipIf(
+        global_settings.use in ("sqlite", "elasticsearch"),
+        "deal with nested table as value",
+    )
     def test_union_values(self):
         data = [
             {"a": "x"},
@@ -424,7 +384,7 @@ class TestEdge1(BaseTestCase):
             {"a": "y", "c": [5, 6]},
             {},
             {"c": 7},
-            {"c": [8, 8]}
+            {"c": [8, 8]},
         ]
 
         test = {
@@ -432,45 +392,41 @@ class TestEdge1(BaseTestCase):
             "query": {
                 "from": TEST_TABLE,
                 "select": {"value": "c", "aggregate": "union"},
-                "edges": ["a"]
+                "edges": ["a"],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
                     {"a": "x", "c": {2, 3}},
                     {"a": "y", "c": {4, 5, 6}},
-                    {"a": NULL, "c": {7, 8}}
-                ]},
+                    {"a": NULL, "c": {7, 8}},
+                ],
+            },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a", "c"],
-                "data": [
-                    ["x", {2, 3}],
-                    ["y", {4, 5, 6}],
-                    [NULL, {7, 8}]
-                ]
+                "data": [["x", {2, 3}], ["y", {4, 5, 6}], [NULL, {7, 8}]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "a",
-                        "allowNulls": True,
-                        "domain": {
-                            "type": "set",
-                            "key": "value",
-                            "partitions": [{"value": "x"}, {"value": "y"}]
-                        }
-                    }
-                ],
-                "data": {
-                    "c": [{2, 3}, {4, 5, 6}, {7, 8}]
-                }
-            }
+                "edges": [{
+                    "name": "a",
+                    "allowNulls": True,
+                    "domain": {
+                        "type": "set",
+                        "key": "value",
+                        "partitions": [{"value": "x"}, {"value": "y"}],
+                    },
+                }],
+                "data": {"c": [{2, 3}, {4, 5, 6}, {7, 8}]},
+            },
         }
         self.utils.execute_tests(test)
 
-    @skipIf(global_settings.use in ('sqlite', 'elasticsearch'), "deal with nested table as value")
+    @skipIf(
+        global_settings.use in ("sqlite", "elasticsearch"),
+        "deal with nested table as value",
+    )
     def test_union_nested_objects(self):
         data = [
             {"a": "x"},
@@ -481,7 +437,7 @@ class TestEdge1(BaseTestCase):
             {"a": "y", "_c": [{"v": 5}, {"v": 6}]},
             {},
             {"_c": {"v": 7}},
-            {"_c": [{"v": 8}, {"v": 8}]}
+            {"_c": [{"v": 8}, {"v": 8}]},
         ]
 
         test = {
@@ -489,45 +445,41 @@ class TestEdge1(BaseTestCase):
             "query": {
                 "from": TEST_TABLE,
                 "select": {"name": "c", "value": "_c.v", "aggregate": "union"},
-                "edges": ["a"]
+                "edges": ["a"],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
                     {"a": "x", "c": {2, 3}},
                     {"a": "y", "c": {4, 5, 6}},
-                    {"a": NULL, "c": {7, 8}}
-                ]},
+                    {"a": NULL, "c": {7, 8}},
+                ],
+            },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a", "c"],
-                "data": [
-                    ["x", {2, 3}],
-                    ["y", {4, 5, 6}],
-                    [NULL, {7, 8}]
-                ]
+                "data": [["x", {2, 3}], ["y", {4, 5, 6}], [NULL, {7, 8}]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "a",
-                        "allowNulls": True,
-                        "domain": {
-                            "type": "set",
-                            "key": "value",
-                            "partitions": [{"value": "x"}, {"value": "y"}]
-                        }
-                    }
-                ],
-                "data": {
-                    "c": [{2, 3}, {4, 5, 6}, {7, 8}]
-                }
-            }
+                "edges": [{
+                    "name": "a",
+                    "allowNulls": True,
+                    "domain": {
+                        "type": "set",
+                        "key": "value",
+                        "partitions": [{"value": "x"}, {"value": "y"}],
+                    },
+                }],
+                "data": {"c": [{2, 3}, {4, 5, 6}, {7, 8}]},
+            },
         }
         self.utils.execute_tests(test)
 
-    @skipIf(global_settings.use in ('sqlite', 'elasticsearch'), "deal with nested table as value")
+    @skipIf(
+        global_settings.use in ("sqlite", "elasticsearch"),
+        "deal with nested table as value",
+    )
     def test_multiple_union(self):
         data = [
             {"a": "x"},
@@ -538,7 +490,7 @@ class TestEdge1(BaseTestCase):
             {"a": "y", "_c": [{"v": 5}, {"v": 6}]},
             {},
             {"_c": {"v": 7}},
-            {"_c": [{"v": 8}, {"v": 8}]}
+            {"_c": [{"v": 8}, {"v": 8}]},
         ]
 
         test = {
@@ -547,33 +499,29 @@ class TestEdge1(BaseTestCase):
                 "from": TEST_TABLE,
                 "select": [
                     {"name": "c", "value": "_c.v", "aggregate": "union"},
-                    {"name": "a", "value": "a", "aggregate": "union"}
-                ]
+                    {"name": "a", "value": "a", "aggregate": "union"},
+                ],
             },
             "expecting_list": {
                 "meta": {"format": "value"},
-                "data": {
-                    "a": {"x", "y"}, "c": {2, 3, 4, 5, 6, 7, 8}
-                }
+                "data": {"a": {"x", "y"}, "c": {2, 3, 4, 5, 6, 7, 8}},
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a", "c"],
-                "data": [
-                    [{"x", "y"}, {2, 3, 4, 5, 6, 7, 8}]
-                ]
+                "data": [[{"x", "y"}, {2, 3, 4, 5, 6, 7, 8}]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "data": {
-                    "c": {2, 3, 4, 5, 6, 7, 8},
-                    "a": {"x", "y"}
-                }
-            }
+                "data": {"c": {2, 3, 4, 5, 6, 7, 8}, "a": {"x", "y"}},
+            },
         }
         self.utils.execute_tests(test)
 
-    @skipIf(global_settings.use in ('sqlite', 'elasticsearch'), "deal with nested table as value")
+    @skipIf(
+        global_settings.use in ("sqlite", "elasticsearch"),
+        "deal with nested table as value",
+    )
     def test_multiple_union2(self):
         data = [
             {"a": ["x", "z"]},
@@ -584,7 +532,7 @@ class TestEdge1(BaseTestCase):
             {"a": "y", "_c": [{"v": 5}, {"v": 6}]},
             {},
             {"_c": {"v": 7}},
-            {"_c": [{"v": 8}, {"v": 8}]}
+            {"_c": [{"v": 8}, {"v": 8}]},
         ]
 
         test = {
@@ -593,29 +541,22 @@ class TestEdge1(BaseTestCase):
                 "from": TEST_TABLE,
                 "select": [
                     {"name": "c", "value": "_c.v", "aggregate": "union"},
-                    {"name": "a", "value": "a", "aggregate": "union"}
-                ]
+                    {"name": "a", "value": "a", "aggregate": "union"},
+                ],
             },
             "expecting_list": {
                 "meta": {"format": "value"},
-                "data": {
-                    "a": {"x", "y", "z"}, "c": {2, 3, 4, 5, 6, 7, 8},
-                }
+                "data": {"a": {"x", "y", "z"}, "c": {2, 3, 4, 5, 6, 7, 8},},
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a", "c"],
-                "data": [
-                    [{"x", "y", "z"}, {2, 3, 4, 5, 6, 7, 8}]
-                ]
+                "data": [[{"x", "y", "z"}, {2, 3, 4, 5, 6, 7, 8}]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "data": {
-                    "c": {2, 3, 4, 5, 6, 7, 8},
-                    "a": {"x", "y", "z"}
-                }
-            }
+                "data": {"c": {2, 3, 4, 5, 6, 7, 8}, "a": {"x", "y", "z"}},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -627,41 +568,30 @@ class TestEdge1(BaseTestCase):
             "query": {
                 "from": TEST_TABLE,
                 "select": {"value": "v", "aggregate": "sum"},
-                "edges": ["a"]
+                "edges": ["a"],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
-                "data": [
-                    {"a": "b", "v": 2},
-                    {"a": "c", "v": 31},
-                    {"a": NULL, "v": 3}
-                ]},
+                "data": [{"a": "b", "v": 2}, {"a": "c", "v": 31}, {"a": NULL, "v": 3}],
+            },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a", "v"],
-                "data": [
-                    ["b", 2],
-                    ["c", 31],
-                    [NULL, 3]
-                ]
+                "data": [["b", 2], ["c", 31], [NULL, 3]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "a",
-                        "allowNulls": True,
-                        "domain": {
-                            "type": "set",
-                            "key": "value",
-                            "partitions": [{"value": "b"}, {"value": "c"}]
-                        }
-                    }
-                ],
-                "data": {
-                    "v": [2, 31, 3]
-                }
-            }
+                "edges": [{
+                    "name": "a",
+                    "allowNulls": True,
+                    "domain": {
+                        "type": "set",
+                        "key": "value",
+                        "partitions": [{"value": "b"}, {"value": "c"}],
+                    },
+                }],
+                "data": {"v": [2, 31, 3]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -675,41 +605,30 @@ class TestEdge1(BaseTestCase):
                 "from": TEST_TABLE,
                 "select": {"value": "v", "aggregate": "max"},
                 "edges": ["a"],
-                "where": {"term": {"a": "c"}}
+                "where": {"term": {"a": "c"}},
             },
             "expecting_list": {
                 "meta": {"format": "list"},
-                "data": [
-                    {"a": "b"},
-                    {"a": "c", "v": 13},
-                    {"a": NULL, "v": NULL}
-                ]},
+                "data": [{"a": "b"}, {"a": "c", "v": 13}, {"a": NULL, "v": NULL}],
+            },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a", "v"],
-                "data": [
-                    ["b", NULL],
-                    ["c", 13],
-                    [NULL, NULL]
-                ]
+                "data": [["b", NULL], ["c", 13], [NULL, NULL]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "a",
-                        "allowNulls": True,
-                        "domain": {
-                            "type": "set",
-                            "key": "value",
-                            "partitions": [{"value": "b"}, {"value": "c"}]
-                        }
-                    }
-                ],
-                "data": {
-                    "v": [NULL, 13, NULL]
-                }
-            }
+                "edges": [{
+                    "name": "a",
+                    "allowNulls": True,
+                    "domain": {
+                        "type": "set",
+                        "key": "value",
+                        "partitions": [{"value": "b"}, {"value": "c"}],
+                    },
+                }],
+                "data": {"v": [NULL, 13, NULL]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -721,42 +640,35 @@ class TestEdge1(BaseTestCase):
             "query": {
                 "from": TEST_TABLE,
                 "select": {"value": "v", "aggregate": "max"},
-                "edges": [
-                    {"value": "a", "allowNulls": False, "domain": {"type": "set", "partitions": ["b", "c"]}}
-                ],
-                "where": {"term": {"a": "c"}}
+                "edges": [{
+                    "value": "a",
+                    "allowNulls": False,
+                    "domain": {"type": "set", "partitions": ["b", "c"]},
+                }],
+                "where": {"term": {"a": "c"}},
             },
             "expecting_list": {
                 "meta": {"format": "list"},
-                "data": [
-                    {"a": "b"},
-                    {"a": "c", "v": 13}
-                ]},
+                "data": [{"a": "b"}, {"a": "c", "v": 13}],
+            },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a", "v"],
-                "data": [
-                    ["b", NULL],
-                    ["c", 13]
-                ]
+                "data": [["b", NULL], ["c", 13]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "a",
-                        "allowNulls": False,
-                        "domain": {
-                            "type": "set",
-                            "key": "value",
-                            "partitions": [{"value": "b"}, {"value": "c"}]
-                        }
-                    }
-                ],
-                "data": {
-                    "v": [NULL, 13],
-                }
-            }
+                "edges": [{
+                    "name": "a",
+                    "allowNulls": False,
+                    "domain": {
+                        "type": "set",
+                        "key": "value",
+                        "partitions": [{"value": "b"}, {"value": "c"}],
+                    },
+                }],
+                "data": {"v": [NULL, 13],},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -764,55 +676,32 @@ class TestEdge1(BaseTestCase):
         test = {
             "metadata": {},
             "data": simple_test_data,
-            "query": {
-                "from": TEST_TABLE,
-                "select": [],
-                "edges": ["a"]
-            },
+            "query": {"from": TEST_TABLE, "select": [], "edges": ["a"]},
             "expecting_list": {
                 "meta": {"format": "list"},
-                "data": [
-                    {"a": "b"},
-                    {"a": "c"},
-                    {}
-                ]
+                "data": [{"a": "b"}, {"a": "c"}, {}],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a"],
-                "data": [
-                    ["b"],
-                    ["c"],
-                    [NULL]
-                ]
+                "data": [["b"], ["c"], [NULL]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "a",
-                        "allowNulls": True,
-                        "domain": {
-                            "type": "set",
-                            "key": "value",
-                            "partitions": [
-                                {
-                                    "dataIndex": 0,
-                                    "name": "b",
-                                    "value": "b"
-                                },
-                                {
-                                    "dataIndex": 1,
-                                    "name": "c",
-                                    "value": "c"
-                                 }
-                            ]
-                        }
-                    }
-                ],
-                "data": {
-                }
-            }
+                "edges": [{
+                    "name": "a",
+                    "allowNulls": True,
+                    "domain": {
+                        "type": "set",
+                        "key": "value",
+                        "partitions": [
+                            {"dataIndex": 0, "name": "b", "value": "b"},
+                            {"dataIndex": 1, "name": "c", "value": "c"},
+                        ],
+                    },
+                }],
+                "data": {},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -821,55 +710,32 @@ class TestEdge1(BaseTestCase):
             "name": "sum column",
             "metadata": {},
             "data": simple_test_data,
-            "query": {
-                "from": TEST_TABLE,
-                "select": {},
-                "edges": ["a"]
-            },
+            "query": {"from": TEST_TABLE, "select": {}, "edges": ["a"]},
             "expecting_list": {
                 "meta": {"format": "list"},
-                "data": [
-                    {"a": "b"},
-                    {"a": "c"},
-                    {}
-                ]
+                "data": [{"a": "b"}, {"a": "c"}, {}],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a"],
-                "data": [
-                    ["b"],
-                    ["c"],
-                    [NULL]
-                ]
+                "data": [["b"], ["c"], [NULL]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "a",
-                        "allowNulls": True,
-                        "domain": {
-                            "type": "set",
-                            "key": "value",
-                            "partitions": [
-                                {
-                                    "dataIndex": 0,
-                                    "name": "b",
-                                    "value": "b"
-                                },
-                                {
-                                    "dataIndex": 1,
-                                    "name": "c",
-                                    "value": "c"
-                                 }
-                            ]
-                        }
-                    }
-                ],
-                "data": {
-                }
-            }
+                "edges": [{
+                    "name": "a",
+                    "allowNulls": True,
+                    "domain": {
+                        "type": "set",
+                        "key": "value",
+                        "partitions": [
+                            {"dataIndex": 0, "name": "b", "value": "b"},
+                            {"dataIndex": 1, "name": "c", "value": "c"},
+                        ],
+                    },
+                }],
+                "data": {},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -881,52 +747,30 @@ class TestEdge1(BaseTestCase):
             "query": {
                 "from": TEST_TABLE,
                 "select": {},
-                "edges": {"name": ".", "value": "a"}
+                "edges": {"name": ".", "value": "a"},
             },
-            "expecting_list": {
-                "meta": {"format": "list"},
-                "data": [
-                    "b",
-                    "c",
-                    NULL
-                ]
-            },
+            "expecting_list": {"meta": {"format": "list"}, "data": ["b", "c", NULL]},
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["."],
-                "data": [
-                    ["b"],
-                    ["c"],
-                    [NULL]
-                ]
+                "data": [["b"], ["c"], [NULL]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": ".",
-                        "allowNulls": True,
-                        "domain": {
-                            "type": "set",
-                            "key": "value",
-                            "partitions": [
-                                {
-                                    "dataIndex": 0,
-                                    "name": "b",
-                                    "value": "b"
-                                },
-                                {
-                                    "dataIndex": 1,
-                                    "name": "c",
-                                    "value": "c"
-                                 }
-                            ]
-                        }
-                    }
-                ],
-                "data": {
-                }
-            }
+                "edges": [{
+                    "name": ".",
+                    "allowNulls": True,
+                    "domain": {
+                        "type": "set",
+                        "key": "value",
+                        "partitions": [
+                            {"dataIndex": 0, "name": "b", "value": "b"},
+                            {"dataIndex": 1, "name": "c", "value": "c"},
+                        ],
+                    },
+                }],
+                "data": {},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -939,53 +783,37 @@ class TestEdge1(BaseTestCase):
                 "from": TEST_TABLE,
                 "select": {"value": "v", "aggregate": "max"},
                 "edges": ["a"],
-                "where": {"term": {"a": "d"}}
+                "where": {"term": {"a": "d"}},
             },
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
-                    {"a": "b", "v":NULL},
-                    {"a": "c", "v":NULL},
-                    {"a": NULL, "v":NULL}
-                ]
+                    {"a": "b", "v": NULL},
+                    {"a": "c", "v": NULL},
+                    {"a": NULL, "v": NULL},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a", "v"],
-                "data": [
-                    ["b", NULL],
-                    ["c", NULL],
-                    [NULL, NULL]
-                ]
+                "data": [["b", NULL], ["c", NULL], [NULL, NULL]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "a",
-                        "allowNulls": True,
-                        "domain": {
-                            "type": "set",
-                            "key": "value",
-                            "partitions": [
-                                {
-                                    "dataIndex": 0,
-                                    "name": "b",
-                                    "value": "b"
-                                },
-                                {
-                                    "dataIndex": 1,
-                                    "name": "c",
-                                    "value": "c"
-                                 }
-                            ]
-                        }
-                    }
-                ],
-                "data": {
-                    "v": [NULL, NULL, NULL]
-                }
-            }
+                "edges": [{
+                    "name": "a",
+                    "allowNulls": True,
+                    "domain": {
+                        "type": "set",
+                        "key": "value",
+                        "partitions": [
+                            {"dataIndex": 0, "name": "b", "value": "b"},
+                            {"dataIndex": 1, "name": "c", "value": "c"},
+                        ],
+                    },
+                }],
+                "data": {"v": [NULL, NULL, NULL]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -997,35 +825,23 @@ class TestEdge1(BaseTestCase):
                 "from": TEST_TABLE,
                 "select": {"value": "v", "aggregate": "max"},
                 "groupby": ["a"],
-                "where": {"term": {"a": "d"}}
+                "where": {"term": {"a": "d"}},
             },
-            "expecting_list": {
-                "meta": {"format": "list"},
-                "data": []
-            },
+            "expecting_list": {"meta": {"format": "list"}, "data": []},
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a", "v"],
-                "data": []
+                "data": [],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "a",
-                        "allowNulls": True,  # MUST BE FALSE, cube FORMAT CAN NOT CHANGE WHAT'S AVAILABLE
-                        "domain": {
-                            "type": "set",
-                            "key": "value",
-                            "partitions": [
-                            ]
-                        }
-                    }
-                ],
-                "data": {
-                    "v": [NULL, NULL, NULL]
-                }
-            }
+                "edges": [{
+                    "name": "a",
+                    "allowNulls": True,  # MUST BE FALSE, cube FORMAT CAN NOT CHANGE WHAT'S AVAILABLE
+                    "domain": {"type": "set", "key": "value", "partitions": []},
+                }],
+                "data": {"v": [NULL, NULL, NULL]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1039,7 +855,7 @@ class TestEdge1(BaseTestCase):
             "query": {
                 "from": TEST_TABLE,
                 "select": {"value": "v", "aggregate": "max"},
-                "edges": ["k"]
+                "edges": ["k"],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -1054,8 +870,8 @@ class TestEdge1(BaseTestCase):
                     {"k": "h", "v": 8},
                     {"k": "i", "v": 9},
                     {"k": "j", "v": 10},
-                    {"v": 13}
-                ]
+                    {"v": 13},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
@@ -1071,37 +887,33 @@ class TestEdge1(BaseTestCase):
                     ["h", 8],
                     ["i", 9],
                     ["j", 10],
-                    [NULL, 13]
-                ]
+                    [NULL, 13],
+                ],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "k",
-                        "allowNulls": True,
-                        "domain": {
-                            "type": "set",
-                            "key": "value",
-                            "partitions": [
-                                {"value": "a"},
-                                {"value": "b"},
-                                {"value": "c"},
-                                {"value": "d"},
-                                {"value": "e"},
-                                {"value": "f"},
-                                {"value": "g"},
-                                {"value": "h"},
-                                {"value": "i"},
-                                {"value": "j"}
-                            ]
-                        }
-                    }
-                ],
-                "data": {
-                    "v": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13]
-                }
-            }
+                "edges": [{
+                    "name": "k",
+                    "allowNulls": True,
+                    "domain": {
+                        "type": "set",
+                        "key": "value",
+                        "partitions": [
+                            {"value": "a"},
+                            {"value": "b"},
+                            {"value": "c"},
+                            {"value": "d"},
+                            {"value": "e"},
+                            {"value": "f"},
+                            {"value": "g"},
+                            {"value": "h"},
+                            {"value": "i"},
+                            {"value": "j"},
+                        ],
+                    },
+                }],
+                "data": {"v": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1112,7 +924,7 @@ class TestEdge1(BaseTestCase):
                 "from": TEST_TABLE,
                 "select": {"value": "v", "aggregate": "max"},
                 "edges": [{"value": "k", "domain": {"type": "default", "limit": 100}}],
-                "limit": 100
+                "limit": 100,
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -1130,8 +942,8 @@ class TestEdge1(BaseTestCase):
                     {"k": "k", "v": 11},
                     {"k": "l", "v": 12},
                     {"k": "m", "v": 13},
-                    {"k": NULL, "v": NULL}
-                ]
+                    {"k": NULL, "v": NULL},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
@@ -1150,40 +962,36 @@ class TestEdge1(BaseTestCase):
                     ["k", 11],
                     ["l", 12],
                     ["m", 13],
-                    [NULL, NULL]
-                ]
+                    [NULL, NULL],
+                ],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "k",
-                        "allowNulls": True,
-                        "domain": {
-                            "type": "set",
-                            "key": "value",
-                            "partitions": [
-                                {"value": "a"},
-                                {"value": "b"},
-                                {"value": "c"},
-                                {"value": "d"},
-                                {"value": "e"},
-                                {"value": "f"},
-                                {"value": "g"},
-                                {"value": "h"},
-                                {"value": "i"},
-                                {"value": "j"},
-                                {"value": "k"},
-                                {"value": "l"},
-                                {"value": "m"}
-                            ]
-                        }
-                    }
-                ],
-                "data": {
-                    "v": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, NULL]
-                }
-            }
+                "edges": [{
+                    "name": "k",
+                    "allowNulls": True,
+                    "domain": {
+                        "type": "set",
+                        "key": "value",
+                        "partitions": [
+                            {"value": "a"},
+                            {"value": "b"},
+                            {"value": "c"},
+                            {"value": "d"},
+                            {"value": "e"},
+                            {"value": "f"},
+                            {"value": "g"},
+                            {"value": "h"},
+                            {"value": "i"},
+                            {"value": "j"},
+                            {"value": "k"},
+                            {"value": "l"},
+                            {"value": "m"},
+                        ],
+                    },
+                }],
+                "data": {"v": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, NULL]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1195,42 +1003,30 @@ class TestEdge1(BaseTestCase):
             "query": {
                 "from": TEST_TABLE,
                 "select": {"value": "v", "aggregate": "max"},
-                "edges": [{"value": "k", "domain": {"type": "default", "limit": 1}}]
+                "edges": [{"value": "k", "domain": {"type": "default", "limit": 1}}],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
-                "data": [
-                    {"k": "a", "v": 1},
-                    {"v": 13},
-                ]
+                "data": [{"k": "a", "v": 1}, {"v": 13},],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["k", "v"],
-                "data": [
-                    ["a", 1],
-                    [NULL, 13],
-                ]
+                "data": [["a", 1], [NULL, 13],],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "k",
-                        "allowNulls": True,
-                        "domain": {
-                            "type": "set",
-                            "key": "value",
-                            "partitions": [
-                                {"value": "a"}
-                            ]
-                        }
-                    }
-                ],
-                "data": {
-                    "v": [1, 13]
-                }
-            }
+                "edges": [{
+                    "name": "k",
+                    "allowNulls": True,
+                    "domain": {
+                        "type": "set",
+                        "key": "value",
+                        "partitions": [{"value": "a"}],
+                    },
+                }],
+                "data": {"v": [1, 13]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1243,7 +1039,7 @@ class TestEdge1(BaseTestCase):
                 "from": TEST_TABLE,
                 "select": {"value": "v", "aggregate": "max"},
                 "edges": [{"value": "k", "domain": {"type": "default"}}],
-                "limit": 5
+                "limit": 5,
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -1253,44 +1049,33 @@ class TestEdge1(BaseTestCase):
                     {"k": "c", "v": 3},
                     {"k": "d", "v": 4},
                     {"k": "e", "v": 5},
-                    {"v": 13}
-                ]
+                    {"v": 13},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["k", "v"],
-                "data": [
-                    [NULL, 13],
-                    ["a", 1],
-                    ["b", 2],
-                    ["c", 3],
-                    ["d", 4],
-                    ["e", 5]
-                ]
+                "data": [[NULL, 13], ["a", 1], ["b", 2], ["c", 3], ["d", 4], ["e", 5]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "k",
-                        "allowNulls": True,
-                        "domain": {
-                            "type": "set",
-                            "key": "value",
-                            "partitions": [
-                                {"value": "a"},
-                                {"value": "b"},
-                                {"value": "c"},
-                                {"value": "d"},
-                                {"value": "e"}
-                            ]
-                        }
-                    }
-                ],
-                "data": {
-                    "v": [1, 2, 3, 4, 5, 13]
-                }
-            }
+                "edges": [{
+                    "name": "k",
+                    "allowNulls": True,
+                    "domain": {
+                        "type": "set",
+                        "key": "value",
+                        "partitions": [
+                            {"value": "a"},
+                            {"value": "b"},
+                            {"value": "c"},
+                            {"value": "d"},
+                            {"value": "e"},
+                        ],
+                    },
+                }],
+                "data": {"v": [1, 2, 3, 4, 5, 13]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1302,7 +1087,7 @@ class TestEdge1(BaseTestCase):
             {"s": 3, "r": 5},
             {"s": 4, "r": 7},
             {"s": 2, "r": 5},
-            {"s": 5, "r": 8}
+            {"s": 5, "r": 8},
         ]
 
         test = {
@@ -1313,8 +1098,8 @@ class TestEdge1(BaseTestCase):
                 "edges": [{
                     "name": "start",
                     "value": {"sub": ["r", "s"]},
-                    "domain": {"type": "range", "min": 0, "max": 6, "interval": 1}
-                }]
+                    "domain": {"type": "range", "min": 0, "max": 6, "interval": 1},
+                }],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -1325,46 +1110,34 @@ class TestEdge1(BaseTestCase):
                     {"start": 3, "count": 3},
                     {"start": 4, "count": 0},
                     {"start": 5, "count": 1},
-                    {"start": NULL, "count": 0}
-                ]
+                    {"start": NULL, "count": 0},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["start", "count"],
-                "data": [
-                    [0, 0],
-                    [1, 1],
-                    [2, 2],
-                    [3, 3],
-                    [4, 0],
-                    [5, 1],
-                    [NULL, 0]
-                ]
+                "data": [[0, 0], [1, 1], [2, 2], [3, 3], [4, 0], [5, 1], [NULL, 0]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "start",
-                        "allowNulls": True,
-                        "domain": {
-                            "type": "range",
-                            "key": "min",
-                            "partitions": [
-                                {"max": 1, "min": 0},
-                                {"max": 2, "min": 1},
-                                {"max": 3, "min": 2},
-                                {"max": 4, "min": 3},
-                                {"max": 5, "min": 4},
-                                {"max": 6, "min": 5}
-                            ]
-                        }
-                    }
-                ],
-                "data": {
-                    "count": [0, 1, 2, 3, 0, 1, 0]
-                }
-            }
+                "edges": [{
+                    "name": "start",
+                    "allowNulls": True,
+                    "domain": {
+                        "type": "range",
+                        "key": "min",
+                        "partitions": [
+                            {"max": 1, "min": 0},
+                            {"max": 2, "min": 1},
+                            {"max": 3, "min": 2},
+                            {"max": 4, "min": 3},
+                            {"max": 5, "min": 4},
+                            {"max": 6, "min": 5},
+                        ],
+                    },
+                }],
+                "data": {"count": [0, 1, 2, 3, 0, 1, 0]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1376,7 +1149,7 @@ class TestEdge1(BaseTestCase):
             {"r": 0.5},
             {"r": 0.7},
             {"r": 0.5},
-            {"r": 0.8}
+            {"r": 0.8},
         ]
 
         test = {
@@ -1387,8 +1160,8 @@ class TestEdge1(BaseTestCase):
                 "edges": [{
                     "name": "start",
                     "value": "r",
-                    "domain": {"type": "range", "min": 0, "max": 0.6, "interval": 0.1}
-                }]
+                    "domain": {"type": "range", "min": 0, "max": 0.6, "interval": 0.1},
+                }],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -1399,8 +1172,8 @@ class TestEdge1(BaseTestCase):
                     {"start": 0.3, "count": 0},
                     {"start": 0.4, "count": 1},
                     {"start": 0.5, "count": 3},
-                    {"start": NULL, "count": 2}
-                ]
+                    {"start": NULL, "count": 2},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
@@ -1412,33 +1185,29 @@ class TestEdge1(BaseTestCase):
                     [0.3, 0],
                     [0.4, 1],
                     [0.5, 3],
-                    [NULL, 2]
-                ]
+                    [NULL, 2],
+                ],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "start",
-                        "allowNulls": True,
-                        "domain": {
-                            "type": "range",
-                            "key": "min",
-                            "partitions": [
-                                {"max": 0.1, "min": 0.0},
-                                {"max": 0.2, "min": 0.1},
-                                {"max": 0.3, "min": 0.2},
-                                {"max": 0.4, "min": 0.3},
-                                {"max": 0.5, "min": 0.4},
-                                {"max": 0.6, "min": 0.5}
-                            ]
-                        }
-                    }
-                ],
-                "data": {
-                    "count": [0, 0, 1, 0, 1, 3, 2]
-                }
-            }
+                "edges": [{
+                    "name": "start",
+                    "allowNulls": True,
+                    "domain": {
+                        "type": "range",
+                        "key": "min",
+                        "partitions": [
+                            {"max": 0.1, "min": 0.0},
+                            {"max": 0.2, "min": 0.1},
+                            {"max": 0.3, "min": 0.2},
+                            {"max": 0.4, "min": 0.3},
+                            {"max": 0.5, "min": 0.4},
+                            {"max": 0.6, "min": 0.5},
+                        ],
+                    },
+                }],
+                "data": {"count": [0, 0, 1, 0, 1, 3, 2]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1453,17 +1222,14 @@ class TestEdge1(BaseTestCase):
             {"r": "e", "s": "ee"},
             {"r": "f"},
             {"r": "f"},
-            {"k": 1}
+            {"k": 1},
         ]
 
         test = {
             "data": data,
             "query": {
                 "from": TEST_TABLE,
-                "edges": [{
-                    "name": "v",
-                    "value": {"coalesce": ["r", "s"]}
-                }]
+                "edges": [{"name": "v", "value": {"coalesce": ["r", "s"]}}],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -1474,8 +1240,8 @@ class TestEdge1(BaseTestCase):
                     {"v": "dd", "count": 1},
                     {"v": "e", "count": 2},
                     {"v": "f", "count": 2},
-                    {"v": NULL, "count": 1}
-                ]
+                    {"v": NULL, "count": 1},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
@@ -1487,32 +1253,28 @@ class TestEdge1(BaseTestCase):
                     ["dd", 1],
                     ["e", 2],
                     ["f", 2],
-                    [NULL, 1]
-                ]
+                    [NULL, 1],
+                ],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "v",
-                        "allowNulls": True,
-                        "domain": {
-                            "type": "set",
-                            "partitions": [
-                                {"value": "a", "dataIndex": 0},
-                                {"value": "bb", "dataIndex": 1},
-                                {"value": "c", "dataIndex": 2},
-                                {"value": "dd", "dataIndex": 3},
-                                {"value": "e", "dataIndex": 4},
-                                {"value": "f", "dataIndex": 5},
-                            ]
-                        }
-                    }
-                ],
-                "data": {
-                    "count": [1, 2, 1, 1, 2, 2, 1]
-                }
-            }
+                "edges": [{
+                    "name": "v",
+                    "allowNulls": True,
+                    "domain": {
+                        "type": "set",
+                        "partitions": [
+                            {"value": "a", "dataIndex": 0},
+                            {"value": "bb", "dataIndex": 1},
+                            {"value": "c", "dataIndex": 2},
+                            {"value": "dd", "dataIndex": 3},
+                            {"value": "e", "dataIndex": 4},
+                            {"value": "f", "dataIndex": 5},
+                        ],
+                    },
+                }],
+                "data": {"count": [1, 2, 1, 1, 2, 2, 1]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1529,21 +1291,14 @@ class TestEdge1(BaseTestCase):
                 {"url": "https://hg.mozilla.org/b/3"},
                 {"url": "https://hg.mozilla.org/c/"},
                 {"url": "https://hg.mozilla.org/d"},
-                {"url": "https://hg.mozilla.org/e"}
+                {"url": "https://hg.mozilla.org/e"},
             ],
             "query": {
                 "from": TEST_TABLE,
                 "groupby": {
                     "name": "subdir",
-                    "value": {
-                        "between": {
-                            "url": [
-                                "https://hg.mozilla.org/",
-                                "/"
-                            ]
-                        }
-                    }
-                }
+                    "value": {"between": {"url": ["https://hg.mozilla.org/", "/"]}},
+                },
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -1551,34 +1306,31 @@ class TestEdge1(BaseTestCase):
                     {"subdir": NULL, "count": 5},
                     {"subdir": "a", "count": 1},
                     {"subdir": "b", "count": 4},
-                    {"subdir": "c", "count": 1}
-                ]}
-
+                    {"subdir": "c", "count": 1},
+                ],
+            },
         }
         self.utils.execute_tests(test)
 
     def test_edge_using_tuple(self):
         data = [
             {"r": "a", "s": "aa"},
-            {          "s": "bb"},
+            {"s": "bb"},
             {"r": "b", "s": "bb"},
             {"r": "c", "s": "cc"},
-            {          "s": "dd"},
+            {"s": "dd"},
             {"r": "e", "s": "ee"},
             {"r": "e", "s": "ee"},
             {"r": "f"},
             {"r": "f"},
-            {"k": 1}
+            {"k": 1},
         ]
 
         test = {
             "data": data,
             "query": {
                 "from": TEST_TABLE,
-                "edges": [{
-                    "name": "v",
-                    "value": ["r", "s"]
-                }]
+                "edges": [{"name": "v", "value": ["r", "s"]}],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -1590,8 +1342,8 @@ class TestEdge1(BaseTestCase):
                     {"v": [NULL, "dd"], "count": 1},
                     {"v": ["e", "ee"], "count": 2},
                     {"v": ["f", NULL], "count": 2},
-                    {"v": [NULL, NULL], "count": 1}
-                ]
+                    {"v": [NULL, NULL], "count": 1},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
@@ -1604,33 +1356,29 @@ class TestEdge1(BaseTestCase):
                     [[NULL, "dd"], 1],
                     [["e", "ee"], 2],
                     [["f", NULL], 2],
-                    [[NULL, NULL], 1]
-                ]
+                    [[NULL, NULL], 1],
+                ],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "v",
-                        "domain": {
-                            "type": "set",
-                            "partitions": [
-                                {"dataIndex": 0, "value": ["a", "aa"]},
-                                {"dataIndex": 1, "value": ["b", "bb"]},
-                                {"dataIndex": 2, "value": ["c", "cc"]},
-                                {"dataIndex": 3, "value": ["e", "ee"]},
-                                {"dataIndex": 4, "value": ["f", NULL]},
-                                {"dataIndex": 5, "value": [NULL, "bb"]},
-                                {"dataIndex": 6, "value": [NULL, "dd"]},
-                                {"dataIndex": 7, "value": [NULL, NULL]}
-                            ]
-                        }
-                    }
-                ],
-                "data": {
-                    "count": [1, 1, 1, 2, 2, 1, 1, 1]
-                }
-            }
+                "edges": [{
+                    "name": "v",
+                    "domain": {
+                        "type": "set",
+                        "partitions": [
+                            {"dataIndex": 0, "value": ["a", "aa"]},
+                            {"dataIndex": 1, "value": ["b", "bb"]},
+                            {"dataIndex": 2, "value": ["c", "cc"]},
+                            {"dataIndex": 3, "value": ["e", "ee"]},
+                            {"dataIndex": 4, "value": ["f", NULL]},
+                            {"dataIndex": 5, "value": [NULL, "bb"]},
+                            {"dataIndex": 6, "value": [NULL, "dd"]},
+                            {"dataIndex": 7, "value": [NULL, NULL]},
+                        ],
+                    },
+                }],
+                "data": {"count": [1, 1, 1, 2, 2, 1, 1, 1]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1650,40 +1398,43 @@ class TestEdge1(BaseTestCase):
                 {"k": "b", "v": 10, "u": 5},
                 {"k": "b", "v": 11, "u": 5},
                 {"k": "b", "v": 12, "u": 5},
-                {"k": "b", "v": 13, "u": 5}
+                {"k": "b", "v": 13, "u": 5},
             ],
             "query": {
-                "select": {"name": "v", "value": {"add": ["v", "u"]}, "aggregate": "percentile", "percentile": 0.70},
+                "select": {
+                    "name": "v",
+                    "value": {"add": ["v", "u"]},
+                    "aggregate": "percentile",
+                    "percentile": 0.70,
+                },
                 "from": TEST_TABLE,
-                "edges": ["k"]
+                "edges": ["k"],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
                     {"k": "a", "v": 9.5},
                     {"k": "b", "v": 16.2},
-                    {"k": NULL, "v": NULL}
-                ]
+                    {"k": NULL, "v": NULL},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["k", "v"],
-                "data": [
-                    ["a", 9.5],
-                    ["b", 16.2],
-                    [NULL, NULL]
-                ]
+                "data": [["a", 9.5], ["b", 16.2], [NULL, NULL]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
                 "select": {"name": "v"},
-                "edges": [
-                    {"name": "k", "domain": {"type": "set", "partitions": [{"value": "a"}, {"value": "b"}]}}
-                ],
-                "data": {
-                    "v": [9.5, 16.2, NULL]
-                }
-            }
+                "edges": [{
+                    "name": "k",
+                    "domain": {
+                        "type": "set",
+                        "partitions": [{"value": "a"}, {"value": "b"}],
+                    },
+                }],
+                "data": {"v": [9.5, 16.2, NULL]},
+            },
         }
         self.utils.execute_tests(test, places=1.5)  # 1.5 approx +/- 3%
 
@@ -1696,67 +1447,55 @@ class TestEdge1(BaseTestCase):
                 {"k": "b", "v": 3},
                 {"k": "b"},
                 {"k": "b"},
-                {"v": 4}
+                {"v": 4},
             ],
             "query": {
                 "from": TEST_TABLE,
                 "select": [
-                    {"name":"count", "value": 1, "aggregate": "count"},
-                    {"value": "v", "aggregate": "count"}
+                    {"name": "count", "value": 1, "aggregate": "count"},
+                    {"value": "v", "aggregate": "count"},
                 ],
-                "edges": ["k"]
+                "edges": ["k"],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
                     {"k": "a", "count": 3, "v": 2},
                     {"k": "b", "count": 3, "v": 1},
-                    {"count": 1, "v": 1}
-                ]
+                    {"count": 1, "v": 1},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["k", "count", "v"],
-                "data": [
-                    ["a", 3, 2],
-                    ["b", 3, 1],
-                    [NULL, 1, 1]
-                ]
+                "data": [["a", 3, 2], ["b", 3, 1], [NULL, 1, 1]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "select": [
-                    {"name": "count"},
-                    {"name": "v"}
-                ],
-                "edges": [
-                    {"name": "k", "domain": {"type": "set", "partitions": [{"value": "a"}, {"value": "b"}]}}
-                ],
-                "data": {
-                    "v": [2, 1, 1],
-                    "count": [3, 3, 1]
-                }
-            }
+                "select": [{"name": "count"}, {"name": "v"}],
+                "edges": [{
+                    "name": "k",
+                    "domain": {
+                        "type": "set",
+                        "partitions": [{"value": "a"}, {"value": "b"}],
+                    },
+                }],
+                "data": {"v": [2, 1, 1], "count": [3, 3, 1]},
+            },
         }
         self.utils.execute_tests(test)
 
     def test_bad_edge_name(self):
         test = {
-            "data": [
-                {"k": "a", "v": 1},
-            ],
-            "query": {
-                "from": TEST_TABLE,
-                "select": "v",
-                "edges": [""]
-            },
+            "data": [{"k": "a", "v": 1},],
+            "query": {"from": TEST_TABLE, "select": "v", "edges": [""]},
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
                     {"k": "a", "count": 3, "v": 2},
                     {"k": "b", "count": 3, "v": 1},
-                    {"count": 1, "v": 1}
-                ]
+                    {"count": 1, "v": 1},
+                ],
             },
         }
 
@@ -1765,7 +1504,11 @@ class TestEdge1(BaseTestCase):
     def test_range(self):
         test = {
             "data": [
-                {"k": "a", "s": 0, "e": 0.1},  # THIS RECORD HAS NO LIFESPAN, SO WE DO NOT COUNT IT
+                {
+                    "k": "a",
+                    "s": 0,
+                    "e": 0.1,
+                },  # THIS RECORD HAS NO LIFESPAN, SO WE DO NOT COUNT IT
                 {"k": "b", "s": 1, "e": 4},
                 {"k": "c", "s": 2, "e": 5},
                 {"k": "d", "s": 3, "e": 6},
@@ -1773,17 +1516,15 @@ class TestEdge1(BaseTestCase):
                 {"k": "f", "s": 5, "e": 8},
                 {"k": "g", "s": 6, "e": 9},
                 {"k": "h", "s": 7, "e": 10},
-                {"k": "i", "s": 8, "e": 11}
+                {"k": "i", "s": 8, "e": 11},
             ],
             "query": {
                 "from": TEST_TABLE,
-                "edges": [
-                    {
-                        "name": "a",
-                        "range": {"min": "s", "max": "e"},
-                        "domain": {"type": "range", "min": 0, "max": 10, "interval": 1}
-                    }
-                ]
+                "edges": [{
+                    "name": "a",
+                    "range": {"min": "s", "max": "e"},
+                    "domain": {"type": "range", "min": 0, "max": 10, "interval": 1},
+                }],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -1798,12 +1539,12 @@ class TestEdge1(BaseTestCase):
                     {"a": 7, "count": 3},
                     {"a": 8, "count": 3},
                     {"a": 9, "count": 2},
-                    {"a": NULL, "count": 0}
-                ]
+                    {"a": NULL, "count": 0},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
-                "header":["a", "count"],
+                "header": ["a", "count"],
                 "data": [
                     [0, 1],
                     [1, 1],
@@ -1815,28 +1556,28 @@ class TestEdge1(BaseTestCase):
                     [7, 3],
                     [8, 3],
                     [9, 2],
-                    [NULL, 0]
-                ]
+                    [NULL, 0],
+                ],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {"name": "a",
-                     "domain": {"partitions": [
-                         {"min": 0, "max": 1},
-                         {"min": 1, "max": 2},
-                         {"min": 2, "max": 3},
-                         {"min": 3, "max": 4},
-                         {"min": 4, "max": 5},
-                         {"min": 5, "max": 6},
-                         {"min": 6, "max": 7},
-                         {"min": 7, "max": 8},
-                         {"min": 8, "max": 9},
-                         {"min": 9, "max": 10}
-                     ]}}
-                ],
-                "data": {"count": [1, 1, 2, 3, 3, 3, 3, 3, 3, 2, 0]}
-            }
+                "edges": [{
+                    "name": "a",
+                    "domain": {"partitions": [
+                        {"min": 0, "max": 1},
+                        {"min": 1, "max": 2},
+                        {"min": 2, "max": 3},
+                        {"min": 3, "max": 4},
+                        {"min": 4, "max": 5},
+                        {"min": 5, "max": 6},
+                        {"min": 6, "max": 7},
+                        {"min": 7, "max": 8},
+                        {"min": 8, "max": 9},
+                        {"min": 9, "max": 10},
+                    ]},
+                }],
+                "data": {"count": [1, 1, 2, 3, 3, 3, 3, 3, 3, 2, 0]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1851,7 +1592,7 @@ class TestEdge1(BaseTestCase):
                 {"s": 5},
                 {"s": 6},
                 {"s": 7},
-                {"s": 8}
+                {"s": 8},
             ],
             "query": {
                 "from": TEST_TABLE,
@@ -1863,19 +1604,16 @@ class TestEdge1(BaseTestCase):
                             "min": 0,
                             "max": 4,
                             "dataIndex": 0,
-                            "name": "first_four"
-                        }]
+                            "name": "first_four",
+                        }],
                     },
-                    "value": "s"
-                }]
+                    "value": "s",
+                }],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
-                "data": [
-                    {"s": "first_four", "count": 4},
-                    {"s": NULL, "count": 5}
-                ]
-            }
+                "data": [{"s": "first_four", "count": 4}, {"s": NULL, "count": 5}],
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1886,52 +1624,40 @@ class TestEdge1(BaseTestCase):
                 "from": TEST_TABLE,
                 "select": [
                     {"name": "count", "value": "v", "aggregate": "count"},
-                    {"name": "sum", "value": "v", "aggregate": "sum"}
+                    {"name": "sum", "value": "v", "aggregate": "sum"},
                 ],
-                "edges": [
-                    {
-                        "name": "a",
-                        "domain": {
-                            "type": "set",
-                            "partitions": [
-                                {"name": "b", "where": {"eq": {"b.r": "b"}}},
-                                {"name": "3", "where": {"eq": {"b.d": 3}}}
-                            ]
-                        }
-                    }
-                ]
+                "edges": [{
+                    "name": "a",
+                    "domain": {
+                        "type": "set",
+                        "partitions": [
+                            {"name": "b", "where": {"eq": {"b.r": "b"}}},
+                            {"name": "3", "where": {"eq": {"b.d": 3}}},
+                        ],
+                    },
+                }],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
                     {"a": "b", "count": 3, "sum": 15},
                     {"a": "3", "count": 4, "sum": 37},
-                    {"a": NULL, "count": 6, "sum": 39}
-                ]
+                    {"a": NULL, "count": 6, "sum": 39},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
-                "header":["a", "count", "sum"],
-                "data": [
-                    ["b", 3, 15],
-                    ["3", 4, 37],
-                    [NULL, 6, 39],
-                ]
+                "header": ["a", "count", "sum"],
+                "data": [["b", 3, 15], ["3", 4, 37], [NULL, 6, 39],],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
                 "edges": [{
                     "name": "a",
-                    "domain": {"partitions": [
-                        {"name": "b"},
-                        {"name": "3"}
-                    ]}
+                    "domain": {"partitions": [{"name": "b"}, {"name": "3"}]},
                 }],
-                "data": {
-                    "count": [3, 4, 6],
-                    "sum": [15, 37, 39]
-                }
-            }
+                "data": {"count": [3, 4, 6], "sum": [15, 37, 39]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1941,16 +1667,11 @@ class TestEdge1(BaseTestCase):
             "query": {
                 "from": TEST_TABLE,
                 "select": {"aggregate": "count"},
-                "edges": [
-                    {
-                        "name": "diff",
-                        "value": {"sub": ["v", "b.d"]},
-                        "domain": {
-                            "type": "set",
-                            "partitions": [0.0, 3.0, 6.0]
-                        }
-                    }
-                ]
+                "edges": [{
+                    "name": "diff",
+                    "value": {"sub": ["v", "b.d"]},
+                    "domain": {"type": "set", "partitions": [0.0, 3.0, 6.0]},
+                }],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -1958,18 +1679,13 @@ class TestEdge1(BaseTestCase):
                     {"diff": 0, "count": 3},
                     {"diff": 3, "count": 3},
                     {"diff": 6, "count": 3},
-                    {"diff": NULL, "count": 4}
-                ]
+                    {"diff": NULL, "count": 4},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
-                "header":["diff", "count"],
-                "data": [
-                    [0, 3],
-                    [3, 3],
-                    [6, 3],
-                    [NULL, 4]
-                ]
+                "header": ["diff", "count"],
+                "data": [[0, 3], [3, 3], [6, 3], [NULL, 4]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
@@ -1978,13 +1694,11 @@ class TestEdge1(BaseTestCase):
                     "domain": {"partitions": [
                         {"value": 0},
                         {"value": 3},
-                        {"value": 6}
-                    ]}
+                        {"value": 6},
+                    ]},
                 }],
-                "data": {
-                    "count": [3, 3, 3, 4]
-                }
-            }
+                "data": {"count": [3, 3, 3, 4]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1993,41 +1707,36 @@ class TestEdge1(BaseTestCase):
             "data": [{"v": -1.0}],
             "query": {
                 "from": TEST_TABLE,
-                "edges": [
-                    {
-                        "name": "v",
-                        "value": "v",
-                        "domain": {
-                            "type": "range",
-                            "min": -2,
-                            "max": 2,
-                            "interval": 1
-                        }
-                    }
-                ]
+                "edges": [{
+                    "name": "v",
+                    "value": "v",
+                    "domain": {"type": "range", "min": -2, "max": 2, "interval": 1},
+                }],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "v",
-                        "domain": {
-                            "key": "min",
-                            "partitions": [
-                                {"min": -2, "max": -1},
-                                {"min": -1, "max": 0},
-                                {"min": 0, "max": 1},
-                                {"min": 1, "max": 2}
-                            ]
-                        }
-                    }
-                ],
-                "data": {"count": [0, 1, 0, 0, 0]}
-            }
+                "edges": [{
+                    "name": "v",
+                    "domain": {
+                        "key": "min",
+                        "partitions": [
+                            {"min": -2, "max": -1},
+                            {"min": -1, "max": 0},
+                            {"min": 0, "max": 1},
+                            {"min": 1, "max": 2},
+                        ],
+                    },
+                }],
+                "data": {"count": [0, 1, 0, 0, 0]},
+            },
         }
         self.utils.execute_tests(test)
 
-    @skipIf(global_settings.use in ('sqlite', 'elasticsearch'), "not sure what first() of nested column would be.  requires schema merging of a.b.~n~ and a.~N~.b.~n~")
+    @skipIf(
+        global_settings.use in ("sqlite", "elasticsearch"),
+        "not sure what first() of nested column would be.  requires schema merging of"
+        " a.b.~n~ and a.~N~.b.~n~",
+    )
     def test_shallow_with_deep_edge(self):
         test = {
             "data": [
@@ -2037,21 +1746,21 @@ class TestEdge1(BaseTestCase):
                 {"v": 4, "a": [{"b": 1}, {"b": 2}, {"b": 2}]},
                 {"v": 5, "a": {"b": 4}},
                 {"v": 6, "a": 3},
-                {"v": 7}
+                {"v": 7},
             ],
             "query": {
                 "from": TEST_TABLE,
                 "edges": [{"name": "b", "value": {"first": "a.b"}}],
-                "select": {"name": "count", "value": {"when": "v", "then": 1}, "aggregate": "count"},
-                "where": {"exists": "a.b"}
+                "select": {
+                    "name": "count",
+                    "value": {"when": "v", "then": 1},
+                    "aggregate": "count",
+                },
+                "where": {"exists": "a.b"},
             },
             "expecting_list": {
                 "meta": {"format": "list"},
-                "data": [
-                    {"b": 1, "count": 2},
-                    {"b": 4, "count": 1},
-                    {"count": 3}
-                ]
+                "data": [{"b": 1, "count": 2}, {"b": 4, "count": 1}, {"count": 3}],
             },
             # "expecting_table": {
             #     "meta": {"format": "table"},
@@ -2078,20 +1787,17 @@ class TestEdge1(BaseTestCase):
                 {"result": {"ok": False}},
                 {"result": {"ok": False}},
                 {"result": {"ok": False}},
-                {"result": {"ok": False}}
+                {"result": {"ok": False}},
             ],
-            "query": {
-                "from": TEST_TABLE,
-                "edges": ["result.ok"]
-            },
+            "query": {"from": TEST_TABLE, "edges": ["result.ok"]},
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
                     {"result": {"ok": False}, "count": 5},
                     {"result": {"ok": True}, "count": 4},
-                    {"count": 0}
-                ]
-            }
+                    {"count": 0},
+                ],
+            },
         }
 
         self.utils.execute_tests(test)
@@ -2106,12 +1812,17 @@ class TestEdge1(BaseTestCase):
                 {"k": "b", "e": 8},
                 {"k": "b", "e": 9},
                 {"k": "c"},
-                {"k": "c"}
+                {"k": "c"},
             ],
             "query": {
-                "select": [{"name": "avg", "value": "e", "aggregate": "average", "default": 0}],
+                "select": [{
+                    "name": "avg",
+                    "value": "e",
+                    "aggregate": "average",
+                    "default": 0,
+                }],
                 "from": TEST_TABLE,
-                "edges": ["k"]
+                "edges": ["k"],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -2119,13 +1830,11 @@ class TestEdge1(BaseTestCase):
                     {"k": "a", "avg": 22 / 4},
                     {"k": "b", "avg": 17 / 2},
                     {"k": "c", "avg": 0},
-                    {"k": NULL, "avg": 0}
-                ]
-            }
+                    {"k": NULL, "avg": 0},
+                ],
+            },
         }
         self.utils.execute_tests(test)
-
-
 
 
 # TODO: ALLOW USE OF EDGE VARIABLES IN QUERY
@@ -2172,7 +1881,7 @@ simple_test_data = [
     {"v": 3},
     {"a": "b"},
     {"a": "c", "v": 7},
-    {"a": "c", "v": 11}
+    {"a": "c", "v": 11},
 ]
 
 long_test_data = [
@@ -2188,7 +1897,7 @@ long_test_data = [
     {"k": "j", "v": 10},
     {"k": "k", "v": 11},
     {"k": "l", "v": 12},
-    {"k": "m", "v": 13}
+    {"k": "m", "v": 13},
 ]
 
 
@@ -2205,7 +1914,5 @@ structured_test_data = [
     {"b": {"r": "d", "d": 1}, "v": 10},
     {"b": {"r": "d", "d": 2}, "v": 11},
     {"b": {"r": "d", "d": 3}, "v": 12},
-    {"b": {"r": null, "d": 3}, "v": 13}
+    {"b": {"r": null, "d": 3}, "v": 13},
 ]
-
-

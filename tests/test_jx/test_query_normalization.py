@@ -10,14 +10,12 @@
 
 from __future__ import absolute_import, division, unicode_literals
 
-from unittest import skip
-
-from jx_base.expressions.select_op import SelectOp
+from mo_testing.fuzzytestcase import FuzzyTestCase
 
 from jx_base.expressions.query_op import _normalize_edges
+from jx_base.expressions.select_op import SelectOp
 from mo_dots import Null
 from mo_json import json2value, value2json
-from mo_testing.fuzzytestcase import FuzzyTestCase
 
 
 class TestQueryNormalization(FuzzyTestCase):
@@ -32,14 +30,21 @@ class TestQueryNormalization(FuzzyTestCase):
         expected = {
             "name": "n",
             "value": {"tuple": ["a", "c"]},
-            "domain": {"dimension": {"fields": ["a", "c"]}}
+            "domain": {"dimension": {"fields": ["a", "c"]}},
         }
         self.assertEqual(result, expected)
 
-    @skipIf(global_settings.use in ('sqlite', 'elasticsearch'), "aggregate select and simple select are different, test is still unclear")
+    @skipIf(
+        global_settings.use in ("sqlite", "elasticsearch"),
+        "aggregate select and simple select are different, test is still unclear",
+    )
     def test_naming_select(self):
         select = {"value": "result.duration", "aggregate": "avg"}
         result = SelectOp.normalize_one(select, None, None, "list")
         # DEEP NAMES ARE ALLOWED, AND NEEDED TO BUILD STRUCTURE FROM A QUERY
-        expected = [{"name": "result.duration", "value": "result.duration", "aggregate": "average"}]
+        expected = [{
+            "name": "result.duration",
+            "value": "result.duration",
+            "aggregate": "average",
+        }]
         self.assertEqual(result, expected)

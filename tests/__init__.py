@@ -13,23 +13,32 @@ from __future__ import unicode_literals
 
 import itertools
 import os
-import signal
-import subprocess
 
-from mo_files import File
+from mo_testing.fuzzytestcase import assertAlmostEqual
 
 import mo_json_config
 from jx_base.expressions import QueryOp
 from jx_python import jx
 from jx_sqlite.container import Container
 from jx_sqlite.query_table import QueryTable
-from mo_dots import wrap, coalesce, unwrap, listwrap, Data, startswith_field, to_data, is_many, is_sequence, Null
+from mo_dots import (
+    wrap,
+    coalesce,
+    unwrap,
+    listwrap,
+    Data,
+    startswith_field,
+    to_data,
+    is_many,
+    is_sequence,
+    Null,
+)
+from mo_files import File
 from mo_future import text
-from mo_json import json2value
+from mo_json import json2value, types
 from mo_kwargs import override
 from mo_logs import Log, Except, constants
 from mo_logs.exceptions import get_stacktrace
-from mo_testing.fuzzytestcase import assertAlmostEqual
 from tests import test_jx
 from tests.test_jx import TEST_TABLE
 
@@ -291,7 +300,8 @@ try:
         constants.set(test_jx.global_settings.constants)
     else:
         Log.alert(
-            f"No TEST_CONFIG environment variable to point to config file.  Using {default_file.abspath}"
+            "No TEST_CONFIG environment variable to point to config file.  Using"
+            f" {default_file.abspath}"
         )
         test_jx.global_settings = mo_json_config.get(f"file:///{default_file.abspath}")
         constants.set(test_jx.global_settings.constants)
@@ -303,3 +313,6 @@ try:
     test_jx.utils = SQLiteUtils(test_jx.global_settings)
 except Exception as e:
     Log.warning("problem", e)
+
+
+STRING_TYPED_COLUMN = types._S

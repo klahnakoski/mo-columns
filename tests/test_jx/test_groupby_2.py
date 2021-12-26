@@ -10,14 +10,14 @@
 
 from __future__ import absolute_import, division, unicode_literals
 
-from unittest import skip
+from unittest import skipIf
 
 from jx_base.expressions import NULL
 from mo_json import null
-from tests.test_jx import BaseTestCase, TEST_TABLE
+from tests.test_jx import BaseTestCase, TEST_TABLE, global_settings
 
 
-@skipIf(global_settings.use in ('sqlite', 'elasticsearch'), "not ready")
+@skipIf(global_settings.use in ("sqlite", "elasticsearch"), "not ready")
 class TestGroupBy2(BaseTestCase):
     def test_count_rows(self):
         test = {
@@ -25,7 +25,7 @@ class TestGroupBy2(BaseTestCase):
             "query": {
                 "from": TEST_TABLE,
                 "select": {"aggregate": "count"},
-                "groupby": ["a", "b"]
+                "groupby": ["a", "b"],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -38,7 +38,8 @@ class TestGroupBy2(BaseTestCase):
                     {"a": "y", "b": null, "count": 1},
                     {"a": null, "b": "m", "count": 1},
                     {"a": null, "b": "n", "count": 1},
-                ]},
+                ],
+            },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a", "b", "count"],
@@ -51,8 +52,8 @@ class TestGroupBy2(BaseTestCase):
                     ["y", NULL, 1],
                     [NULL, "m", 1],
                     [NULL, "n", 1],
-                ]
-            }
+                ],
+            },
         }
         self.utils.execute_tests(test)
 
@@ -64,7 +65,7 @@ class TestGroupBy2(BaseTestCase):
             "query": {
                 "from": TEST_TABLE,
                 "select": {"value": "v", "aggregate": "sum"},
-                "groupby": ["a", "b"]
+                "groupby": ["a", "b"],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -76,47 +77,9 @@ class TestGroupBy2(BaseTestCase):
                     {"a": "y", "b": "n", "v": 50},
                     {"a": "y", "b": NULL, "v": 13},
                     {"a": NULL, "b": "m", "v": 17},
-                    {"a": NULL, "b": "n", "v": 19}
-                ]},
-            "expecting_table": {
-                "meta": {"format": "table"},
-                "header": ["a", "b", "v"],
-                "data": [
-                    ["x", "m", 29],
-                    ["x", "n", 3],
-                    ["x", NULL, 5],
-                    ["y", "m", 7],
-                    ["y", "n", 50],
-                    ["y", NULL, 13],
-                    [NULL, "m", 17],
-                    [NULL, "n", 19]
-                ]
-            }
-        }
-        self.utils.execute_tests(test)
-
-    def test_sum_rows_w_domain(self):
-        test = {
-            "name": "sum rows",
-            "metadata": {},
-            "data": two_dim_test_data,
-            "query": {
-                "from": TEST_TABLE,
-                "select": {"value": "v", "aggregate": "sum"},
-                "groupby": ["a", "b"]
+                    {"a": NULL, "b": "n", "v": 19},
+                ],
             },
-            "expecting_list": {
-                "meta": {"format": "list"},
-                "data": [
-                    {"a": "x", "b": "m", "v": 29},
-                    {"a": "x", "b": "n", "v": 3},
-                    {"a": "x", "b": null, "v": 5},
-                    {"a": "y", "b": "m", "v": 7},
-                    {"a": "y", "b": "n", "v": 50},
-                    {"a": "y", "b": null, "v": 13},
-                    {"a": null, "b": "m", "v": 17},
-                    {"a": null, "b": "n", "v": 19},
-                ]},
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a", "b", "v"],
@@ -129,8 +92,48 @@ class TestGroupBy2(BaseTestCase):
                     ["y", NULL, 13],
                     [NULL, "m", 17],
                     [NULL, "n", 19],
-                ]
-            }
+                ],
+            },
+        }
+        self.utils.execute_tests(test)
+
+    def test_sum_rows_w_domain(self):
+        test = {
+            "name": "sum rows",
+            "metadata": {},
+            "data": two_dim_test_data,
+            "query": {
+                "from": TEST_TABLE,
+                "select": {"value": "v", "aggregate": "sum"},
+                "groupby": ["a", "b"],
+            },
+            "expecting_list": {
+                "meta": {"format": "list"},
+                "data": [
+                    {"a": "x", "b": "m", "v": 29},
+                    {"a": "x", "b": "n", "v": 3},
+                    {"a": "x", "b": null, "v": 5},
+                    {"a": "y", "b": "m", "v": 7},
+                    {"a": "y", "b": "n", "v": 50},
+                    {"a": "y", "b": null, "v": 13},
+                    {"a": null, "b": "m", "v": 17},
+                    {"a": null, "b": "n", "v": 19},
+                ],
+            },
+            "expecting_table": {
+                "meta": {"format": "table"},
+                "header": ["a", "b", "v"],
+                "data": [
+                    ["x", "m", 29],
+                    ["x", "n", 3],
+                    ["x", NULL, 5],
+                    ["y", "m", 7],
+                    ["y", "n", 50],
+                    ["y", NULL, 13],
+                    [NULL, "m", 17],
+                    [NULL, "n", 19],
+                ],
+            },
         }
         self.utils.execute_tests(test)
 
@@ -154,7 +157,6 @@ class TestGroupBy2(BaseTestCase):
 # })
 
 
-
 two_dim_test_data = [
     {"a": "x", "b": "m", "v": 2},
     {"a": "x", "b": "n", "v": 3},
@@ -165,25 +167,10 @@ two_dim_test_data = [
     {"a": null, "b": "m", "v": 17},
     {"a": null, "b": "n", "v": 19},
     {"a": "x", "b": "m", "v": 27},
-    {"a": "y", "b": "n", "v": 39}
+    {"a": "y", "b": "n", "v": 39},
 ]
 
-metadata = {
-    "properties": {
-        "a": {
-            "type": "string",
-            "domain": {
-                "type": "set",
-                "partitions": ["x", "y", "z"]
-            }
-        },
-        "b": {
-            "type": "string",
-            "domain": {
-                "type": "set",
-                "partitions": ["m", "n"]
-            }
-        }
-    }
-}
-
+metadata = {"properties": {
+    "a": {"type": "string", "domain": {"type": "set", "partitions": ["x", "y", "z"]}},
+    "b": {"type": "string", "domain": {"type": "set", "partitions": ["m", "n"]}},
+}}

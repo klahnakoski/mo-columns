@@ -10,7 +10,7 @@
 
 from __future__ import absolute_import, division, unicode_literals
 
-from unittest import skip, skipIf
+from unittest import skipIf
 
 from jx_base.expressions import NULL
 from mo_dots import list_to_data
@@ -320,12 +320,7 @@ class TestSetOps(BaseTestCase):
 
     def test_select_add_w_default(self):
         test = {
-            "data": [
-                {"a": 1, "b": -1},
-                {"a": 1},
-                {"b": -1},
-                {}
-            ],
+            "data": [{"a": 1, "b": -1}, {"a": 1}, {"b": -1}, {}],
             "query": {
                 "from": TEST_TABLE,
                 "select": [
@@ -336,7 +331,12 @@ class TestSetOps(BaseTestCase):
             },
             "expecting_list": {
                 "meta": {"format": "list"},
-                "data": [{"a": 1, "b": -1, "t": 0}, {"a": 1, "t": -5}, {"b": -1, "t": -5}, {"t": -5}],
+                "data": [
+                    {"a": 1, "b": -1, "t": 0},
+                    {"a": 1, "t": -5},
+                    {"b": -1, "t": -5},
+                    {"t": -5},
+                ],
             },
         }
         self.utils.execute_tests(test)
@@ -885,11 +885,11 @@ class TestSetOps(BaseTestCase):
                         ]},
                     },
                 ],
-                "limit": 20
+                "limit": 20,
             },
             "expecting_table": {
                 "meta": {"format": "table"},
-                "header":["d", "e", "f"],
+                "header": ["d", "e", "f"],
                 "data": [
                     [NULL, NULL, NULL],
                     [0, NULL, "/"],

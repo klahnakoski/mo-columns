@@ -10,8 +10,9 @@
 
 from __future__ import absolute_import, division, unicode_literals
 
-from mo_logs import Log
 from mo_testing.fuzzytestcase import FuzzyTestCase
+
+from mo_logs import Log
 
 TEST_TABLE = "testdata"
 
@@ -20,16 +21,21 @@ utils = None
 
 
 class BaseTestCase(FuzzyTestCase):
-
     def __init__(self, *args, **kwargs):
         FuzzyTestCase.__init__(self, *args, **kwargs)
         if not utils:
             try:
                 import tests
             except Exception as e:
-                Log.error("Expecting ./tests/__init__.py with instructions to setup testing", cause=e)
+                Log.error(
+                    "Expecting ./tests/__init__.py with instructions to setup testing",
+                    cause=e,
+                )
         if utils is None:
-            Log.error("Expecting ./tests/__init__.py to set `global_settings` and `utils` so tests can be run")
+            Log.error(
+                "Expecting ./tests/__init__.py to set `global_settings` and `utils` so"
+                " tests can be run"
+            )
         self.utils = utils
 
     @classmethod

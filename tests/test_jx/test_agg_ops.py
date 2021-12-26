@@ -10,13 +10,12 @@
 
 from __future__ import absolute_import, division, unicode_literals
 
-from unittest import skipIf, skip
+from unittest import skipIf
 
 from tests.test_jx import BaseTestCase, TEST_TABLE, global_settings
 
 
 class TestAggOps(BaseTestCase):
-
     def test_boolean_in_expression(self):
         test = {
             "data": [
@@ -102,146 +101,127 @@ class TestAggOps(BaseTestCase):
     def test_simplest(self):
         test = {
             "data": [{"a": i} for i in range(30)],
-            "query": {
-                "from": TEST_TABLE,
-                "select": {"aggregate": "count"}
-            },
-            "expecting_list": {
-                "meta": {"format": "value"}, "data": 30
-            },
+            "query": {"from": TEST_TABLE, "select": {"aggregate": "count"}},
+            "expecting_list": {"meta": {"format": "value"}, "data": 30},
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["count"],
-                "data": [[30]]
+                "data": [[30]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
                 "edges": [],
-                "data": {
-                    "count": 30
-                }
-            }
+                "data": {"count": 30},
+            },
         }
         self.utils.execute_tests(test)
 
     def test_max(self):
         test = {
-            "data": [{"a": i*2} for i in range(30)],
-            "query": {
-                "from": TEST_TABLE,
-                "select": {"value": "a", "aggregate": "max"}
-            },
-            "expecting_list": {
-                "meta": {"format": "value"}, "data": 58
-            },
+            "data": [{"a": i * 2} for i in range(30)],
+            "query": {"from": TEST_TABLE, "select": {"value": "a", "aggregate": "max"}},
+            "expecting_list": {"meta": {"format": "value"}, "data": 58},
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a"],
-                "data": [[58]]
+                "data": [[58]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
                 "edges": [],
-                "data": {
-                    "a": 58
-                }
-            }
+                "data": {"a": 58},
+            },
         }
         self.utils.execute_tests(test)
 
     @skipIf(global_settings.use == "sqlite", "not expected to pass yet")
     def test_median(self):
         test = {
-            "data": [{"a": i**2} for i in range(30)],
+            "data": [{"a": i ** 2} for i in range(30)],
             "query": {
                 "from": TEST_TABLE,
-                "select": {"value": "a", "aggregate": "median"}
+                "select": {"value": "a", "aggregate": "median"},
             },
-            "expecting_list": {
-                "meta": {"format": "value"}, "data": 210.5
-            },
+            "expecting_list": {"meta": {"format": "value"}, "data": 210.5},
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a"],
-                "data": [[210.5]]
+                "data": [[210.5]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
                 "edges": [],
-                "data": {
-                    "a": 210.5
-                }
-            }
+                "data": {"a": 210.5},
+            },
         }
         self.utils.execute_tests(test)
 
     @skipIf(global_settings.use == "sqlite", "not expected to pass yet")
     def test_percentile(self):
         test = {
-            "data": [{"a": i**2} for i in range(30)],
+            "data": [{"a": i ** 2} for i in range(30)],
             "query": {
                 "from": TEST_TABLE,
-                "select": {"value": "a", "aggregate": "percentile", "percentile": 0.90}
+                "select": {"value": "a", "aggregate": "percentile", "percentile": 0.90},
             },
-            "expecting_list": {
-                "meta": {"format": "value"}, "data": 702.5
-            },
+            "expecting_list": {"meta": {"format": "value"}, "data": 702.5},
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a"],
-                "data": [[702.5]]
+                "data": [[702.5]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
                 "edges": [],
-                "data": {
-                    "a": 702.5
-                }
-            }
+                "data": {"a": 702.5},
+            },
         }
         self.utils.execute_tests(test, places=1.5)  # 1.5 approx +/- 3%
 
-    @skipIf(global_settings.use=="sqlite", "not expected to pass yet")
+    @skipIf(global_settings.use == "sqlite", "not expected to pass yet")
     def test_both_percentile(self):
         test = {
-            "data": [{"a": i**2} for i in range(30)],
+            "data": [{"a": i ** 2} for i in range(30)],
             "query": {
                 "from": TEST_TABLE,
                 "select": [
-                    {"name": "a", "value": "a", "aggregate": "percentile", "percentile": 0.90},
-                    {"name": "b", "value": "a", "aggregate": "median"}
-                ]
+                    {
+                        "name": "a",
+                        "value": "a",
+                        "aggregate": "percentile",
+                        "percentile": 0.90,
+                    },
+                    {"name": "b", "value": "a", "aggregate": "median"},
+                ],
             },
             "expecting_list": {
                 "meta": {"format": "value"},
-                "data": {"a": 703.5, "b": 210.5}
+                "data": {"a": 703.5, "b": 210.5},
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a", "b"],
-                "data": [[703.5, 210.5]]
+                "data": [[703.5, 210.5]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
                 "edges": [],
-                "data": {
-                    "a": 703.5,
-                    "b": 210.5
-                }
-            }
+                "data": {"a": 703.5, "b": 210.5},
+            },
         }
         self.utils.execute_tests(test, places=1.5)  # 1.5 approx +/- 3%
 
     @skipIf(global_settings.use == "sqlite", "not expected to pass yet")
     def test_stats(self):
         test = {
-            "data": [{"a": i**2} for i in range(30)],
+            "data": [{"a": i ** 2} for i in range(30)],
             "query": {
                 "from": TEST_TABLE,
-                "select": {"value": "a", "aggregate": "stats"}
+                "select": {"value": "a", "aggregate": "stats"},
             },
             "expecting_list": {
-                "meta": {"format": "value"}, "data": {
+                "meta": {"format": "value"},
+                "data": {
                     "count": 30,
                     "std": 259.76901064,
                     "min": 0,
@@ -250,8 +230,8 @@ class TestAggOps(BaseTestCase):
                     "median": 210.5,
                     "sos": 4463999,
                     "var": 67479.93889,
-                    "avg": 285.1666667
-                }
+                    "avg": 285.1666667,
+                },
             },
             "expecting_table": {
                 "meta": {"format": "table"},
@@ -265,194 +245,169 @@ class TestAggOps(BaseTestCase):
                     "median": 210.5,
                     "sos": 4463999,
                     "var": 67479.93889,
-                    "avg": 285.1666667
-                }]]
+                    "avg": 285.1666667,
+                }]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
                 "edges": [],
-                "data": {
-                    "a": {
-                        "count": 30,
-                        "std": 259.76901064,
-                        "min": 0,
-                        "max": 841,
-                        "sum": 8555,
-                        "median": 210.5,
-                        "sos": 4463999,
-                        "var": 67479.93889,
-                        "avg": 285.1666667
-                    }
-                }
-            }
+                "data": {"a": {
+                    "count": 30,
+                    "std": 259.76901064,
+                    "min": 0,
+                    "max": 841,
+                    "sum": 8555,
+                    "median": 210.5,
+                    "sos": 4463999,
+                    "var": 67479.93889,
+                    "avg": 285.1666667,
+                }},
+            },
         }
         self.utils.execute_tests(test, places=2)
 
     def test_bad_percentile(self):
         test = {
-            "data": [{"a": i**2} for i in range(30)],
+            "data": [{"a": i ** 2} for i in range(30)],
             "query": {
                 "from": TEST_TABLE,
-                "select": {"value": "a", "aggregate": "percentile", "percentile": "0.90"}
+                "select": {
+                    "value": "a",
+                    "aggregate": "percentile",
+                    "percentile": "0.90",
+                },
             },
-            "expecting_list": {
-                "meta": {"format": "value"}, "data": 681.3
-            }
+            "expecting_list": {"meta": {"format": "value"}, "data": 681.3},
         }
 
-        self.assertRaises("Expecting `percentile` to be a float", self.utils.execute_tests, test)
+        self.assertRaises(
+            "Expecting `percentile` to be a float", self.utils.execute_tests, test
+        )
 
     def test_many_aggs_on_one_column(self):
         # ES WILL NOT ACCEPT TWO (NAIVE) AGGREGATES ON SAME FIELD, COMBINE THEM USING stats AGGREGATION
         test = {
-            "data": [{"a": i*2} for i in range(30)],
+            "data": [{"a": i * 2} for i in range(30)],
             "query": {
                 "from": TEST_TABLE,
                 "select": [
                     {"name": "maxi", "value": "a", "aggregate": "max"},
                     {"name": "mini", "value": "a", "aggregate": "min"},
-                    {"name": "count", "value": "a", "aggregate": "count"}
-                ]
+                    {"name": "count", "value": "a", "aggregate": "count"},
+                ],
             },
             "expecting_list": {
                 "meta": {"format": "value"},
-                "data": {"mini": 0, "maxi": 58, "count": 30}
+                "data": {"mini": 0, "maxi": 58, "count": 30},
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["mini", "maxi", "count"],
-                "data": [
-                    [0, 58, 30]
-                ]
-            }
+                "data": [[0, 58, 30]],
+            },
         }
         self.utils.execute_tests(test)
 
     def test_simplest_on_value(self):
         test = {
             "data": list(range(30)),
-            "query": {
-                "from": TEST_TABLE,
-                "select": {"aggregate": "count"}
-            },
-            "expecting_list": {
-                "meta": {"format": "value"}, "data": 30
-            },
+            "query": {"from": TEST_TABLE, "select": {"aggregate": "count"}},
+            "expecting_list": {"meta": {"format": "value"}, "data": 30},
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["count"],
-                "data": [[30]]
+                "data": [[30]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
                 "edges": [],
-                "data": {
-                    "count": 30
-                }
-            }
+                "data": {"count": 30},
+            },
         }
         self.utils.execute_tests(test)
 
     def test_max_on_value(self):
         test = {
-            "data": [i*2 for i in range(30)],
-            "query": {
-                "from": TEST_TABLE,
-                "select": {"value": ".", "aggregate": "max"}
-            },
-            "expecting_list": {
-                "meta": {"format": "value"},
-                "data": 58
-            },
+            "data": [i * 2 for i in range(30)],
+            "query": {"from": TEST_TABLE, "select": {"value": ".", "aggregate": "max"}},
+            "expecting_list": {"meta": {"format": "value"}, "data": 58},
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["max"],
-                "data": [[58]]
+                "data": [[58]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
                 "edges": [],
-                "data": {
-                    "max": 58
-                }
-            }
+                "data": {"max": 58},
+            },
         }
         self.utils.execute_tests(test)
 
     def test_max_object_on_value(self):
         test = {
-            "data": [{"a": i*2} for i in range(30)],
+            "data": [{"a": i * 2} for i in range(30)],
             "query": {
                 "from": TEST_TABLE,
-                "select": [{"value": "a", "aggregate": "max"}]
+                "select": [{"value": "a", "aggregate": "max"}],
             },
-            "expecting_list": {
-                "meta": {"format": "value"}, "data": {"a": 58}
-            },
+            "expecting_list": {"meta": {"format": "value"}, "data": {"a": 58}},
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a"],
-                "data": [[58]]
+                "data": [[58]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
                 "edges": [],
-                "data": {
-                    "a": 58
-                }
-            }
+                "data": {"a": 58},
+            },
         }
         self.utils.execute_tests(test)
 
     @skipIf(global_settings.use == "sqlite", "sqlite does not have a median function")
     def test_median_on_value(self):
         test = {
-            "data": [i**2 for i in range(30)],
+            "data": [i ** 2 for i in range(30)],
             "query": {
                 "from": TEST_TABLE,
-                "select": {"value": ".", "aggregate": "median"}
+                "select": {"value": ".", "aggregate": "median"},
             },
-            "expecting_list": {
-                "meta": {"format": "value"}, "data": 210.5
-            },
+            "expecting_list": {"meta": {"format": "value"}, "data": 210.5},
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["median"],
-                "data": [[210.5]]
+                "data": [[210.5]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
                 "edges": [],
-                "data": {
-                    "median": 210.5
-                }
-            }
+                "data": {"median": 210.5},
+            },
         }
         self.utils.execute_tests(test, places=2)
 
     def test_many_aggs_on_value(self):
         # ES WILL NOT ACCEPT TWO (NAIVE) AGGREGATES ON SAME FIELD, COMBINE THEM USING stats AGGREGATION
         test = {
-            "data": [i*2 for i in range(30)],
+            "data": [i * 2 for i in range(30)],
             "query": {
                 "from": TEST_TABLE,
                 "select": [
                     {"name": "maxi", "value": ".", "aggregate": "max"},
                     {"name": "mini", "value": ".", "aggregate": "min"},
-                    {"name": "count", "value": ".", "aggregate": "count"}
-                ]
+                    {"name": "count", "value": ".", "aggregate": "count"},
+                ],
             },
             "expecting_list": {
                 "meta": {"format": "value"},
-                "data": {"mini": 0, "maxi": 58, "count": 30}
+                "data": {"mini": 0, "maxi": 58, "count": 30},
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["mini", "maxi", "count"],
-                "data": [
-                    [0, 58, 30]
-                ]
-            }
+                "data": [[0, 58, 30]],
+            },
         }
         self.utils.execute_tests(test)
 
@@ -465,7 +420,7 @@ class TestAggOps(BaseTestCase):
                 {"a": 2, "d": "x"},
                 {"a": 3, "d": "x"},
                 {"a": 3, "d": "x"},
-                {"a": 3, "d": "x"}
+                {"a": 3, "d": "x"},
             ],
             "query": {
                 "from": TEST_TABLE,
@@ -473,13 +428,13 @@ class TestAggOps(BaseTestCase):
                     {"value": "a", "aggregate": "cardinality"},
                     {"value": "b", "aggregate": "cardinality"},
                     {"value": "c", "aggregate": "cardinality"},
-                    {"value": "d", "aggregate": "cardinality"}
-                ]
+                    {"value": "d", "aggregate": "cardinality"},
+                ],
             },
             "expecting_list": {
                 "meta": {"format": "value"},
-                "data": {"a": 3, "b": 1, "c": 0, "d": 1}
-            }
+                "data": {"a": 3, "b": 1, "c": 0, "d": 1},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -499,13 +454,13 @@ class TestAggOps(BaseTestCase):
                 "from": TEST_TABLE,
                 "select": [
                     {"name": "max", "value": ["a", "b"], "aggregate": "max"},
-                    {"name": "min", "value": ["a", "b"], "aggregate": "min"}
-                ]
+                    {"name": "min", "value": ["a", "b"], "aggregate": "min"},
+                ],
             },
             "expecting_list": {
                 "meta": {"format": "value"},
-                "data": {"max": [3, 3], "min": [1, 1]}
-            }
+                "data": {"max": [3, 3], "min": [1, 1]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -524,17 +479,17 @@ class TestAggOps(BaseTestCase):
                 "from": TEST_TABLE,
                 "select": [
                     {"name": "max", "value": ["a", "b"], "aggregate": "max"},
-                    {"name": "min", "value": ["a", "b"], "aggregate": "min"}
-                ]
+                    {"name": "min", "value": ["a", "b"], "aggregate": "min"},
+                ],
             },
             "expecting_list": {
                 "meta": {"format": "value"},
-                "data": {"max": ["b", True], "min": ["a", False]}
-            }
+                "data": {"max": ["b", True], "min": ["a", False]},
+            },
         }
         self.utils.execute_tests(test)
 
-    @skipIf(global_settings.use in ('sqlite', 'elasticsearch'), "broken")
+    @skipIf(global_settings.use in ("sqlite", "elasticsearch"), "broken")
     def test_union(self):
         test = {
             "data": [
@@ -554,18 +509,30 @@ class TestAggOps(BaseTestCase):
                 {"b": "y"},
                 {"b": "y"},
                 {"b": "y"},
-                {"b": "z"}
+                {"b": "z"},
             ],
             "query": {
                 "from": TEST_TABLE,
-                "select": [
-                    {"value": "b", "aggregate": "union"}
-                ]
+                "select": [{"value": "b", "aggregate": "union"}],
             },
             "expecting_list": {
                 "meta": {"format": "value"},
-                "data": {"b": {"x", "y", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "z"}}
-            }
+                "data": {"b": {
+                    "x",
+                    "y",
+                    "a",
+                    "b",
+                    "c",
+                    "d",
+                    "e",
+                    "f",
+                    "g",
+                    "h",
+                    "i",
+                    "j",
+                    "z",
+                }},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -583,12 +550,9 @@ class TestAggOps(BaseTestCase):
                 "from": TEST_TABLE,
                 "select": [
                     {"value": "b", "aggregate": "sum"},
-                    {"name": "a", "value": {"eq": {"a": "a"}}, "aggregate": "sum"}
-                ]
+                    {"name": "a", "value": {"eq": {"a": "a"}}, "aggregate": "sum"},
+                ],
             },
-            "expecting_list": {
-                "meta": {"format": "value"},
-                "data": {"b": 3, "a": 2}
-            }
+            "expecting_list": {"meta": {"format": "value"}, "data": {"b": 3, "a": 2}},
         }
         self.utils.execute_tests(test)

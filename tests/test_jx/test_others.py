@@ -8,17 +8,16 @@
 
 from __future__ import absolute_import, division, unicode_literals
 
-from unittest import skip
+from unittest import skipIf
 
 from mo_dots import to_data
 from mo_json import value2json, json2value
-from tests import error
+from tests import error, global_settings
 from tests.test_jx import BaseTestCase, TEST_TABLE
 
 
-@skipIf(global_settings.use in ('sqlite', 'elasticsearch'), "broken")
+@skipIf(global_settings.use in ("sqlite", "elasticsearch"), "broken")
 class TestOther(BaseTestCase):
-
     def test_tuple_w_cubes(self):
         test = to_data({
             "data": [{"a": 1}, {"a": 2}],
@@ -29,23 +28,29 @@ class TestOther(BaseTestCase):
         self.utils.fill_container(test)  # FILL AND MAKE DUMMY QUERY
 
         query = value2json({"tuple": [
-            {"from": test.query['from'], "where": {"eq": {"a": 1}}, "meta": {"testing": True}},
-            {"from": test.query['from'], "where": {"eq": {"a": 2}}, "meta": {"testing": True}},
-        ]}).encode('utf8')
+            {
+                "from": test.query["from"],
+                "where": {"eq": {"a": 1}},
+                "meta": {"testing": True},
+            },
+            {
+                "from": test.query["from"],
+                "where": {"eq": {"a": 2}},
+                "meta": {"testing": True},
+            },
+        ]}).encode("utf8")
         # SEND  QUERY
         response = self.utils.try_till_response(self.utils.testing.query, data=query)
 
         if response.status_code != 200:
             error(response)
 
-        result = json2value(response.all_content.decode('utf8'))
+        result = json2value(response.all_content.decode("utf8"))
 
-        self.assertEqual(result, {
-            "data": [
-                {"data": {".": [{"a": 1}]}},
-                {"data": {".": [{"a": 2}]}},
-            ]
-        })
+        self.assertEqual(
+            result,
+            {"data": [{"data": {".": [{"a": 1}]}}, {"data": {".": [{"a": 2}]}},]},
+        )
 
     def test_tuple(self):
         test = to_data({
@@ -57,23 +62,30 @@ class TestOther(BaseTestCase):
         self.utils.fill_container(test)  # FILL AND MAKE DUMMY QUERY
 
         query = value2json({"tuple": [
-            {"from": test.query['from'], "where": {"eq": {"a": 1}}, "format": "list", "meta": {"testing": True}},
-            {"from": test.query['from'], "where": {"eq": {"a": 2}}, "format": "list", "meta": {"testing": True}},
-        ]}).encode('utf8')
+            {
+                "from": test.query["from"],
+                "where": {"eq": {"a": 1}},
+                "format": "list",
+                "meta": {"testing": True},
+            },
+            {
+                "from": test.query["from"],
+                "where": {"eq": {"a": 2}},
+                "format": "list",
+                "meta": {"testing": True},
+            },
+        ]}).encode("utf8")
         # SEND  QUERY
         response = self.utils.try_till_response(self.utils.testing.query, data=query)
 
         if response.status_code != 200:
             error(response)
 
-        result = json2value(response.all_content.decode('utf8'))
+        result = json2value(response.all_content.decode("utf8"))
 
-        self.assertEqual(result, {
-            "data": [
-                {"data": [{"a": 1}]},
-                {"data": [{"a": 2}]},
-            ]
-        })
+        self.assertEqual(
+            result, {"data": [{"data": [{"a": 1}]}, {"data": [{"a": 2}]},]}
+        )
 
     def test_one_tuple(self):
         test = to_data({
@@ -85,24 +97,20 @@ class TestOther(BaseTestCase):
         self.utils.fill_container(test)  # FILL AND MAKE DUMMY QUERY
 
         query = value2json({"tuple": {
-            "from": test.query['from'],
+            "from": test.query["from"],
             "where": {"eq": {"a": 1}},
             "format": "list",
-            "meta": {"testing": True}
-        }}).encode('utf8')
+            "meta": {"testing": True},
+        }}).encode("utf8")
         # SEND  QUERY
         response = self.utils.try_till_response(self.utils.testing.query, data=query)
 
         if response.status_code != 200:
             error(response)
 
-        result = json2value(response.all_content.decode('utf8'))
+        result = json2value(response.all_content.decode("utf8"))
 
-        self.assertEqual(result, {
-            "data": [
-                {"data": [{"a": 1}]},
-            ]
-        })
+        self.assertEqual(result, {"data": [{"data": [{"a": 1}]},]})
 
     def test_many_tuple(self):
         test = to_data({
@@ -114,25 +122,24 @@ class TestOther(BaseTestCase):
         self.utils.fill_container(test)  # FILL AND MAKE DUMMY QUERY
 
         query = {
-            "from": test.query['from'],
+            "from": test.query["from"],
             "where": {"eq": {"a": 1}},
             "format": "list",
-            "meta": {"testing": True}
+            "meta": {"testing": True},
         }
         expected = {"data": [{"a": 1}]}
         for i in range(40):
             query = {"tuple": query}
             expected = [expected]
-        body = value2json(query).encode('utf8')
+        body = value2json(query).encode("utf8")
         # SEND  QUERY
         response = self.utils.try_till_response(self.utils.testing.query, data=body)
 
         if response.status_code != 200:
             error(response)
 
-        result = json2value(response.all_content.decode('utf8'))
+        result = json2value(response.all_content.decode("utf8"))
         self.assertEqual(result, {"data": expected})
-
 
     def test_zero_tuple(self):
         test = to_data({
@@ -143,12 +150,12 @@ class TestOther(BaseTestCase):
 
         self.utils.fill_container(test)  # FILL AND MAKE DUMMY QUERY
 
-        body = value2json({"tuple": {}}).encode('utf8')
+        body = value2json({"tuple": {}}).encode("utf8")
         # SEND  QUERY
         response = self.utils.try_till_response(self.utils.testing.query, data=body)
 
         if response.status_code != 200:
             error(response)
 
-        result = json2value(response.all_content.decode('utf8'))
+        result = json2value(response.all_content.decode("utf8"))
         self.assertEqual(result, {"data": []})

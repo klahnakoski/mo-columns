@@ -10,7 +10,7 @@
 
 from __future__ import absolute_import, division, unicode_literals
 
-from unittest import skipIf, skip
+from unittest import skipIf
 
 from jx_base.expressions import NULL
 from mo_dots import to_data, list_to_data
@@ -23,25 +23,11 @@ lots_of_data = list_to_data([{"a": i} for i in range(30)])
 
 
 class TestSorting(BaseTestCase):
-
     def test_name_and_direction_sort(self):
         test = {
-            "data": [
-                {"a": 1},
-                {"a": 3},
-                {"a": 4},
-                {"a": 6},
-                {"a": 2}
-            ],
-            "query": {
-                "from": TEST_TABLE,
-                "select": "a",
-                "sort": {"a": "desc"}
-            },
-            "expecting_list": {
-                "meta": {"format": "list"},
-                "data": [6, 4, 3, 2, 1]
-            }
+            "data": [{"a": 1}, {"a": 3}, {"a": 4}, {"a": 6}, {"a": 2}],
+            "query": {"from": TEST_TABLE, "select": "a", "sort": {"a": "desc"}},
+            "expecting_list": {"meta": {"format": "list"}, "data": [6, 4, 3, 2, 1]},
         }
         self.utils.execute_tests(test)
 
@@ -57,44 +43,36 @@ class TestSorting(BaseTestCase):
                 {"a": "a", "value": 8},
                 {"a": "a", "value": 9},
                 {"a": "a", "value": 10},
-                {"a": "a", "value": 11}
+                {"a": "a", "value": 11},
             ],
-            "query": {
-                "from": TEST_TABLE,
-                "edges": "a",
-                "sort": "a"
-            },
+            "query": {"from": TEST_TABLE, "edges": "a", "sort": "a"},
             "expecting_list": {
                 "meta": {"format": "list"},
-                "data": [
-                    {"a": "a", "count": 5},
-                    {"a": "c", "count": 4},
-                    {"count": 1}
-                ]
+                "data": [{"a": "a", "count": 5}, {"a": "c", "count": 4}, {"count": 1}],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a", "count"],
-                "data": [
-                    ["a", 5],
-                    ["c", 4],
-                    [NULL, 1]
-                ]
+                "data": [["a", 5], ["c", 4], [NULL, 1]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [{"name": "a", "domain": {"type": "set", "partitions": [
-                    {"value": "a"},
-                    {"value": "c"}
-                ]}}],
-                "data": {
-                    "count": [5, 4, 1]
-                }
-            }
+                "edges": [{
+                    "name": "a",
+                    "domain": {
+                        "type": "set",
+                        "partitions": [{"value": "a"}, {"value": "c"}],
+                    },
+                }],
+                "data": {"count": [5, 4, 1]},
+            },
         }
         self.utils.execute_tests(test)
 
-    @skipIf(global_settings.use in ('sqlite', 'elasticsearch'), "coordinate sort clause with matching edges")
+    @skipIf(
+        global_settings.use in ("sqlite", "elasticsearch"),
+        "coordinate sort clause with matching edges",
+    )
     def test_2edge_and_sort(self):
         test = {
             "data": [
@@ -109,12 +87,12 @@ class TestSorting(BaseTestCase):
                 {"a": "a", "b": 0, "value": 8},
                 {"a": "a", "b": 0, "value": 9},
                 {"a": "a", "b": 1, "value": 10},
-                {"a": "a", "b": 1, "value": 11}
+                {"a": "a", "b": 1, "value": 11},
             ],
             "query": {
                 "from": TEST_TABLE,
                 "edges": ["a", "b"],
-                "sort": [{"a": "desc"}, {"b": "desc"}]
+                "sort": [{"a": "desc"}, {"b": "desc"}],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -127,8 +105,8 @@ class TestSorting(BaseTestCase):
                     {"a": "a", "count": 1},
                     {"b": 1, "count": 1},
                     {"b": 0, "count": 0},
-                    {"count": 1}
-                ]
+                    {"count": 1},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
@@ -142,36 +120,49 @@ class TestSorting(BaseTestCase):
                     ["a", NULL, 1],
                     [NULL, 1, 1],
                     [NULL, 0, 0],
-                    [NULL, NULL, 1]
-                ]
+                    [NULL, NULL, 1],
+                ],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
                 "edges": [
-                    {"name": "b", "domain": {"type": "set", "partitions": [
-                        {"value": 0},
-                        {"value": 1}
-                    ]}},
-                    {"name": "a", "domain": {"type": "set", "partitions": [
-                        {"value": "a"},
-                        {"value": "c"}
-                    ]}}
+                    {
+                        "name": "b",
+                        "domain": {
+                            "type": "set",
+                            "partitions": [{"value": 0}, {"value": 1}],
+                        },
+                    },
+                    {
+                        "name": "a",
+                        "domain": {
+                            "type": "set",
+                            "partitions": [{"value": "a"}, {"value": "c"}],
+                        },
+                    },
                 ],
-                "data": {
-                    "count": [[2, 2, 0], [3, 2, 1], [1, 0, 1]]
-                }
-            }
+                "data": {"count": [[2, 2, 0], [3, 2, 1], [1, 0, 1]]},
+            },
         }
 
         subtest = to_data(test)
-        subtest.name = get_stacktrace()[0]['method']
+        subtest.name = get_stacktrace()[0]["method"]
         self.utils.fill_container(test)
 
         test = to_data(test)
-        self.utils.send_queries({"query": test.query, "expecting_list": test.expecting_list})
-        self.utils.send_queries({"query": test.query, "expecting_table": test.expecting_table})
+        self.utils.send_queries({
+            "query": test.query,
+            "expecting_list": test.expecting_list,
+        })
+        self.utils.send_queries({
+            "query": test.query,
+            "expecting_table": test.expecting_table,
+        })
         try:
-            self.utils.send_queries({"query": test.query, "expecting_cube": test.expecting_cube})
+            self.utils.send_queries({
+                "query": test.query,
+                "expecting_cube": test.expecting_cube,
+            })
             Log.error("expecting error regarding sorting edges")
         except Exception as e:
             pass
@@ -188,40 +179,29 @@ class TestSorting(BaseTestCase):
                 {"a": "a", "value": 8},
                 {"a": "a", "value": 9},
                 {"a": "a", "value": 10},
-                {"a": "a", "value": 11}
+                {"a": "a", "value": 11},
             ],
-            "query": {
-                "from": TEST_TABLE,
-                "groupby": "a",
-                "sort": "a"
-            },
+            "query": {"from": TEST_TABLE, "groupby": "a", "sort": "a"},
             "expecting_list": {
                 "meta": {"format": "list"},
-                "data": [
-                    {"a": "a", "count": 5},
-                    {"a": "c", "count": 4},
-                    {"count": 1}
-                ]
+                "data": [{"a": "a", "count": 5}, {"a": "c", "count": 4}, {"count": 1}],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a", "count"],
-                "data": [
-                    ["a", 5],
-                    ["c", 4],
-                    [NULL, 1]
-                ]
+                "data": [["a", 5], ["c", 4], [NULL, 1]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [{"name": "a", "domain": {"type": "set", "partitions": [
-                    {"value": "a"},
-                    {"value": "c"}
-                ]}}],
-                "data": {
-                    "count": [5, 4, 1]
-                }
-            }
+                "edges": [{
+                    "name": "a",
+                    "domain": {
+                        "type": "set",
+                        "partitions": [{"value": "a"}, {"value": "c"}],
+                    },
+                }],
+                "data": {"count": [5, 4, 1]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -237,43 +217,40 @@ class TestSorting(BaseTestCase):
                 {"a": Date("2018-04-02 01:34:00").unix, "value": 8},
                 {"a": Date("2018-04-02 02:44:00").unix, "value": 9},
                 {"a": Date("2018-04-02 04:54:00").unix, "value": 10},
-                {"a": Date("2018-04-02 14:04:00").unix, "value": 11}
+                {"a": Date("2018-04-02 14:04:00").unix, "value": 11},
             ],
             "query": {
                 "from": TEST_TABLE,
                 "groupby": {
                     "name": "date",
-                    "value": {"floor": [{"div": ["a", 86400]}]}
+                    "value": {"floor": [{"div": ["a", 86400]}]},
                 },
-                "sort": {"value": {"floor": [{"div": ["a", 86400]}]}}
+                "sort": {"value": {"floor": [{"div": ["a", 86400]}]}},
             },
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
                     {"date": 17622, "count": 4},
                     {"date": 17623, "count": 5},
-                    {"count": 1}
-                ]
+                    {"count": 1},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["date", "count"],
-                "data": [
-                    [17622, 4],
-                    [17623, 5],
-                    [NULL, 1]
-                ]
+                "data": [[17622, 4], [17623, 5], [NULL, 1]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [{"name": "date", "domain": {"type": "set", "partitions": [
-                    {"value": 17622},
-                    {"value": 17623}
-                ]}}],
-                "data": {
-                    "count": [4, 5, 1]
-                }
-            }
+                "edges": [{
+                    "name": "date",
+                    "domain": {
+                        "type": "set",
+                        "partitions": [{"value": 17622}, {"value": 17623}],
+                    },
+                }],
+                "data": {"count": [4, 5, 1]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -289,12 +266,12 @@ class TestSorting(BaseTestCase):
                 {"a": "a", "b": 1, "value": 8},
                 {"a": "a", "b": 2, "value": 9},
                 {"a": "a", "b": 2, "value": 10},
-                {"a": "a", "value": 11}
+                {"a": "a", "value": 11},
             ],
             "query": {
                 "from": TEST_TABLE,
                 "groupby": ["a", "b"],
-                "sort": [{"b": "desc"}, {"a": "asc"}]
+                "sort": [{"b": "desc"}, {"a": "asc"}],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -305,8 +282,8 @@ class TestSorting(BaseTestCase):
                     {"a": "c", "b": 1, "count": 2},
                     {"a": "a", "b": NULL, "count": 1},
                     {"a": "c", "b": NULL, "count": 1},
-                    {"count": 1}
-                ]
+                    {"count": 1},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
@@ -318,13 +295,16 @@ class TestSorting(BaseTestCase):
                     ["c", 1, 2],
                     ["a", NULL, 1],
                     ["c", NULL, 1],
-                    [NULL, NULL, 1]
-                ]
-            }
+                    [NULL, NULL, 1],
+                ],
+            },
         }
         self.utils.execute_tests(test)
 
-    @skipIf(global_settings.use in ('sqlite', 'elasticsearch'), "coordinate sort clause with matching edges")
+    @skipIf(
+        global_settings.use in ("sqlite", "elasticsearch"),
+        "coordinate sort clause with matching edges",
+    )
     def test_groupby2b_and_sort(self):
         test = {
             "data": [
@@ -339,12 +319,12 @@ class TestSorting(BaseTestCase):
                 {"a": "a", "b": 0, "value": 8},
                 {"a": "a", "b": 0, "value": 9},
                 {"a": "a", "b": 1, "value": 10},
-                {"a": "a", "b": 1, "value": 11}
+                {"a": "a", "b": 1, "value": 11},
             ],
             "query": {
                 "from": TEST_TABLE,
                 "groupby": ["a", "b"],
-                "sort": [{"a": "desc"}, {"b": "desc"}]
+                "sort": [{"a": "desc"}, {"b": "desc"}],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -355,8 +335,8 @@ class TestSorting(BaseTestCase):
                     {"a": "a", "b": 0, "count": 2},
                     {"a": "a", "count": 1},
                     {"b": 1, "count": 1},
-                    {"count": 1}
-                ]
+                    {"count": 1},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
@@ -368,29 +348,36 @@ class TestSorting(BaseTestCase):
                     ["a", 0, 2],
                     ["a", NULL, 1],
                     [NULL, 1, 1],
-                    [NULL, NULL, 1]
-                ]
+                    [NULL, NULL, 1],
+                ],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
                 "edges": [
-                    {"name": "a", "domain": {"type": "set", "partitions": [
-                        {"value": "c"},
-                        {"value": "a"}
-                    ]}},
-                    {"name": "b", "domain": {"type": "set", "partitions": [
-                        {"value": 1},
-                        {"value": 0}
-                    ]}}
+                    {
+                        "name": "a",
+                        "domain": {
+                            "type": "set",
+                            "partitions": [{"value": "c"}, {"value": "a"}],
+                        },
+                    },
+                    {
+                        "name": "b",
+                        "domain": {
+                            "type": "set",
+                            "partitions": [{"value": 1}, {"value": 0}],
+                        },
+                    },
                 ],
-                "data": {
-                    "count": [[2, 2, 0], [3, 2, 1], [1, 0, 1]]
-                }
-            }
+                "data": {"count": [[2, 2, 0], [3, 2, 1], [1, 0, 1]]},
+            },
         }
         self.utils.execute_tests(test)
 
-    @skipIf(global_settings.use in ('sqlite', 'elasticsearch'), "coordinate sort clause with matching edges")
+    @skipIf(
+        global_settings.use in ("sqlite", "elasticsearch"),
+        "coordinate sort clause with matching edges",
+    )
     def test_groupby2c_and_sort(self):
         test = {
             "data": [
@@ -405,24 +392,27 @@ class TestSorting(BaseTestCase):
                 {"a": "a", "b": 0, "value": 8},
                 {"a": "a", "b": 0, "value": 9},
                 {"a": "a", "b": 1, "value": 10},
-                {"a": "a", "b": 1, "value": 11}
+                {"a": "a", "b": 1, "value": 11},
             ],
             "query": {
                 "from": TEST_TABLE,
                 "groupby": ["a", "b"],
-                "sort": [{"b": "desc"}, {"a": "desc"}]  # ENSURE DIFFERENT ORDER STILL SORTS CUBE
+                "sort": [
+                    {"b": "desc"},
+                    {"a": "desc"},
+                ],  # ENSURE DIFFERENT ORDER STILL SORTS CUBE
             },
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
                     {"a": "c", "b": 1, "count": 2},
                     {"a": "a", "b": 1, "count": 3},
-                    {          "b": 1, "count": 1},
+                    {"b": 1, "count": 1},
                     {"a": "c", "b": 0, "count": 2},
                     {"a": "a", "b": 0, "count": 2},
-                    {"a": "a",         "count": 1},
-                    {                  "count": 1}
-                ]
+                    {"a": "a", "count": 1},
+                    {"count": 1},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
@@ -434,25 +424,29 @@ class TestSorting(BaseTestCase):
                     ["c", 0, 2],
                     ["a", 0, 2],
                     ["a", NULL, 1],
-                    [NULL, NULL, 1]
-                ]
+                    [NULL, NULL, 1],
+                ],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
                 "edges": [
-                    {"name": "a", "domain": {"type": "set", "partitions": [
-                        {"value": "c"},
-                        {"value": "a"}
-                    ]}},
-                    {"name": "b", "domain": {"type": "set", "partitions": [
-                        {"value": 1},
-                        {"value": 0}
-                    ]}}
-                 ],
-                "data": {
-                    "count": [[2, 2, 0], [3, 2, 1], [1, 0, 1]]
-                }
-            }
+                    {
+                        "name": "a",
+                        "domain": {
+                            "type": "set",
+                            "partitions": [{"value": "c"}, {"value": "a"}],
+                        },
+                    },
+                    {
+                        "name": "b",
+                        "domain": {
+                            "type": "set",
+                            "partitions": [{"value": 1}, {"value": 0}],
+                        },
+                    },
+                ],
+                "data": {"count": [[2, 2, 0], [3, 2, 1], [1, 0, 1]]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -461,33 +455,11 @@ class TestSorting(BaseTestCase):
 
         test = {
             "data": [
-                [
-                    {"a": 4},
-                    {"a": 1},
-                    {"a": 3},
-                    {"a": 7},
-                    {"a": 2}
-                ],
-                [
-                    {"a": -4},
-                    {"a": -1},
-                    {"a": -3},
-                    {"a": -7},
-                    {"a": -2}
-                ],
-                [
-                    {"a": 4},
-                    {"a": 1},
-                    {"a": -3},
-                    {"a": -7},
-                    {"a": 2}
-                ],
+                [{"a": 4}, {"a": 1}, {"a": 3}, {"a": 7}, {"a": 2}],
+                [{"a": -4}, {"a": -1}, {"a": -3}, {"a": -7}, {"a": -2}],
+                [{"a": 4}, {"a": 1}, {"a": -3}, {"a": -7}, {"a": 2}],
             ],
-            "query": {
-                "from": TEST_TABLE,
-                "sort": [{"a": "asc"}],
-                "limit": 1000
-            },
+            "query": {"from": TEST_TABLE, "sort": [{"a": "asc"}], "limit": 1000},
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
@@ -506,7 +478,7 @@ class TestSorting(BaseTestCase):
                     {"a": 4},
                     {"a": 4},
                     {"a": 7},
-                ]
+                ],
             },
         }
         self.utils.execute_tests(test)
@@ -515,33 +487,11 @@ class TestSorting(BaseTestCase):
     def test_nested(self):
         test = {
             "data": [
-                {"b": [
-                    {"a": 4},
-                    {"a": 1},
-                    {"a": 3},
-                    {"a": 7},
-                    {"a": 2}
-                ]},
-                {"b": [
-                    {"a": -4},
-                    {"a": -1},
-                    {"a": -3},
-                    {"a": -7},
-                    {"a": -2}
-                ]},
-                {"b": [
-                    {"a": 4},
-                    {"a": 1},
-                    {"a": -3},
-                    {"a": -7},
-                    {"a": 2}
-                ]},
+                {"b": [{"a": 4}, {"a": 1}, {"a": 3}, {"a": 7}, {"a": 2}]},
+                {"b": [{"a": -4}, {"a": -1}, {"a": -3}, {"a": -7}, {"a": -2}]},
+                {"b": [{"a": 4}, {"a": 1}, {"a": -3}, {"a": -7}, {"a": 2}]},
             ],
-            "query": {
-                "from": TEST_TABLE+".b",
-                "sort": [{"a": "asc"}],
-                "limit": 100
-            },
+            "query": {"from": TEST_TABLE + ".b", "sort": [{"a": "asc"}], "limit": 100},
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
@@ -560,7 +510,7 @@ class TestSorting(BaseTestCase):
                     {"a": 4},
                     {"a": 4},
                     {"a": 7},
-                ]
+                ],
             },
         }
         self.utils.execute_tests(test)
@@ -568,30 +518,14 @@ class TestSorting(BaseTestCase):
     def test_single_nested(self):
         test = {
             "data": [
-                {"b": [
-                    {"a": 4},
-                    {"a": 4},
-                ]},
-                {"b": [
-                    {"a": -4},
-                ]},
-                {"b": [
-                    {"a": 1},
-                ]},
+                {"b": [{"a": 4}, {"a": 4},]},
+                {"b": [{"a": -4},]},
+                {"b": [{"a": 1},]},
             ],
-            "query": {
-                "from": TEST_TABLE+".b",
-                "sort": [{"a": "asc"}]
-            },
+            "query": {"from": TEST_TABLE + ".b", "sort": [{"a": "asc"}]},
             "expecting_list": {
                 "meta": {"format": "list"},
-                "data": [
-                    {"a": -4},
-                    {"a": 1},
-                    {"a": 4},
-                    {"a": 4},
-                ]
+                "data": [{"a": -4}, {"a": 1}, {"a": 4}, {"a": 4},],
             },
         }
         self.utils.execute_tests(test)
-

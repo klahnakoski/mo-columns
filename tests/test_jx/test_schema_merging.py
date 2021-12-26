@@ -10,63 +10,40 @@
 
 from __future__ import absolute_import, division, unicode_literals
 
-from unittest import skip
+from unittest import skipIf
 
 from jx_base.expressions import NULL
-from tests.test_jx import BaseTestCase, TEST_TABLE
+from tests.test_jx import BaseTestCase, TEST_TABLE, global_settings
 
 
-@skipIf(global_settings.use in ('sqlite', 'elasticsearch'), "not ready")
+@skipIf(global_settings.use in ("sqlite", "elasticsearch"), "not ready")
 class TestSchemaMerging(BaseTestCase):
     """
     TESTS THAT DEMONSTRATE DIFFERENT SCHEMAS
     """
 
-    @skipIf(global_settings.use in ('sqlite', 'elasticsearch'), "broken")
+    @skipIf(global_settings.use in ("sqlite", "elasticsearch"), "broken")
     def test_select(self):
         test = {
-            "data": [
-                {"a": "b"},
-                {"a": [{"b": 1}, {"b": 2}]},
-                {"a": 3}
-            ],
-            "query": {
-                "from": TEST_TABLE,
-                "select": "a"
-            },
+            "data": [{"a": "b"}, {"a": [{"b": 1}, {"b": 2}]}, {"a": 3}],
+            "query": {"from": TEST_TABLE, "select": "a"},
             "expecting_list": {
                 "meta": {"format": "list"},
-                "data": [
-                    "b",
-                    [{"b": 1}, {"b": 2}],
-                    3
-                ]
+                "data": ["b", [{"b": 1}, {"b": 2}], 3],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a"],
-                "data": [
-                        ["b"],
-                        [[{"b": 1}, {"b": 2}]],
-                        [3]
-                ]
+                "data": [["b"], [[{"b": 1}, {"b": 2}]], [3]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "rownum",
-                        "domain": {"type": "rownum", "min": 0, "max": 3, "interval": 1}
-                    }
-                ],
-                "data": {
-                    "a": [
-                        "b",
-                        [{"b": 1}, {"b": 2}],
-                        3
-                    ]
-                }
-            }
+                "edges": [{
+                    "name": "rownum",
+                    "domain": {"type": "rownum", "min": 0, "max": 3, "interval": 1},
+                }],
+                "data": {"a": ["b", [{"b": 1}, {"b": 2}], 3]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -76,163 +53,90 @@ class TestSchemaMerging(BaseTestCase):
                 # _id USED TO CONTROL INSERT
                 {"_id": "1", "a": "b"},
                 {"_id": "2", "a": 3},
-                {"_id": "3", "a": "c"}
+                {"_id": "3", "a": "c"},
             ],
-            "query": {
-                "from": TEST_TABLE,
-                "select": "a"
-            },
-            "expecting_list": {
-                "meta": {"format": "list"},
-                "data": [
-                    "b",
-                    3,
-                    "c"
-                ]
-            },
+            "query": {"from": TEST_TABLE, "select": "a"},
+            "expecting_list": {"meta": {"format": "list"}, "data": ["b", 3, "c"]},
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a"],
-                "data": [
-                    ["b"],
-                    [3],
-                    ["c"]
-                ]
+                "data": [["b"], [3], ["c"]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "rownum",
-                        "domain": {"type": "rownum", "min": 0, "max": 3, "interval": 1}
-                    }
-                ],
-                "data": {
-                    "a": ["b", 3, "c"]
-                }
-            }
+                "edges": [{
+                    "name": "rownum",
+                    "domain": {"type": "rownum", "min": 0, "max": 3, "interval": 1},
+                }],
+                "data": {"a": ["b", 3, "c"]},
+            },
         }
         self.utils.execute_tests(test)
 
     def test_dots_in_property_names(self):
         test = {
-            "data": [
-                {"a.html": "hello"},
-                {"a": {"html": "world"}}
-            ],
-            "query": {
-                "from": TEST_TABLE,
-                "select": "a\\.html"
-            },
-            "expecting_list": {
-                "meta": {"format": "list"},
-                "data": [
-                    "hello",
-                    NULL
-                ]
-            },
+            "data": [{"a.html": "hello"}, {"a": {"html": "world"}}],
+            "query": {"from": TEST_TABLE, "select": "a\\.html"},
+            "expecting_list": {"meta": {"format": "list"}, "data": ["hello", NULL]},
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a\\.html"],
-                "data": [
-                    ["hello"],
-                    [NULL]
-                ]
+                "data": [["hello"], [NULL]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "rownum",
-                        "domain": {"type": "rownum", "min": 0, "max": 2, "interval": 1}
-                    }
-                ],
-                "data": {
-                    "a\\.html": ["hello", NULL]
-                }
-            }
+                "edges": [{
+                    "name": "rownum",
+                    "domain": {"type": "rownum", "min": 0, "max": 2, "interval": 1},
+                }],
+                "data": {"a\\.html": ["hello", NULL]},
+            },
         }
         self.utils.execute_tests(test)
 
     def test_dots_in_property_names2(self):
         test = {
-            "data": [
-                {"a.html": "hello"},
-                {"a": {"html": "world"}}
-            ],
-            "query": {
-                "from": TEST_TABLE,
-                "select": "a.html"
-            },
-            "expecting_list": {
-                "meta": {"format": "list"},
-                "data": [
-                    NULL,
-                    "world"
-                ]
-            },
+            "data": [{"a.html": "hello"}, {"a": {"html": "world"}}],
+            "query": {"from": TEST_TABLE, "select": "a.html"},
+            "expecting_list": {"meta": {"format": "list"}, "data": [NULL, "world"]},
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a.html"],
-                "data": [
-                    [NULL],
-                    ["world"]
-                ]
+                "data": [[NULL], ["world"]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "rownum",
-                        "domain": {"type": "rownum", "min": 0, "max": 2, "interval": 1}
-                    }
-                ],
-                "data": {
-                    "a.html": [NULL, "world"]
-                }
-            }
+                "edges": [{
+                    "name": "rownum",
+                    "domain": {"type": "rownum", "min": 0, "max": 2, "interval": 1},
+                }],
+                "data": {"a.html": [NULL, "world"]},
+            },
         }
         self.utils.execute_tests(test)
 
-    @skipIf(global_settings.use in ('sqlite', 'elasticsearch'), "broken")
+    @skipIf(global_settings.use in ("sqlite", "elasticsearch"), "broken")
     def test_dots_in_property_names3(self):
         test = {
-            "data": [
-                {"a.html": "hello"},
-                {"a": {"html": "world"}}
-            ],
-            "query": {
-                "from": TEST_TABLE,
-                "select": ["a\\.html", "a.html"]
-            },
+            "data": [{"a.html": "hello"}, {"a": {"html": "world"}}],
+            "query": {"from": TEST_TABLE, "select": ["a\\.html", "a.html"]},
             "expecting_list": {
                 "meta": {"format": "list"},
-                "data": [
-                    {"a.html": "hello"},
-                    {"a": {"html": "world"}}
-                ]
+                "data": [{"a.html": "hello"}, {"a": {"html": "world"}}],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a\\.html", "a.html"],
-                "data": [
-                    ["hello", NULL],
-                    [NULL, "world"]
-                ]
+                "data": [["hello", NULL], [NULL, "world"]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "rownum",
-                        "domain": {"type": "rownum", "min": 0, "max": 2, "interval": 1}
-                    }
-                ],
-                "data": {
-                    "a\\.html": ["hello", NULL],
-                    "a.html": [NULL, "world"]
-                }
-            }
+                "edges": [{
+                    "name": "rownum",
+                    "domain": {"type": "rownum", "min": 0, "max": 2, "interval": 1},
+                }],
+                "data": {"a\\.html": ["hello", NULL], "a.html": [NULL, "world"]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -246,27 +150,19 @@ class TestSchemaMerging(BaseTestCase):
                 {"a": [{"b": 1}, {"b": 2}]},  # TEST THAT INNER CAN BE MAPPED TO NESTED
                 {"a": {"b": 4}},  # TEST THAT INNER IS MAPPED TO NESTED, AFTER SEEING NESTED
                 {"a": 3},
-                {}
+                {},
             ],
             "query": {
                 "from": TEST_TABLE,
-                "select": {"value": "a", "aggregate": "count"}
+                "select": {"value": "a", "aggregate": "count"},
             },
-            "expecting_list": {
-                "meta": {"format": "value"},
-                "data": 6
-            },
+            "expecting_list": {"meta": {"format": "value"}, "data": 6},
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a"],
-                "data": [[6]]
+                "data": [[6]],
             },
-            "expecting_cube": {
-                "meta": {"format": "cube"},
-                "data": {
-                    "a": 6
-                }
-            }
+            "expecting_cube": {"meta": {"format": "cube"}, "data": {"a": 6}},
         }
         self.utils.execute_tests(test)
 
@@ -276,66 +172,64 @@ class TestSchemaMerging(BaseTestCase):
                 {"k": 1, "a": "b"},
                 {"k": 2, "a": {"b": 1}},
                 {"k": 3, "a": {}},
-                {"k": 4, "a": [{"b": 1}, {"b": 2}]},  # TEST THAT INNER CAN BE MAPPED TO NESTED
-                {"k": 5, "a": {"b": 4}},  # TEST THAT INNER IS MAPPED TO NESTED, AFTER SEEING NESTED
+                {
+                    "k": 4,
+                    "a": [{"b": 1}, {"b": 2}],
+                },  # TEST THAT INNER CAN BE MAPPED TO NESTED
+                {
+                    "k": 5,
+                    "a": {"b": 4},
+                },  # TEST THAT INNER IS MAPPED TO NESTED, AFTER SEEING NESTED
                 {"k": 6, "a": 3},
-                {"k": 7, }
+                {"k": 7,},
             ],
-            "query": {
-                "from": TEST_TABLE,
-                "select": ["a.b"],
-                "where": {"eq": {"k": 2}}
-            },
-            "expecting_list": {
-                "meta": {"format": "list"},
-                "data": [{"a": {"b": 1}}]
-            },
+            "query": {"from": TEST_TABLE, "select": ["a.b"], "where": {"eq": {"k": 2}}},
+            "expecting_list": {"meta": {"format": "list"}, "data": [{"a": {"b": 1}}]},
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a.b"],
-                "data": [[1]]
+                "data": [[1]],
             },
-            "expecting_cube": {
-                "meta": {"format": "cube"},
-                "data": {
-                    "a.b": [1]
-                }
-            }
+            "expecting_cube": {"meta": {"format": "cube"}, "data": {"a.b": [1]}},
         }
         self.utils.execute_tests(test)
 
-    @skipIf(global_settings.use in ('sqlite', 'elasticsearch'), "complicated where clause needs support")
+    @skipIf(
+        global_settings.use in ("sqlite", "elasticsearch"),
+        "complicated where clause needs support",
+    )
     def test_where(self):
         test = {
             "data": [
                 {"k": 1, "a": "b"},
                 {"k": 2, "a": {"b": 1}},
                 {"k": 3, "a": {}},
-                {"k": 4, "a": [{"b": 1}, {"b": 2}]},  # TEST THAT INNER CAN BE MAPPED TO NESTED
-                {"k": 5, "a": {"b": 4}},  # TEST THAT INNER IS MAPPED TO NESTED, AFTER SEEING NESTED
+                {
+                    "k": 4,
+                    "a": [{"b": 1}, {"b": 2}],
+                },  # TEST THAT INNER CAN BE MAPPED TO NESTED
+                {
+                    "k": 5,
+                    "a": {"b": 4},
+                },  # TEST THAT INNER IS MAPPED TO NESTED, AFTER SEEING NESTED
                 {"k": 6, "a": 3},
-                {"k": 7, }
+                {"k": 7,},
             ],
             "query": {
                 "from": TEST_TABLE + ".a",
                 "select": ["k"],
-                "where": {"eq": {"a.b": 1}}
+                "where": {"eq": {"a.b": 1}},
             },
             "expecting_list": {
                 "meta": {"format": "list"},
-                "data": [{"k": 2}, {"k": 4}]
+                "data": [{"k": 2}, {"k": 4}],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["k"],
-                "data": [[2], [4]]
+                "data": [[2], [4]],
             },
-            "expecting_cube": {
-                "meta": {"format": "cube"},
-                "data": {
-                    "k": [2, 4]
-                }
-            }
+            "expecting_cube": {"meta": {"format": "cube"}, "data": {"k": [2, 4]}},
         }
         self.utils.execute_tests(test)
 
@@ -348,27 +242,19 @@ class TestSchemaMerging(BaseTestCase):
                 {"a": [{"b": 1}, {"b": 2}]},  # TEST THAT INNER CAN BE MAPPED TO NESTED
                 {"a": {"b": 4}},  # TEST THAT INNER IS MAPPED TO NESTED, AFTER SEEING NESTED
                 {"a": 3},
-                {}
+                {},
             ],
             "query": {
                 "from": TEST_TABLE,
-                "select": {"value": "a.b", "aggregate": "sum"}
+                "select": {"value": "a.b", "aggregate": "sum"},
             },
-            "expecting_list": {
-                "meta": {"format": "value"},
-                "data": 8
-            },
+            "expecting_list": {"meta": {"format": "value"}, "data": 8},
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a.b"],
-                "data": [[8]]
+                "data": [[8]],
             },
-            "expecting_cube": {
-                "meta": {"format": "cube"},
-                "data": {
-                    "a.b": 8
-                }
-            }
+            "expecting_cube": {"meta": {"format": "cube"}, "data": {"a.b": 8}},
         }
         self.utils.execute_tests(test)
 
@@ -378,15 +264,21 @@ class TestSchemaMerging(BaseTestCase):
                 {"v": 1, "a": "b"},
                 {"v": 2, "a": {"b": 1}},
                 {"v": 3, "a": {}},
-                {"v": 4, "a": [{"b": 1}, {"b": 2}, {"b": 2}]},  # TEST THAT INNER CAN BE MAPPED TO NESTED
-                {"v": 5, "a": {"b": 4}},  # TEST THAT INNER IS MAPPED TO NESTED, AFTER SEEING NESTED
+                {
+                    "v": 4,
+                    "a": [{"b": 1}, {"b": 2}, {"b": 2}],
+                },  # TEST THAT INNER CAN BE MAPPED TO NESTED
+                {
+                    "v": 5,
+                    "a": {"b": 4},
+                },  # TEST THAT INNER IS MAPPED TO NESTED, AFTER SEEING NESTED
                 {"v": 6, "a": 3},
-                {"v": 7}
+                {"v": 7},
             ],
             "query": {
                 "from": TEST_TABLE + ".a",
                 "edges": [{"value": "b"}],
-                "select": {"value": "v", "aggregate": "sum"}
+                "select": {"value": "v", "aggregate": "sum"},
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -394,9 +286,8 @@ class TestSchemaMerging(BaseTestCase):
                     {"b": 1, "v": 6},
                     {"b": 2, "v": 4},
                     {"b": 4, "v": 5},
-                    {"v": 14}
-                ]
-            }
+                    {"v": 14},
+                ],
+            },
         }
         self.utils.execute_tests(test)
-

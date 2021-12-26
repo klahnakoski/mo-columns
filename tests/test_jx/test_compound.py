@@ -43,7 +43,6 @@ class TestOther(BaseTestCase):
             "query": {
                 "from": TEST_TABLE,
                 "select": [{"name": "a", "value": {"from": "a", "select": "v"}}, "b"],
-                "where": {"exists": "a"}
+                "where": {"exists": "a"},
             },
         }
-

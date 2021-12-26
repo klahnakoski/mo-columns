@@ -10,9 +10,10 @@
 
 from __future__ import absolute_import, division, unicode_literals
 
-from unittest import skip, skipIf
+from unittest import skipIf
 
 import mo_math
+
 from jx_base.expressions import NULL
 from mo_dots import list_to_data
 from tests.test_jx import BaseTestCase, TEST_TABLE, global_settings
@@ -134,20 +135,15 @@ class TestDeepOps(BaseTestCase):
     def test_deep_select_column(self):
         test = {
             "data": [
-                {"_a": [
-                    {"b": "x", "v": 2},
-                    {"b": "y", "v": 3}
-                ]},
+                {"_a": [{"b": "x", "v": 2}, {"b": "y", "v": 3}]},
                 {"_a": {"b": "x", "v": 5}},
-                {"_a": [
-                    {"b": "x", "v": 7},
-                ]},
-                {"c": "x"}
+                {"_a": [{"b": "x", "v": 7},]},
+                {"c": "x"},
             ],
             "query": {
                 "from": TEST_TABLE + "._a",
                 "select": {"value": "_a.v", "aggregate": "sum"},
-                "edges": ["_a.b"]
+                "edges": ["_a.b"],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -155,33 +151,26 @@ class TestDeepOps(BaseTestCase):
                     {"_a": {"b": "x", "v": 14}},
                     {"_a": {"b": "y", "v": 3}},
                     {"_a": {}},
-                ]},
+                ],
+            },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["_a.b", "_a.v"],
-                "data": [
-                    ["x", 14],
-                    ["y", 3],
-                    [NULL, NULL]
-                ]
+                "data": [["x", 14], ["y", 3], [NULL, NULL]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "_a.b",
-                        "allowNulls": True,
-                        "domain": {
-                            "type": "set",
-                            "key": "value",
-                            "partitions": [{"value": "x"}, {"value": "y"}]
-                        }
-                    }
-                ],
-                "data": {
-                    "_a.v": [14, 3, NULL]
-                }
-            }
+                "edges": [{
+                    "name": "_a.b",
+                    "allowNulls": True,
+                    "domain": {
+                        "type": "set",
+                        "key": "value",
+                        "partitions": [{"value": "x"}, {"value": "y"}],
+                    },
+                }],
+                "data": {"_a.v": [14, 3, NULL]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -189,53 +178,41 @@ class TestDeepOps(BaseTestCase):
     def test_deep_select_column_w_groupby(self):
         test = {
             "data": [
-                {"_a": [
-                    {"b": "x", "v": 2},
-                    {"b": "y", "v": 3}
-                ]},
+                {"_a": [{"b": "x", "v": 2}, {"b": "y", "v": 3}]},
                 {"_a": {"b": "x", "v": 5}},
-                {"_a": [
-                    {"b": "x", "v": 7},
-                ]},
-                {"c": "x"}
+                {"_a": [{"b": "x", "v": 7},]},
+                {"c": "x"},
             ],
             "query": {
                 "from": TEST_TABLE + "._a",
                 "select": {"value": "_a.v", "aggregate": "sum"},
-                "groupby": ["_a.b"]
+                "groupby": ["_a.b"],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
-                "data": [
-                    {"_a": {"b": "x", "v": 14}},
-                    {"_a": {"b": "y", "v": 3}},
-                ]},
+                "data": [{"_a": {"b": "x", "v": 14}}, {"_a": {"b": "y", "v": 3}},],
+            },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["_a.b", "_a.v"],
-                "data": [
-                    ["x", 14],
-                    ["y", 3]
-                ]
-            }
+                "data": [["x", 14], ["y", 3]],
+            },
         }
         self.utils.execute_tests(test)
 
     @skipIf(global_settings.use == "sqlite", "broken")
     def test_bad_deep_select_column_w_groupby(self):
         test = {
-            "data": [  # WE NEED SOME DATA TO MAKE A NESTED COLUMN
-                {"_a": {"b": "x"}}
-            ],
+            "data": [{"_a": {"b": "x"}}],  # WE NEED SOME DATA TO MAKE A NESTED COLUMN
             "query": {
                 "from": TEST_TABLE,
                 "select": {"value": "a.v", "aggregate": "sum"},
-                "groupby": ["a.b"]
+                "groupby": ["a.b"],
             },
             "expecting_list": {  # DUMMY: SO AN QUERY ATTEMPT IS MADE
                 "meta": {"format": "list"},
-                "data": []
-            }
+                "data": [],
+            },
         }
         self.assertRaises(Exception, self.utils.execute_tests, test)
 
@@ -243,58 +220,41 @@ class TestDeepOps(BaseTestCase):
         # TEST THAT ABSOLUTE COLUMN NAMES WORK (WHEN THEY DO NOT CONFLICT WITH RELATIVE PROPERTY NAME)
         test = {
             "data": [
-                {"o": 3, "_a": [
-                    {"b": "x", "v": 2},
-                    {"b": "y", "v": 3}
-                ]},
+                {"o": 3, "_a": [{"b": "x", "v": 2}, {"b": "y", "v": 3}]},
                 {"o": 1, "_a": {"b": "x", "v": 5}},
-                {"o": 2, "_a": [
-                    {"b": "x", "v": 7},
-                ]},
-                {"o": 4, "c": "x"}
+                {"o": 2, "_a": [{"b": "x", "v": 7},]},
+                {"o": 4, "c": "x"},
             ],
             "query": {
                 "from": TEST_TABLE + "._a",
                 "select": ["b", "o"],
                 "where": {"eq": {"b": "x"}},
-                "sort": ["o"]
+                "sort": ["o"],
             },
             "es_query": {  # FOR REFERENCE
                 "query": {"nested": {
                     "path": "_a",
                     "inner_hits": {"size": 100000},
-                    "filter": {"term": {"_a.b": "x"}}
+                    "filter": {"term": {"_a.b": "x"}},
                 }},
-                "fields": ["o"]
+                "fields": ["o"],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
-                "data": [
-                    {"o": 1, "b": "x"},
-                    {"o": 2, "b": "x"},
-                    {"o": 3, "b": "x"}
-                ]},
+                "data": [{"o": 1, "b": "x"}, {"o": 2, "b": "x"}, {"o": 3, "b": "x"}],
+            },
             "expecting_table": {
                 "header": ["b", "o"],
-                "data": [
-                    ["x", 1],
-                    ["x", 2],
-                    ["x", 3]
-                ]
+                "data": [["x", 1], ["x", 2], ["x", 3]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "rownum",
-                        "domain": {"type": "rownum", "min": 0, "max": 3, "interval": 1}
-                    }
-                ],
-                "data": {
-                    "b": ["x", "x", "x"],
-                    "o": [1, 2, 3]
-                }
-            }
+                "edges": [{
+                    "name": "rownum",
+                    "domain": {"type": "rownum", "min": 0, "max": 3, "interval": 1},
+                }],
+                "data": {"b": ["x", "x", "x"], "o": [1, 2, 3]},
+            },
         }
 
         self.utils.execute_tests(test)
@@ -303,70 +263,48 @@ class TestDeepOps(BaseTestCase):
     def test_select_whole_document(self):
         test = {
             "data": [
-                {"o": 3, "_a": [
-                    {"b": "x", "v": 2},
-                    {"b": "y", "v": 3}
-                ]},
+                {"o": 3, "_a": [{"b": "x", "v": 2}, {"b": "y", "v": 3}]},
                 {"o": 1, "_a": {"b": "x", "v": 5}},
-                {"o": 2, "_a": [
-                    {"b": "x", "v": 7},
-                ]},
-                {"o": 4, "c": "x"}
+                {"o": 2, "_a": [{"b": "x", "v": 7},]},
+                {"o": 4, "c": "x"},
             ],
-            "query": {
-                "from": TEST_TABLE,
-                "select": "*",
-                "sort": ["o"]
-            },
+            "query": {"from": TEST_TABLE, "select": "*", "sort": ["o"]},
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
                     {"o": 1, "_a": {"b": "x", "v": 5}},
                     {"o": 2, "_a": {"b": "x", "v": 7}},
-                    {"o": 3, "_a": [
-                        {"b": "x", "v": 2},
-                        {"b": "y", "v": 3}
-                    ]},
-                    {"o": 4, "c": "x"}
-                ]},
+                    {"o": 3, "_a": [{"b": "x", "v": 2}, {"b": "y", "v": 3}]},
+                    {"o": 4, "c": "x"},
+                ],
+            },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["o", "_a", "c"],
                 "data": [
                     [1, {"b": "x", "v": 5}, NULL],
                     [2, {"b": "x", "v": 7}, NULL],
-                    [3,
-                     [
-                         {"b": "x", "v": 2},
-                         {"b": "y", "v": 3}
-                     ],
-                     NULL
-                    ],
-                    [4, NULL, "x"]
-                ]
+                    [3, [{"b": "x", "v": 2}, {"b": "y", "v": 3}], NULL],
+                    [4, NULL, "x"],
+                ],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "rownum",
-                        "domain": {"type": "rownum", "min": 0, "max": 4, "interval": 1}
-                    }
-                ],
+                "edges": [{
+                    "name": "rownum",
+                    "domain": {"type": "rownum", "min": 0, "max": 4, "interval": 1},
+                }],
                 "data": {
                     "_a": [
                         {"b": "x", "v": 5},
                         {"b": "x", "v": 7},
-                        [
-                            {"b": "x", "v": 2},
-                            {"b": "y", "v": 3}
-                        ],
-                        NULL
+                        [{"b": "x", "v": 2}, {"b": "y", "v": 3}],
+                        NULL,
                     ],
                     "c": [NULL, NULL, NULL, "x"],
-                    "o": [1, 2, 3, 4]
-                }
-            }
+                    "o": [1, 2, 3, 4],
+                },
+            },
         }
         self.utils.execute_tests(test)
 
@@ -374,20 +312,12 @@ class TestDeepOps(BaseTestCase):
     def test_select_whole_nested_document(self):
         test = {
             "data": [
-                {"o": 3, "_a": [
-                    {"b": "x", "v": 2},
-                    {"b": "y", "v": 3}
-                ]},
+                {"o": 3, "_a": [{"b": "x", "v": 2}, {"b": "y", "v": 3}]},
                 {"o": 1, "_a": {"b": "x", "v": 5}},
-                {"o": 2, "_a": [
-                    {"b": "x", "v": 7},
-                ]},
-                {"o": 4, "c": "x"}
+                {"o": 2, "_a": [{"b": "x", "v": 7},]},
+                {"o": 4, "c": "x"},
             ],
-            "query": {
-                "from": TEST_TABLE + "._a",
-                "select": "*"
-            },
+            "query": {"from": TEST_TABLE + "._a", "select": "*"},
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
@@ -395,8 +325,9 @@ class TestDeepOps(BaseTestCase):
                     {"o": 2, "b": "x", "v": 7},
                     {"o": 3, "b": "x", "v": 2},
                     {"o": 3, "b": "y", "v": 3},
-                    {"o": 4, "c": "x"}
-                ]},
+                    {"o": 4, "c": "x"},
+                ],
+            },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["o", "b", "v", "c"],
@@ -405,24 +336,22 @@ class TestDeepOps(BaseTestCase):
                     [2, "x", 7, NULL],
                     [3, "x", 2, NULL],
                     [3, "y", 3, NULL],
-                    [4, NULL, NULL, "x"]
-                ]
+                    [4, NULL, NULL, "x"],
+                ],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "rownum",
-                        "domain": {"type": "rownum", "min": 0, "max": 5, "interval": 1}
-                    }
-                ],
+                "edges": [{
+                    "name": "rownum",
+                    "domain": {"type": "rownum", "min": 0, "max": 5, "interval": 1},
+                }],
                 "data": {
                     "b": ["x", "x", "y", "x", NULL],
                     "v": [5, 7, 3, 2, NULL],
                     "c": [NULL, NULL, NULL, NULL, "x"],
-                    "o": [1, 2, 3, 3, 4]
-                }
-            }
+                    "o": [1, 2, 3, 3, 4],
+                },
+            },
         }
 
         self.utils.execute_tests(test)
@@ -439,46 +368,34 @@ class TestDeepOps(BaseTestCase):
                     {"b": {"s": 4}, "h": {"s": "b-d"}},
                     {"b": {"s": 5}, "h": {"s": "b-e"}},
                     {"b": {"s": 6}, "h": {"s": "b-f"}},
-                   ]}}
+                ]}}
             ],
             "query": {
                 "select": "a._t.*",
                 "from": TEST_TABLE + ".a._t",
-                "where": {
-                    "prefix": {
-                        "h.s": "a-"
-                    }
-                }
+                "where": {"prefix": {"h.s": "a-"}},
             },
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
                     {"a": {"_t": {"b.s": 1, "h.s": "a-a"}}},
                     {"a": {"_t": {"b.s": 2, "h.s": "a-b"}}},
-                    {"a": {"_t": {"b.s": 3, "h.s": "a-c"}}}
-                ]},
+                    {"a": {"_t": {"b.s": 3, "h.s": "a-c"}}},
+                ],
+            },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a._t.b.s", "a._t.h.s"],
-                "data": [
-                    [1, "a-a"],
-                    [2, "a-b"],
-                    [3, "a-c"]
-                ]
+                "data": [[1, "a-a"], [2, "a-b"], [3, "a-c"]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "rownum",
-                        "domain": {"type": "rownum", "min": 0, "max": 3, "interval": 1}
-                    }
-                ],
-                "data": {
-                    "a._t.b.s": [1, 2, 3],
-                    "a._t.h.s": ["a-a", "a-b", "a-c"]
-                }
-            }
+                "edges": [{
+                    "name": "rownum",
+                    "domain": {"type": "rownum", "min": 0, "max": 3, "interval": 1},
+                }],
+                "data": {"a._t.b.s": [1, 2, 3], "a._t.h.s": ["a-a", "a-b", "a-c"]},
+            },
         }
 
         self.utils.execute_tests(test)
@@ -499,44 +416,37 @@ class TestDeepOps(BaseTestCase):
             "query": {
                 "select": "a._t",
                 "from": TEST_TABLE + ".a._t",
-                "where": {
-                    "prefix": {
-                        "h.s": "a-"
-                    }
-                }
+                "where": {"prefix": {"h.s": "a-"}},
             },
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
                     {"b": {"s": 1}, "h": {"s": "a-a"}},
                     {"b": {"s": 2}, "h": {"s": "a-b"}},
-                    {"b": {"s": 3}, "h": {"s": "a-c"}}
-                ]},
+                    {"b": {"s": 3}, "h": {"s": "a-c"}},
+                ],
+            },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a._t"],
                 "data": [
                     [{"b": {"s": 1}, "h": {"s": "a-a"}}],
                     [{"b": {"s": 2}, "h": {"s": "a-b"}}],
-                    [{"b": {"s": 3}, "h": {"s": "a-c"}}]
-                ]
+                    [{"b": {"s": 3}, "h": {"s": "a-c"}}],
+                ],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "rownum",
-                        "domain": {"type": "rownum", "min": 0, "max": 3, "interval": 1}
-                    }
-                ],
-                "data": {
-                     "a._t": [
-                        {"b": {"s": 1}, "h": {"s": "a-a"}},
-                        {"b": {"s": 2}, "h": {"s": "a-b"}},
-                        {"b": {"s": 3}, "h": {"s": "a-c"}}
-                    ]
-                }
-            }
+                "edges": [{
+                    "name": "rownum",
+                    "domain": {"type": "rownum", "min": 0, "max": 3, "interval": 1},
+                }],
+                "data": {"a._t": [
+                    {"b": {"s": 1}, "h": {"s": "a-a"}},
+                    {"b": {"s": 2}, "h": {"s": "a-b"}},
+                    {"b": {"s": 3}, "h": {"s": "a-c"}},
+                ]},
+            },
         }
 
         self.utils.execute_tests(test)
@@ -557,19 +467,16 @@ class TestDeepOps(BaseTestCase):
             "query": {
                 "select": ["a._t"],
                 "from": TEST_TABLE + ".a._t",
-                "where": {
-                    "prefix": {
-                        "h.s": "a-"
-                    }
-                }
+                "where": {"prefix": {"h.s": "a-"}},
             },
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
                     {"a": {"_t": {"b": {"s": 1}, "h": {"s": "a-a"}}}},
                     {"a": {"_t": {"b": {"s": 2}, "h": {"s": "a-b"}}}},
-                    {"a": {"_t": {"b": {"s": 3}, "h": {"s": "a-c"}}}}
-                ]}
+                    {"a": {"_t": {"b": {"s": 3}, "h": {"s": "a-c"}}}},
+                ],
+            },
         }
 
         self.utils.execute_tests(test)
@@ -579,46 +486,38 @@ class TestDeepOps(BaseTestCase):
         # TEST WE CAN PERFORM AGGREGATES ON EXPRESSIONS OF DEEP VARIABLES
         test = {
             "data": [
-                {"o": 3, "a": {"_a": [
-                    {"v": "a string"},
-                    {"v": "another string"}
-                ]}},
+                {"o": 3, "a": {"_a": [{"v": "a string"}, {"v": "another string"}]}},
                 {"o": 1, "a": {"_a": {"v": "still more"}}},
-                {"o": 2, "a": {"_a": [
-                    {"v": "string!"},
-                ]}},
-                {"o": 4, "a": {}}
+                {"o": 2, "a": {"_a": [{"v": "string!"},]}},
+                {"o": 4, "a": {}},
             ],
             "query": {
                 "from": TEST_TABLE + ".a._a",
-                "select": {"name": "l", "value": {"length": "v"}, "aggregate": "max"}
+                "select": {"name": "l", "value": {"length": "v"}, "aggregate": "max"},
             },
             "es_query": {
                 # FOR REFERENCE
                 "fields": [],
                 "aggs": {"_nested": {
                     "nested": {"path": "a._a"},
-                    "aggs": {"max_length": {"max": {"script": "(doc[\"v\"].value).length()"}}}
+                    "aggs": {"max_length": {"max": {
+                        "script": '(doc["v"].value).length()'
+                    }}},
                 }},
                 "size": 10,
-                "sort": []
+                "sort": [],
             },
-            "expecting_list": {
-                "meta": {"format": "value"},
-                "data": 14
-            },
+            "expecting_list": {"meta": {"format": "value"}, "data": 14},
             "expecting_table": {
                 "meta": {"format": "table"},
-                "header":["l"],
-                "data": [[14]]
+                "header": ["l"],
+                "data": [[14]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "select": {
-                    "name": "l"
-                },
-                "data": {"l": 14}
-            }
+                "select": {"name": "l"},
+                "data": {"l": 14},
+            },
         }
 
         self.utils.execute_tests(test)
@@ -627,34 +526,28 @@ class TestDeepOps(BaseTestCase):
         # TEST WE CAN PERFORM AGGREGATES ON EXPRESSIONS OF DEEP VARIABLES
         test = {
             "data": [
-                {"o": 3, "a": {"_a": [
-                    {"v": "a string"},
-                    {"v": "another string"}
-                ]}},
+                {"o": 3, "a": {"_a": [{"v": "a string"}, {"v": "another string"}]}},
                 {"o": 1, "a": {"_a": {"v": "still more"}}},
-                {"o": 2, "a": {"_a": [
-                    {"v": "string!"},
-                ]}},
-                {"o": 4, "a": {}}
+                {"o": 2, "a": {"_a": [{"v": "string!"},]}},
+                {"o": 4, "a": {}},
             ],
             "query": {
                 "from": TEST_TABLE + ".a._a",
                 "select": {"name": "l", "value": {"length": "v"}, "aggregate": "max"},
-                "where": {"lt": {"o": 3}}
+                "where": {"lt": {"o": 3}},
             },
             "es_query": {  # FOR REFERENCE
-                           "fields": [],
-                           "aggs": {"_nested": {
-                               "nested": {"path": "a._a"},
-                               "aggs": {"max_length": {"max": {"script": "(doc[\"v\"].value).length()"}}}
-                           }},
-                           "size": 10,
-                           "sort": []
+                "fields": [],
+                "aggs": {"_nested": {
+                    "nested": {"path": "a._a"},
+                    "aggs": {"max_length": {"max": {
+                        "script": '(doc["v"].value).length()'
+                    }}},
+                }},
+                "size": 10,
+                "sort": [],
             },
-            "expecting_list": {
-                "meta": {"format": "value"},
-                "data": 10
-            }
+            "expecting_list": {"meta": {"format": "value"}, "data": 10},
         }
 
         self.utils.execute_tests(test)
@@ -664,36 +557,31 @@ class TestDeepOps(BaseTestCase):
         # TEST WE CAN PERFORM AGGREGATES ON EXPRESSIONS OF DEEP VARIABLES
         test = {
             "data": [
-                {"o": 3, "a": {"_a": [
-                    {"v": "a string"},
-                    {"v": "another string"}
-                ]}},
+                {"o": 3, "a": {"_a": [{"v": "a string"}, {"v": "another string"}]}},
                 {"o": 1, "a": {"_a": {"v": "still more"}}},
-                {"o": 2, "a": {"_a": [
-                    {"v": "string!"},
-                ]}},
-                {"o": 4, "a": {}}
+                {"o": 2, "a": {"_a": [{"v": "string!"},]}},
+                {"o": 4, "a": {}},
             ],
             "query": {
                 "from": TEST_TABLE + ".a._a",
                 "select": "*",
-                "where": {
-                    "eq": [{"length": "v"}, 10]
-                }
+                "where": {"eq": [{"length": "v"}, 10]},
             },
             "es_query": {  # FOR REFERENCE
                 "fields": [],
                 "aggs": {"_nested": {
                     "nested": {"path": "a._a"},
-                    "aggs": {"max_length": {"max": {"script": "(doc[\"v\"].value).length()"}}}
+                    "aggs": {"max_length": {"max": {
+                        "script": '(doc["v"].value).length()'
+                    }}},
                 }},
                 "size": 10,
-                "sort": []
+                "sort": [],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
-                "data": [{"o": 1, "v": "still more"}]
-            }
+                "data": [{"o": 1, "v": "still more"}],
+            },
         }
 
         self.utils.execute_tests(test)
@@ -702,34 +590,26 @@ class TestDeepOps(BaseTestCase):
         # TEST WE CAN PERFORM EXPRESSIONS OF DEEP VARIABLES
         test = {
             "data": [
-                {"o": 3, "a": {"_a": [
-                    {"v": "a string", "s": False},
-                    {"v": "another string"}
-                ]}},
-                {"o": 1, "a": {"_a": {
-                    "v": "still more",
-                    "s": False
-                }}},
-                {"o": 2, "a": {"_a": [
-                    {"v": "string!", "s": True},
-                ]}},
-                {"o": 4, "a": {"_a": {"s": False}}}
+                {
+                    "o": 3,
+                    "a": {"_a": [
+                        {"v": "a string", "s": False},
+                        {"v": "another string"},
+                    ]},
+                },
+                {"o": 1, "a": {"_a": {"v": "still more", "s": False}}},
+                {"o": 2, "a": {"_a": [{"v": "string!", "s": True},]}},
+                {"o": 4, "a": {"_a": {"s": False}}},
             ],
             "query": {
                 "from": TEST_TABLE + ".a._a",
                 "select": ["o", "v"],
-                "where": {"and": [
-                    {"gte": {"o": 2}},
-                    {"eq": {"s": False}}
-                ]}
+                "where": {"and": [{"gte": {"o": 2}}, {"eq": {"s": False}}]},
             },
             "expecting_list": {
                 "meta": {"format": "list"},
-                "data": [
-                    {"o": 3, "v": "a string"},
-                    {"o": 4}
-                ]
-            }
+                "data": [{"o": 3, "v": "a string"}, {"o": 4}],
+            },
         }
 
         self.utils.execute_tests(test)
@@ -738,39 +618,31 @@ class TestDeepOps(BaseTestCase):
     def test_deep_where_on_fact_table(self):
         test = {
             "data": [
-                {"o": 1, "a": {"_a": {
-                    "v": "still more",
-                    "s": False
-                }}},
-                {"o": 3, "a": {"_a": [
-                    {"v": "a string", "s": False},
-                    {"v": "another string"}
-                ]}},
-                {"o": 2, "a": {"_a": [
-                    {"v": "string!", "s": True},
-                ]}},
-                {"o": 4, "a": {"_a": {"s": False}}}
+                {"o": 1, "a": {"_a": {"v": "still more", "s": False}}},
+                {
+                    "o": 3,
+                    "a": {"_a": [
+                        {"v": "a string", "s": False},
+                        {"v": "another string"},
+                    ]},
+                },
+                {"o": 2, "a": {"_a": [{"v": "string!", "s": True},]}},
+                {"o": 4, "a": {"_a": {"s": False}}},
             ],
             "query": {
                 "from": TEST_TABLE,
                 "select": ["o", "a._a.v"],
                 "where": {"exists": "a._a.v"},
-                "sort": "o"
+                "sort": "o",
             },
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
-                    {"o": 1, "a": {"_a": {
-                        "v": "still more",
-                    }}},
-                    {"o": 2, "a": {"_a": {
-                        "v": "string!",
-                    }}},
-                    {"o": 3, "a": {"_a": {
-                        "v": {"a string", "another string"}
-                    }}},
-                ]
-            }
+                    {"o": 1, "a": {"_a": {"v": "still more",}}},
+                    {"o": 2, "a": {"_a": {"v": "string!",}}},
+                    {"o": 3, "a": {"_a": {"v": {"a string", "another string"}}}},
+                ],
+            },
         }
         self.utils.execute_tests(test)
 
@@ -781,23 +653,18 @@ class TestDeepOps(BaseTestCase):
         """
         test = {
             "data": [
-                {"o": 3, "a": {"_a": [
-                    {"v": "a string", "s": False},
-                    {"v": "another string"}
-                ]}},
-                {"o": 1, "a": {"_a": {
-                    "v": "still more",
-                    "s": False
-                }}},
-                {"o": 2, "a": {"_a": [
-                    {"v": "string!", "s": True},
-                ]}},
-                {"o": 4, "a": {"_a": {"s": False}}}
+                {
+                    "o": 3,
+                    "a": {"_a": [
+                        {"v": "a string", "s": False},
+                        {"v": "another string"},
+                    ]},
+                },
+                {"o": 1, "a": {"_a": {"v": "still more", "s": False}}},
+                {"o": 2, "a": {"_a": [{"v": "string!", "s": True},]}},
+                {"o": 4, "a": {"_a": {"s": False}}},
             ],
-            "query": {
-                "select": ["_id"],
-                "from": TEST_TABLE + ".a._a",
-            },
+            "query": {"select": ["_id"], "from": TEST_TABLE + ".a._a",},
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
@@ -805,8 +672,8 @@ class TestDeepOps(BaseTestCase):
                     {"_id": mo_math.is_hex},
                     {"_id": mo_math.is_hex},
                     {"_id": mo_math.is_hex},
-                    {"_id": mo_math.is_hex}
-                ]
+                    {"_id": mo_math.is_hex},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
@@ -816,21 +683,23 @@ class TestDeepOps(BaseTestCase):
                     [mo_math.is_hex],
                     [mo_math.is_hex],
                     [mo_math.is_hex],
-                    [mo_math.is_hex]
-                ]
+                    [mo_math.is_hex],
+                ],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "rownum",
-                        "domain": {"type": "rownum", "min": 0, "max": 5, "interval": 1}
-                    }
-                ],
-                "data": {
-                    "_id": [mo_math.is_hex, mo_math.is_hex, mo_math.is_hex, mo_math.is_hex, mo_math.is_hex]
-                }
-            }
+                "edges": [{
+                    "name": "rownum",
+                    "domain": {"type": "rownum", "min": 0, "max": 5, "interval": 1},
+                }],
+                "data": {"_id": [
+                    mo_math.is_hex,
+                    mo_math.is_hex,
+                    mo_math.is_hex,
+                    mo_math.is_hex,
+                    mo_math.is_hex,
+                ]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -841,23 +710,18 @@ class TestDeepOps(BaseTestCase):
 
         test = {
             "data": [
-                {"o": 3, "a": {"_a": [
-                    {"v": "a string", "s": False},
-                    {"v": "another string"}
-                ]}},
-                {"o": 1, "a": {"_a": {
-                    "v": "still more",
-                    "s": False
-                }}},
-                {"o": 2, "a": {"_a": [
-                    {"v": "string!", "s": True},
-                ]}},
-                {"o": 4, "a": {"_a": {"s": False}}}
+                {
+                    "o": 3,
+                    "a": {"_a": [
+                        {"v": "a string", "s": False},
+                        {"v": "another string"},
+                    ]},
+                },
+                {"o": 1, "a": {"_a": {"v": "still more", "s": False}}},
+                {"o": 2, "a": {"_a": [{"v": "string!", "s": True},]}},
+                {"o": 4, "a": {"_a": {"s": False}}},
             ],
-            "query": {
-                "select": "_id",
-                "from": TEST_TABLE + ".a._a",
-            },
+            "query": {"select": "_id", "from": TEST_TABLE + ".a._a",},
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
@@ -865,9 +729,9 @@ class TestDeepOps(BaseTestCase):
                     mo_math.is_hex,
                     mo_math.is_hex,
                     mo_math.is_hex,
-                    mo_math.is_hex
-                ]
-            }
+                    mo_math.is_hex,
+                ],
+            },
         }
         self.utils.execute_tests(test)
 
@@ -875,23 +739,18 @@ class TestDeepOps(BaseTestCase):
     def test_aggs_on_parent(self):
         test = {
             "data": [
-                {"o": 3, "a": {"_a": [
-                    {"v": "a string", "s": False},
-                    {"v": "another string"}
-                ]}},
-                {"o": 1, "a": {"_a": {
-                    "v": "still more",
-                    "s": False
-                }}},
-                {"o": 2, "a": {"_a": [
-                    {"v": "string!", "s": True},
-                ]}},
-                {"o": 4, "a": {"_a": {"s": False}}}
+                {
+                    "o": 3,
+                    "a": {"_a": [
+                        {"v": "a string", "s": False},
+                        {"v": "another string"},
+                    ]},
+                },
+                {"o": 1, "a": {"_a": {"v": "still more", "s": False}}},
+                {"o": 2, "a": {"_a": [{"v": "string!", "s": True},]}},
+                {"o": 4, "a": {"_a": {"s": False}}},
             ],
-            "query": {
-                "from": TEST_TABLE + ".a._a",
-                "edges": ["o"]
-            },
+            "query": {"from": TEST_TABLE + ".a._a", "edges": ["o"]},
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
@@ -899,36 +758,31 @@ class TestDeepOps(BaseTestCase):
                     {"o": 2, "count": 1},
                     {"o": 3, "count": 2},
                     {"o": 4, "count": 1},
-                    {"o": NULL, "count": 0}
-                ]
+                    {"o": NULL, "count": 0},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["o", "count"],
-                "data": [
-                    [1, 1],
-                    [2, 1],
-                    [3, 2],
-                    [4, 1],
-                    [NULL, 0]
-                ]
-
+                "data": [[1, 1], [2, 1], [3, 2], [4, 1], [NULL, 0]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
                 "select": {"name": "count"},
-                "edges": [
-                    {"name": "o", "domain": {"type": "set", "partitions": [
-                        {"value": 1, "dataIndex": 0},
-                        {"value": 2, "dataIndex": 1},
-                        {"value": 3, "dataIndex": 2},
-                        {"value": 4, "dataIndex": 3}
-                    ]}}
-                ],
-                "data": {
-                    "count": [1, 1, 2, 1, 0]
-                }
-            }
+                "edges": [{
+                    "name": "o",
+                    "domain": {
+                        "type": "set",
+                        "partitions": [
+                            {"value": 1, "dataIndex": 0},
+                            {"value": 2, "dataIndex": 1},
+                            {"value": 3, "dataIndex": 2},
+                            {"value": 4, "dataIndex": 3},
+                        ],
+                    },
+                }],
+                "data": {"count": [1, 1, 2, 1, 0]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -936,23 +790,15 @@ class TestDeepOps(BaseTestCase):
     def test_aggs_on_parent_and_child(self):
         test = {
             "data": [
-                {"o": 1, "a": {"_a": [
-                    {"v": "b", "s": False},
-                    {"v": "c"}
-                ]}},
-                {"o": 1, "a": {"_a": {
-                    "v": "b",
-                    "s": False
-                }}},
-                {"o": 2, "a": {"_a": [
-                    {"v": "b", "s": True},
-                ]}},
-                {"o": 2, "a": {"_a": {"s": False}}}
+                {"o": 1, "a": {"_a": [{"v": "b", "s": False}, {"v": "c"}]}},
+                {"o": 1, "a": {"_a": {"v": "b", "s": False}}},
+                {"o": 2, "a": {"_a": [{"v": "b", "s": True},]}},
+                {"o": 2, "a": {"_a": {"s": False}}},
             ],
             "query": {
                 "from": TEST_TABLE + ".a._a",
                 "edges": ["o", "v"],
-                "select": {"aggregate": "count", "value": "s"}
+                "select": {"aggregate": "count", "value": "s"},
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -966,7 +812,7 @@ class TestDeepOps(BaseTestCase):
                     {"o": NULL, "v": "b", "s": 0},
                     {"o": NULL, "v": "c", "s": 0},
                     {"o": NULL, "v": NULL, "s": 0},
-                ]
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
@@ -981,28 +827,34 @@ class TestDeepOps(BaseTestCase):
                     [NULL, "b", 0],
                     [NULL, "c", 0],
                     [NULL, NULL, 0],
-                ]
+                ],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
                 "edges": [
-                    {"name": "o", "domain": {"type": "set", "partitions": [
-                        {"value": 1, "dataIndex": 0},
-                        {"value": 2, "dataIndex": 1},
-                    ]}},
-                    {"name": "v", "domain": {"type": "set", "partitions": [
-                        {"value": "b", "dataIndex": 0},
-                        {"value": "c", "dataIndex": 1},
-                    ]}}
+                    {
+                        "name": "o",
+                        "domain": {
+                            "type": "set",
+                            "partitions": [
+                                {"value": 1, "dataIndex": 0},
+                                {"value": 2, "dataIndex": 1},
+                            ],
+                        },
+                    },
+                    {
+                        "name": "v",
+                        "domain": {
+                            "type": "set",
+                            "partitions": [
+                                {"value": "b", "dataIndex": 0},
+                                {"value": "c", "dataIndex": 1},
+                            ],
+                        },
+                    },
                 ],
-                "data": {
-                    "s": [
-                        [2, 0, 0],
-                        [1, 0, 1],
-                        [0, 0, 0]
-                    ]
-                }
-            }
+                "data": {"s": [[2, 0, 0], [1, 0, 1], [0, 0, 0]]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1011,24 +863,16 @@ class TestDeepOps(BaseTestCase):
         # ADDED DOCUMENT WHERE o IS MISSING
         test = {
             "data": [
-                {"o": 1, "a": {"_a": [
-                    {"v": "b", "s": False},
-                    {"v": "c"}
-                ]}},
-                {"o": 1, "a": {"_a": {
-                    "v": "b",
-                    "s": False
-                }}},
-                {"o": 2, "a": {"_a": [
-                    {"v": "b", "s": True},
-                ]}},
+                {"o": 1, "a": {"_a": [{"v": "b", "s": False}, {"v": "c"}]}},
+                {"o": 1, "a": {"_a": {"v": "b", "s": False}}},
+                {"o": 2, "a": {"_a": [{"v": "b", "s": True},]}},
                 {"o": 2, "a": {"_a": {"s": False}}},
-                {"a": {"_a": {"s": False}}}
+                {"a": {"_a": {"s": False}}},
             ],
             "query": {
                 "from": TEST_TABLE + ".a._a",
                 "edges": ["o", "v"],
-                "select": {"aggregate": "count", "value": "s"}
+                "select": {"aggregate": "count", "value": "s"},
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -1039,10 +883,10 @@ class TestDeepOps(BaseTestCase):
                     {"o": 2, "v": "b", "s": 1},
                     {"o": 2, "v": "c", "s": 0},
                     {"o": 2, "v": NULL, "s": 1},
-                    {"o": NULL, "v":"b", "s": 0},
-                    {"o": NULL, "v":"c", "s": 0},
-                    {"o": NULL, "v":NULL, "s": 1}
-                ]
+                    {"o": NULL, "v": "b", "s": 0},
+                    {"o": NULL, "v": "c", "s": 0},
+                    {"o": NULL, "v": NULL, "s": 1},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
@@ -1056,29 +900,35 @@ class TestDeepOps(BaseTestCase):
                     [2, NULL, 1],
                     [NULL, "b", 0],
                     [NULL, "c", 0],
-                    [NULL, NULL, 1]
-                ]
+                    [NULL, NULL, 1],
+                ],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
                 "edges": [
-                    {"name": "o", "domain": {"type": "set", "partitions": [
-                        {"value": 1, "dataIndex": 0},
-                        {"value": 2, "dataIndex": 1},
-                    ]}},
-                    {"name": "v", "domain": {"type": "set", "partitions": [
-                        {"value": "b", "dataIndex": 0},
-                        {"value": "c", "dataIndex": 1},
-                    ]}}
+                    {
+                        "name": "o",
+                        "domain": {
+                            "type": "set",
+                            "partitions": [
+                                {"value": 1, "dataIndex": 0},
+                                {"value": 2, "dataIndex": 1},
+                            ],
+                        },
+                    },
+                    {
+                        "name": "v",
+                        "domain": {
+                            "type": "set",
+                            "partitions": [
+                                {"value": "b", "dataIndex": 0},
+                                {"value": "c", "dataIndex": 1},
+                            ],
+                        },
+                    },
                 ],
-                "data": {
-                    "s": [
-                        [2, 0, 0],
-                        [1, 0, 1],
-                        [0, 0, 1]
-                    ]
-                }
-            }
+                "data": {"s": [[2, 0, 0], [1, 0, 1], [0, 0, 1]]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1087,22 +937,14 @@ class TestDeepOps(BaseTestCase):
         # NO DOCUEMNT WHERE v IS MISSING
         test = {
             "data": [
-                {"o": 1, "a": {"_a": [
-                    {"v": "b", "s": False},
-                    {"v": "c"}
-                ]}},
-                {"o": 1, "a": {"_a": {
-                    "v": "b",
-                    "s": False
-                }}},
-                {"o": 2, "a": {"_a": [
-                    {"v": "b", "s": True},
-                ]}}
+                {"o": 1, "a": {"_a": [{"v": "b", "s": False}, {"v": "c"}]}},
+                {"o": 1, "a": {"_a": {"v": "b", "s": False}}},
+                {"o": 2, "a": {"_a": [{"v": "b", "s": True},]}},
             ],
             "query": {
                 "from": TEST_TABLE + ".a._a",
                 "edges": ["o", "v"],
-                "select": {"aggregate": "count", "value": "s"}
+                "select": {"aggregate": "count", "value": "s"},
             },
             "expecting_list": {  # TODO: THIS MAY NOT BE CORRECT
                 "meta": {"format": "list"},
@@ -1115,8 +957,8 @@ class TestDeepOps(BaseTestCase):
                     {"o": 2, "v": NULL, "s": 0},
                     {"o": NULL, "v": "b", "s": 0},
                     {"o": NULL, "v": "c", "s": 0},
-                    {"o": NULL, "v": NULL, "s": 0}
-                ]
+                    {"o": NULL, "v": NULL, "s": 0},
+                ],
             },
             "expecting_table": {  # TODO: THIS MAY NOT BE CORRECT
                 "meta": {"format": "table"},
@@ -1130,106 +972,105 @@ class TestDeepOps(BaseTestCase):
                     [2, NULL, 0],
                     [NULL, "b", 0],
                     [NULL, "c", 0],
-                    [NULL, NULL, 0]
-                ]
+                    [NULL, NULL, 0],
+                ],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
                 "edges": [
-                    {"name": "o", "domain": {"type": "set", "partitions": [
-                        {"value": 1, "dataIndex": 0},
-                        {"value": 2, "dataIndex": 1},
-                    ]}},
-                    {"name": "v", "domain": {"type": "set", "partitions": [
-                        {"value": "b", "dataIndex": 0},
-                        {"value": "c", "dataIndex": 1},
-                    ]}}
+                    {
+                        "name": "o",
+                        "domain": {
+                            "type": "set",
+                            "partitions": [
+                                {"value": 1, "dataIndex": 0},
+                                {"value": 2, "dataIndex": 1},
+                            ],
+                        },
+                    },
+                    {
+                        "name": "v",
+                        "domain": {
+                            "type": "set",
+                            "partitions": [
+                                {"value": "b", "dataIndex": 0},
+                                {"value": "c", "dataIndex": 1},
+                            ],
+                        },
+                    },
                 ],
-                "data": {
-                    "s": [
-                        [2, 0, 0],
-                        [1, 0, 0],
-                        [0, 0, 0]
-                    ]
-                }
-            }
+                "data": {"s": [[2, 0, 0], [1, 0, 0], [0, 0, 0]]},
+            },
         }
         self.utils.execute_tests(test)
 
     def test_deep_edge_using_list(self):
         data = [{"a": {"_b": [
-            {"r": "a",  "s": "aa"},
-            {           "s": "bb"},
+            {"r": "a", "s": "aa"},
+            {"s": "bb"},
             {"r": "bb", "s": "bb"},
-            {"r": "c",  "s": "cc"},
-            {           "s": "dd"},
-            {"r": "e",  "s": "ee"},
-            {"r": "e",  "s": "ee"},
+            {"r": "c", "s": "cc"},
+            {"s": "dd"},
+            {"r": "e", "s": "ee"},
+            {"r": "e", "s": "ee"},
             {"r": "f"},
             {"r": "f"},
-            {                     "k": 1}
+            {"k": 1},
         ]}}]
 
         test = {
             "data": data,
             "query": {
                 "from": TEST_TABLE + ".a._b",
-                "edges": [{
-                    "name": "v",
-                    "value": ["r", "s"]
-                }]
+                "edges": [{"name": "v", "value": ["r", "s"]}],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
-                    {"v": ["a" , "aa"], "count": 1},
+                    {"v": ["a", "aa"], "count": 1},
                     {"v": [NULL, "bb"], "count": 1},
                     {"v": ["bb", "bb"], "count": 1},
-                    {"v": ["c" , "cc"], "count": 1},
+                    {"v": ["c", "cc"], "count": 1},
                     {"v": [NULL, "dd"], "count": 1},
-                    {"v": ["e" , "ee"], "count": 2},
-                    {"v": ["f" , NULL], "count": 2},
-                    {"v": [NULL, NULL], "count": 1}
-                ]
+                    {"v": ["e", "ee"], "count": 2},
+                    {"v": ["f", NULL], "count": 2},
+                    {"v": [NULL, NULL], "count": 1},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["v", "count"],
                 "data": [
-                    [["a" , "aa"], 1],
+                    [["a", "aa"], 1],
                     [[NULL, "bb"], 1],
                     [["bb", "bb"], 1],
-                    [["c" , "cc"], 1],
+                    [["c", "cc"], 1],
                     [[NULL, "dd"], 1],
-                    [["e" , "ee"], 2],
-                    [["f" , NULL], 2],
-                    [[NULL, NULL], 1]
-                ]
+                    [["e", "ee"], 2],
+                    [["f", NULL], 2],
+                    [[NULL, NULL], 1],
+                ],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "v",
-                        "domain": {
-                            "type": "set",
-                            "partitions": [
-                                {"dataIndex": 0, "value": ["a", "aa"]},
-                                {"dataIndex": 1, "value": ["bb", "bb"]},
-                                {"dataIndex": 2, "value": ["c", "cc"]},
-                                {"dataIndex": 3, "value": ["e", "ee"]},
-                                {"dataIndex": 4, "value": ["f", NULL]},
-                                {"dataIndex": 5, "value": [NULL, "bb"]},
-                                {"dataIndex": 6, "value": [NULL, "dd"]},
-                                {"dataIndex": 7, "value": [NULL, NULL]}
-                            ]
-                        }
-                    }
-                ],
-                "data": {
-                    "count": [1, 1, 1, 2, 2, 1, 1, 1]
-                }
-            }
+                "edges": [{
+                    "name": "v",
+                    "domain": {
+                        "type": "set",
+                        "partitions": [
+                            {"dataIndex": 0, "value": ["a", "aa"]},
+                            {"dataIndex": 1, "value": ["bb", "bb"]},
+                            {"dataIndex": 2, "value": ["c", "cc"]},
+                            {"dataIndex": 3, "value": ["e", "ee"]},
+                            {"dataIndex": 4, "value": ["f", NULL]},
+                            {"dataIndex": 5, "value": [NULL, "bb"]},
+                            {"dataIndex": 6, "value": [NULL, "dd"]},
+                            {"dataIndex": 7, "value": [NULL, NULL]},
+                        ],
+                    },
+                }],
+                "data": {"count": [1, 1, 1, 2, 2, 1, 1, 1]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1241,16 +1082,19 @@ class TestDeepOps(BaseTestCase):
             {"r": {"s": "b"}, "v": {"u": 3}},
             {"r": {"s": "b"}, "v": {"u": 4}},
             {"r": {"s": "c"}, "v": {"u": 5}},
-            {"v": {"u": 6}}
+            {"v": {"u": 6}},
         ]}}]
 
         test = {
             "data": data,
             "query": {
-                "select": {"value": "v.u", "aggregate": "sum"},  # TEST RELATIVE NAME IN select
+                "select": {
+                    "value": "v.u",
+                    "aggregate": "sum",
+                },  # TEST RELATIVE NAME IN select
                 "from": TEST_TABLE + ".a._b",
                 "edges": ["r.s"],  # TEST RELATIVE NAME IN edges
-                "where": {"ne": {"r.s": "b"}}  # TEST RELATIVE NAME IN where
+                "where": {"ne": {"r.s": "b"}},  # TEST RELATIVE NAME IN where
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -1258,32 +1102,25 @@ class TestDeepOps(BaseTestCase):
                     {"r": {"s": "a"}, "v": {"u": 3}},
                     {"r": {"s": "b"}, "v": NULL},
                     {"r": {"s": "c"}, "v": {"u": 5}},
-                    {"r": NULL, "v": {"u": NULL}}
-                ]
+                    {"r": NULL, "v": {"u": NULL}},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["r.s", "v.u"],
-                "data": [
-                    ["a", 3],
-                    ["b", NULL],
-                    ["c", 5],
-                    [NULL, NULL]
-                ]
+                "data": [["a", 3], ["b", NULL], ["c", 5], [NULL, NULL]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {"name": "r.s", "domain": {"type": "set", "partitions": [
-                        {"value": "a"},
-                        {"value": "b"},
-                        {"value": "c"}
-                    ]}}
-                ],
-                "data": {
-                    "v.u": [3, NULL, 5, NULL]
-                }
-            }
+                "edges": [{
+                    "name": "r.s",
+                    "domain": {
+                        "type": "set",
+                        "partitions": [{"value": "a"}, {"value": "b"}, {"value": "c"}],
+                    },
+                }],
+                "data": {"v.u": [3, NULL, 5, NULL]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1294,7 +1131,7 @@ class TestDeepOps(BaseTestCase):
             {"r": {"s": "b"}, "v": {"u": 3}},
             {"r": {"s": "b"}, "v": {"u": 4}},
             {"r": {"s": "c"}, "v": {"u": 5}},
-            {"v": {"u": 6}}
+            {"v": {"u": 6}},
         ]}}]
 
         test = {
@@ -1302,7 +1139,7 @@ class TestDeepOps(BaseTestCase):
             "query": {
                 "select": ["r.s", "v.u"],
                 "from": TEST_TABLE + ".a._b",
-                "where": {"ne": {"r.s": "b"}}
+                "where": {"ne": {"r.s": "b"}},
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -1310,32 +1147,21 @@ class TestDeepOps(BaseTestCase):
                     {"r": {"s": "a"}, "v": {"u": 1}},
                     {"r": {"s": "a"}, "v": {"u": 2}},
                     {"r": {"s": "c"}, "v": {"u": 5}},
-                ]
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["r.s", "v.u"],
-                "data": [
-                    ["a", 1],
-                    ["a", 2],
-                    ["c", 5]
-                ]
+                "data": [["a", 1], ["a", 2], ["c", 5]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {"name": "rownum", "domain": {
-                        "type": "rownum",
-                        "min": 0,
-                        "max": 3,
-                        "interval": 1
-                    }}
-                ],
-                "data": {
-                    "v.u": [1, 2, 5],
-                    "r.s": ["a", "a", "c"]
-                }
-            }
+                "edges": [{
+                    "name": "rownum",
+                    "domain": {"type": "rownum", "min": 0, "max": 3, "interval": 1},
+                }],
+                "data": {"v.u": [1, 2, 5], "r.s": ["a", "a", "c"]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1347,16 +1173,19 @@ class TestDeepOps(BaseTestCase):
             {"r": {"s": "b"}, "v": {"u": 3}},
             {"r": {"s": "b"}, "v": {"u": 4}},
             {"r": {"s": "c"}, "v": {"u": 5}},
-            {"v": {"u": 6}}
+            {"v": {"u": 6}},
         ]}}]
 
         test = {
             "data": data,
             "query": {
-                "select": {"value": "v.u", "aggregate": "sum"},  # TEST RELATIVE NAME IN select
+                "select": {
+                    "value": "v.u",
+                    "aggregate": "sum",
+                },  # TEST RELATIVE NAME IN select
                 "from": TEST_TABLE + ".a._b",
                 "edges": ["r.s"],  # TEST RELATIVE NAME IN edges
-                "where": {"not": {"eq": {"r.s": "b"}}}  # TEST RELATIVE NAME IN where
+                "where": {"not": {"eq": {"r.s": "b"}}},  # TEST RELATIVE NAME IN where
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -1364,32 +1193,25 @@ class TestDeepOps(BaseTestCase):
                     {"r": {"s": "a"}, "v": {"u": 3}},
                     {"r": {"s": "b"}, "v": NULL},
                     {"r": {"s": "c"}, "v": {"u": 5}},
-                    {"r": NULL, "v": {"u": 6}}
-                ]
+                    {"r": NULL, "v": {"u": 6}},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["r.s", "v.u"],
-                "data": [
-                    ["a", 3],
-                    ["b", NULL],
-                    ["c", 5],
-                    [NULL, 6]
-                ]
+                "data": [["a", 3], ["b", NULL], ["c", 5], [NULL, 6]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {"name": "r.s", "domain": {"type": "set", "partitions": [
-                        {"value": "a"},
-                        {"value": "b"},
-                        {"value": "c"}
-                    ]}}
-                ],
-                "data": {
-                    "v.u": [3, NULL, 5, 6]
-                }
-            }
+                "edges": [{
+                    "name": "r.s",
+                    "domain": {
+                        "type": "set",
+                        "partitions": [{"value": "a"}, {"value": "b"}, {"value": "c"}],
+                    },
+                }],
+                "data": {"v.u": [3, NULL, 5, 6]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1397,33 +1219,18 @@ class TestDeepOps(BaseTestCase):
     def test_shallow_and_ne_deep(self):
         test = {
             "data": [
-                {"k": 1, "o": "a", "a": [
-                    {"v": "good", "s": False},
-                    {"v": "bad"}
-                ]},
-                {"k": 2, "o": "a", "a": [{
-                    "v": "good",
-                    "s": True},
-                ]},
-                {"k": 3, "o": "a", "a": {
-                    "v": "bad",
-                    "s": False
-                }},
+                {"k": 1, "o": "a", "a": [{"v": "good", "s": False}, {"v": "bad"}]},
+                {"k": 2, "o": "a", "a": [{"v": "good", "s": True},]},
+                {"k": 3, "o": "a", "a": {"v": "bad", "s": False}},
                 {"k": 4, "o": 4, "a": {"s": False}},
-                {"k": 5, "o": "a"}
+                {"k": 5, "o": "a"},
             ],
             "query": {
                 "from": TEST_TABLE,
                 "select": "k",
-                "where": {"and": [
-                    {"eq": {"o": "a"}},
-                    {"neq": {"a.v": "bad"}}
-                ]}
+                "where": {"and": [{"eq": {"o": "a"}}, {"neq": {"a.v": "bad"}}]},
             },
-            "expecting_list": {
-                "meta": {"format": "list"},
-                "data": [1, 2]
-            },
+            "expecting_list": {"meta": {"format": "list"}, "data": [1, 2]},
         }
         self.utils.execute_tests(test)
 
@@ -1434,7 +1241,7 @@ class TestDeepOps(BaseTestCase):
             {"r": {"s": "b"}, "v": {"u": 3}},
             {"r": {"s": "b"}, "v": {"u": 4}},
             {"r": {"s": "c"}, "v": {"u": 5}},
-            {"v": {"u": 6}}
+            {"v": {"u": 6}},
         ]}}]
 
         test = {
@@ -1442,7 +1249,7 @@ class TestDeepOps(BaseTestCase):
             "query": {
                 "select": ["r.s", "v.u"],
                 "from": TEST_TABLE + ".a._b",
-                "where": {"not": {"eq": {"r.s": "b"}}}
+                "where": {"not": {"eq": {"r.s": "b"}}},
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -1450,57 +1257,41 @@ class TestDeepOps(BaseTestCase):
                     {"r": {"s": "a"}, "v": {"u": 1}},
                     {"r": {"s": "a"}, "v": {"u": 2}},
                     {"r": {"s": "c"}, "v": {"u": 5}},
-                    {"v": {"u": 6}}
-                ]
+                    {"v": {"u": 6}},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["r.s", "v.u"],
-                "data": [
-                    ["a", 1],
-                    ["a", 2],
-                    ["c", 5],
-                    [NULL, 6]
-                ]
+                "data": [["a", 1], ["a", 2], ["c", 5], [NULL, 6]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {"name": "rownum", "domain": {
-                        "type": "rownum",
-                        "min": 0,
-                        "max": 4,
-                        "interval": 1
-                    }}
-                ],
-                "data": {
-                    "v.u": [1, 2, 5, 6],
-                    "r.s": ["a", "a", "c", NULL]
-                }
-            }
+                "edges": [{
+                    "name": "rownum",
+                    "domain": {"type": "rownum", "min": 0, "max": 4, "interval": 1},
+                }],
+                "data": {"v.u": [1, 2, 5, 6], "r.s": ["a", "a", "c", NULL]},
+            },
         }
         self.utils.execute_tests(test)
 
     def test_select_average_on_none(self):
         test = {
-            "data": [{"a": {"_b": [
-                {"a": 0},
-                {}
-            ]}}],
+            "data": [{"a": {"_b": [{"a": 0}, {}]}}],
             "query": {
-                "from": TEST_TABLE+".a._b",
-                "select": [
-                    {"name": "t", "value": {"add": ["a", "a"]}, "aggregate": "average"}
-                ],
-                "edges": ["a"]
+                "from": TEST_TABLE + ".a._b",
+                "select": [{
+                    "name": "t",
+                    "value": {"add": ["a", "a"]},
+                    "aggregate": "average",
+                }],
+                "edges": ["a"],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
-                "data": [
-                    {"a": 0, "t": 0},
-                    {"t": NULL}
-                ]
-            }
+                "data": [{"a": 0, "t": 0}, {"t": NULL}],
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1515,24 +1306,17 @@ class TestDeepOps(BaseTestCase):
                 {"a": 1},
                 {"b": 0},
                 {"b": 1},
-                {}
+                {},
             ]}}],
             "query": {
-                "from": TEST_TABLE+".a._b",
-                "select": [
-                    "a",
-                    "b"
-                ],
-                "where": {"missing": "a"}
+                "from": TEST_TABLE + ".a._b",
+                "select": ["a", "b"],
+                "where": {"missing": "a"},
             },
             "expecting_list": {
                 "meta": {"format": "list"},
-                "data": [
-                    {"b": 0},
-                    {"b": 1},
-                    {}
-                ]
-            }
+                "data": [{"b": 0}, {"b": 1}, {}],
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1540,26 +1324,16 @@ class TestDeepOps(BaseTestCase):
     def test_missing_on_not_exists(self):
         # CHECKING FOR A MISSING COLUMN THAT DOES NOT EXIST SHOULD NOT THROW AN ERROR, RATHER RETURN true
         test = {
-            "data": [
-                {
-                    "a": {"_b": [{"a": 1}, {"a": 2}]},
-                    "b": 0
-                }
-            ],
+            "data": [{"a": {"_b": [{"a": 1}, {"a": 2}]}, "b": 0}],
             "query": {
-                "from": TEST_TABLE+".a._b",
-                "select": [
-                    "a"
-                ],
-                "where": {"missing": "c"}
+                "from": TEST_TABLE + ".a._b",
+                "select": ["a"],
+                "where": {"missing": "c"},
             },
             "expecting_list": {
                 "meta": {"format": "list"},
-                "data": [
-                    {"a": 1},
-                    {"a": 2}
-                ]
-            }
+                "data": [{"a": 1}, {"a": 2}],
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1575,15 +1349,12 @@ class TestDeepOps(BaseTestCase):
                 {"a": 1},
                 {"b": 0},
                 {"b": 1},
-                {}
+                {},
             ]}}],
             "query": {
-                "from": TEST_TABLE+".a._b",
-                "select": [
-                    "a",
-                    "b"
-                ],
-                "where": {"exists": "a"}
+                "from": TEST_TABLE + ".a._b",
+                "select": ["a", "b"],
+                "where": {"exists": "a"},
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -1593,9 +1364,9 @@ class TestDeepOps(BaseTestCase):
                     {"a": 0},
                     {"a": 1, "b": 0},
                     {"a": 1, "b": 1},
-                    {"a": 1}
-                ]
-            }
+                    {"a": 1},
+                ],
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1610,18 +1381,12 @@ class TestDeepOps(BaseTestCase):
                 {"q": {"a": 1}},
                 {"q": {"b": 0}},
                 {"q": {"b": 1}},
-                {"q": {}}
+                {"q": {}},
             ]}}],
             "query": {
-                "from": TEST_TABLE+".a._b",
-                "select": [
-                    "q.a",
-                    "q.b"
-                ],
-                "where": {"or": [
-                    {"exists": "q.b"},
-                    {"exists": "q.a"}
-                ]}
+                "from": TEST_TABLE + ".a._b",
+                "select": ["q.a", "q.b"],
+                "where": {"or": [{"exists": "q.b"}, {"exists": "q.a"}]},
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -1633,9 +1398,9 @@ class TestDeepOps(BaseTestCase):
                     {"q": {"a": 1, "b": 1}},
                     {"q": {"a": 1}},
                     {"q": {"b": 0}},
-                    {"q": {"b": 1}}
-                ]
-            }
+                    {"q": {"b": 1}},
+                ],
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1644,20 +1409,13 @@ class TestDeepOps(BaseTestCase):
         test = {
             "data": [{"a": {
                 "_b": [{"f": "a"}, {"f": "b"}],
-                "_c": [{"f": "c"}, {"f": "d"}]
-            }
-            }],
-            "query": {
-                "from": TEST_TABLE + ".a._b",
-                "select": ["f"]
-            },
+                "_c": [{"f": "c"}, {"f": "d"}],
+            }}],
+            "query": {"from": TEST_TABLE + ".a._b", "select": ["f"]},
             "expecting_list": {
                 "meta": {"format": "list"},
-                "data": [
-                    {"f": "a"},
-                    {"f": "b"}
-                ]
-            }
+                "data": [{"f": "a"}, {"f": "b"}],
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1666,24 +1424,15 @@ class TestDeepOps(BaseTestCase):
         # SELECTING * IS LIKE . BUT WITH DIFFERENT COLUMN NAMES
         #
         test = {
-            "data": [{"x": 1, "a": {"_b": [
-                {"q": {"a": 0, "b": 1}},
-                {"q": {"a": 0}},
-                {"q": {}}
-            ]}}],
-            "query": {
-                "from": TEST_TABLE+".a._b",
-                "select": ["*"],
-                "format": "list"
-            },
+            "data": [{
+                "x": 1,
+                "a": {"_b": [{"q": {"a": 0, "b": 1}}, {"q": {"a": 0}}, {"q": {}}]},
+            }],
+            "query": {"from": TEST_TABLE + ".a._b", "select": ["*"], "format": "list"},
             "expecting_list": {
                 "meta": {"format": "list"},
-                "data": [
-                    {"x": 1, "q.a": 0, "q.b": 1},
-                    {"x": 1, "q.a": 0},
-                    {"x": 1}
-                ]
-            }
+                "data": [{"x": 1, "q.a": 0, "q.b": 1}, {"x": 1, "q.a": 0}, {"x": 1}],
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1692,24 +1441,23 @@ class TestDeepOps(BaseTestCase):
         # SELECTING * IS LIKE . BUT WITH DIFFERENT COLUMN NAMES
         #
         test = {
-            "data": [{"x": 1, "a": {"_b": [
-                {"q": {"a": 0, "b": 1}},
-                {"q": {"a": 0}},
-                {"q": {}}
-            ]}}],
+            "data": [{
+                "x": 1,
+                "a": {"_b": [{"q": {"a": 0, "b": 1}}, {"q": {"a": 0}}, {"q": {}}]},
+            }],
             "query": {
-                "from": TEST_TABLE+".a._b",
+                "from": TEST_TABLE + ".a._b",
                 "select": ["*", {"name": "parent", "value": "..*"}],
-                "format": "list"
+                "format": "list",
             },
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
                     {"q.a": 0, "q.b": 1, "parent": {"x": 1}},
                     {"q.a": 0, "parent": {"x": 1}},
-                    {"parent": {"x": 1}}
-                ]
-            }
+                    {"parent": {"x": 1}},
+                ],
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1717,20 +1465,12 @@ class TestDeepOps(BaseTestCase):
     def test_deep_select_dot(self):
         test = {
             "data": [
-                {"x": 1, "_a": [
-                    {"b": "x", "v": 2},
-                    {"b": "y", "v": 3}
-                ]},
+                {"x": 1, "_a": [{"b": "x", "v": 2}, {"b": "y", "v": 3}]},
                 {"x": 2, "_a": {"b": "x", "v": 5}},
-                {"_a": [
-                    {"b": "x", "v": 7},
-                ]},
-                {"x": 3, "c": "x"}
+                {"_a": [{"b": "x", "v": 7},]},
+                {"x": 3, "c": "x"},
             ],
-            "query": {
-                "from": TEST_TABLE + "._a",
-                "select": {"value": "."},
-            },
+            "query": {"from": TEST_TABLE + "._a", "select": {"value": "."},},
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
@@ -1738,8 +1478,8 @@ class TestDeepOps(BaseTestCase):
                     {"b": "y", "v": 3},
                     {"b": "x", "v": 5},
                     {"b": "x", "v": 7},
-                    {}
-                ]
+                    {},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
@@ -1749,33 +1489,23 @@ class TestDeepOps(BaseTestCase):
                     [{"b": "y", "v": 3}],
                     [{"b": "x", "v": 5}],
                     [{"b": "x", "v": 7}],
-                    [{}]
-                ]
+                    [{}],
+                ],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "domain": {
-                            "interval": 1,
-                            "max": 5,
-                            "min": 0,
-                            "type": "rownum"
-                        },
-                        "name": "rownum"
-                    }
-                ],
-                "data": {
-                    ".": [
-                        {"b": "x", "v": 2},
-                        {"b": "y", "v": 3},
-                        {"b": "x", "v": 5},
-                        {"b": "x", "v": 7},
-                        {}
-                    ]
-
-                }
-            }
+                "edges": [{
+                    "domain": {"interval": 1, "max": 5, "min": 0, "type": "rownum"},
+                    "name": "rownum",
+                }],
+                "data": {".": [
+                    {"b": "x", "v": 2},
+                    {"b": "y", "v": 3},
+                    {"b": "x", "v": 5},
+                    {"b": "x", "v": 7},
+                    {},
+                ]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1785,42 +1515,23 @@ class TestDeepOps(BaseTestCase):
         test = {
             "data": [
                 {"_a": [{"b": 1, "c": 2}, {"b": 3, "c": 4}]},
-                {"_a": [{"b": 5, "c": 6}, {"b": 7, "c": 8}]}
+                {"_a": [{"b": 5, "c": 6}, {"b": 7, "c": 8}]},
             ],
-            "query": {
-                "from": TEST_TABLE,
-                "select": "_a.b"
-            },
-            "expecting_list": {
-                "meta": {"format": "list"},
-                "data": [
-                    [1, 3],
-                    [5, 7]
-                ]
-            },
+            "query": {"from": TEST_TABLE, "select": "_a.b"},
+            "expecting_list": {"meta": {"format": "list"}, "data": [[1, 3], [5, 7]]},
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["_a.b"],
-                "data": [
-                    [[1, 3]],
-                    [[5, 7]]
-                ]
+                "data": [[[1, 3]], [[5, 7]]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [
-                    {
-                        "name": "rownum",
-                        "domain": {"type": "rownum", "min": 0, "max": 2, "interval": 1}
-                    }
-                ],
-                "data": {
-                    "_a.b": [
-                        [1, 3],
-                        [5, 7]
-                    ]
-                }
-            }
+                "edges": [{
+                    "name": "rownum",
+                    "domain": {"type": "rownum", "min": 0, "max": 2, "interval": 1},
+                }],
+                "data": {"_a.b": [[1, 3], [5, 7]]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1829,32 +1540,26 @@ class TestDeepOps(BaseTestCase):
         # TEST A TWO-TYPE PROPERTY ("o") IS ACCURATELY FILTERED
         test = {
             "data": [
-                {"o": 3, "a": [
-                    {"v": "a string", "s": False},
-                    {"v": "another string"}
-                ]},
-                {"o": "a", "a": [{
-                    "v": "string!",
-                    "s": True},
-                ]},
-                {"o": "a", "a": {  # THIS IS SECONDS SO WE DO NOT HAVE BOTH INNER AND NESTED OBJECTS
-                    "v": "still more",
-                    "s": False
-                }},
-                {"o": 4, "a": {"s": False}}
+                {"o": 3, "a": [{"v": "a string", "s": False}, {"v": "another string"}]},
+                {"o": "a", "a": [{"v": "string!", "s": True},]},
+                {
+                    "o": "a",
+                    "a": {  # THIS IS SECONDS SO WE DO NOT HAVE BOTH INNER AND NESTED OBJECTS
+                        "v": "still more",
+                        "s": False,
+                    },
+                },
+                {"o": 4, "a": {"s": False}},
             ],
             "query": {
                 "from": TEST_TABLE + ".a",
                 "select": ["o", "v"],
-                "where": {"eq": {"o": "a"}}
+                "where": {"eq": {"o": "a"}},
             },
             "expecting_list": {
                 "meta": {"format": "list"},
-                "data": [
-                    {"o": "a", "v": "string!"},
-                    {"o": "a", "v": "still more"}
-                ]
-            }
+                "data": [{"o": "a", "v": "string!"}, {"o": "a", "v": "still more"}],
+            },
         }
 
         self.utils.execute_tests(test)
@@ -1869,43 +1574,46 @@ class TestDeepOps(BaseTestCase):
                 {"v": 3, "a": {}},
                 {"v": 5, "a": [{"b": 4}]},
                 {"v": 6, "a": 3},
-                {"v": 7}
+                {"v": 7},
             ],
             "query": {
-                "from": TEST_TABLE+".a",
+                "from": TEST_TABLE + ".a",
                 "edges": [{"value": "b"}],
-                "select": {"name": "count", "value": {"when": "v", "then": 1}, "aggregate": "count"}
+                "select": {
+                    "name": "count",
+                    "value": {"when": "v", "then": 1},
+                    "aggregate": "count",
+                },
             },
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
                     {"b": 1, "count": 2},
-                    {"b": 2, "count": 1},  # v (at b==2) is multivalued: [4, 4] =>  is not null => {"when":"v", "then":1} == 1
+                    {
+                        "b": 2,
+                        "count": 1,
+                    },  # v (at b==2) is multivalued: [4, 4] =>  is not null => {"when":"v", "then":1} == 1
                     {"b": 4, "count": 1},
-                    {"count": 4}
-                ]
+                    {"count": 4},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["b", "count"],
-                "data": [
-                    [1, 2],
-                    [2, 1],
-                    [4, 1],
-                    [NULL, 4]
-                ]
+                "data": [[1, 2], [2, 1], [4, 1], [NULL, 4]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [{"name": "b", "domain": {"partitions": [
-                    {"value": 1},
-                    {"value": 2},
-                    {"value": 4}
-                ]}}],
-                "data": {
-                    "count": [2, 1, 1, 4]
-                }
-            }
+                "edges": [{
+                    "name": "b",
+                    "domain": {"partitions": [
+                        {"value": 1},
+                        {"value": 2},
+                        {"value": 4},
+                    ]},
+                }],
+                "data": {"count": [2, 1, 1, 4]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1920,43 +1628,42 @@ class TestDeepOps(BaseTestCase):
                 {"v": 5, "a": [{"b": 4}]},
                 {"v": 6, "a": 3},
                 {"v": 7},
-                {"v": 8, "a": [{}, {"b": 2}]}
+                {"v": 8, "a": [{}, {"b": 2}]},
             ],
             "query": {
-                "from": TEST_TABLE+".a",
+                "from": TEST_TABLE + ".a",
                 "edges": [{"value": "b"}],
-                "select": {"name": "sum", "value": "v", "aggregate": "sum"}
+                "select": {"name": "sum", "value": "v", "aggregate": "sum"},
             },
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
                     {"b": 1, "sum": 6},
-                    {"b": 2, "sum": 12},  # v (at b==2) is multivalued: [4, 4] =>  is not null => {"when":"v", "then":1} == 1
+                    {
+                        "b": 2,
+                        "sum": 12,
+                    },  # v (at b==2) is multivalued: [4, 4] =>  is not null => {"when":"v", "then":1} == 1
                     {"b": 4, "sum": 5},
-                    {"sum": 25}
-                ]
+                    {"sum": 25},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["b", "sum"],
-                "data": [
-                    [1, 6],
-                    [2, 12],
-                    [4, 5],
-                    [NULL, 25]
-                ]
+                "data": [[1, 6], [2, 12], [4, 5], [NULL, 25]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [{"name": "b", "domain": {"partitions": [
-                    {"value": 1},
-                    {"value": 2},
-                    {"value": 4}
-                ]}}],
-                "data": {
-                    "sum": [6, 12, 5, 25]
-                }
-            }
+                "edges": [{
+                    "name": "b",
+                    "domain": {"partitions": [
+                        {"value": 1},
+                        {"value": 2},
+                        {"value": 4},
+                    ]},
+                }],
+                "data": {"sum": [6, 12, 5, 25]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -1970,12 +1677,16 @@ class TestDeepOps(BaseTestCase):
                 {"v": 3, "a": {}},
                 {"v": 5, "a": [{"b": 4}]},
                 {"v": 6, "a": 3},
-                {"v": 7}
+                {"v": 7},
             ],
             "query": {
-                "from": TEST_TABLE+".a",
+                "from": TEST_TABLE + ".a",
                 "edges": [{"name": "b", "value": "a.b"}],
-                "select": {"name": "count", "value": {"when": "v", "then": 1}, "aggregate": "count"}
+                "select": {
+                    "name": "count",
+                    "value": {"when": "v", "then": 1},
+                    "aggregate": "count",
+                },
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -1983,30 +1694,26 @@ class TestDeepOps(BaseTestCase):
                     {"b": 1, "count": 2},
                     {"b": 2, "count": 1},
                     {"b": 4, "count": 1},
-                    {"count": 4}
-                ]
+                    {"count": 4},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["b", "count"],
-                "data": [
-                    [1, 2],
-                    [2, 1],
-                    [4, 1],
-                    [NULL, 4]
-                ]
+                "data": [[1, 2], [2, 1], [4, 1], [NULL, 4]],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
-                "edges": [{"name": "b", "domain": {"partitions": [
-                    {"value": 1},
-                    {"value": 2},
-                    {"value": 4}
-                ]}}],
-                "data": {
-                    "count": [2, 1, 1, 4]
-                }
-            }
+                "edges": [{
+                    "name": "b",
+                    "domain": {"partitions": [
+                        {"value": 1},
+                        {"value": 2},
+                        {"value": 4},
+                    ]},
+                }],
+                "data": {"count": [2, 1, 1, 4]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -2014,22 +1721,13 @@ class TestDeepOps(BaseTestCase):
     def test_nested_document_selection(self):
         test = {
             "data": [
-                [
-                    {"b": "x", "v": [{"k": 1}, {"k": 2}]},
-                    {"b": "y", "v": [{"k": "3"}]}
-                ],
+                [{"b": "x", "v": [{"k": 1}, {"k": 2}]}, {"b": "y", "v": [{"k": "3"}]}],
                 {"b": "x", "v": [{"k": 5}]},
-                [
-                    {"b": "x", "v": [{"k": 7}]},
-                ],
+                [{"b": "x", "v": [{"k": 7}]},],
                 [],
-                [{"m": 1}]
+                [{"m": 1}],
             ],
-            "query": {
-                "select": ["b", "v"],
-                "from": TEST_TABLE,
-                "format": "list"
-            },
+            "query": {"select": ["b", "v"], "from": TEST_TABLE, "format": "list"},
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
@@ -2038,9 +1736,9 @@ class TestDeepOps(BaseTestCase):
                     {"b": "x", "v": {"k": 5}},
                     {"b": "x", "v": {"k": 7}},
                     NULL,
-                    NULL
-                ]
-            }
+                    NULL,
+                ],
+            },
         }
 
         self.utils.execute_tests(test)
@@ -2053,23 +1751,18 @@ class TestDeepOps(BaseTestCase):
                 {"b": "y", "v": [{"m": "a", "k": "3"}]},
                 {"b": "x", "v": [{"m": "a", "k": 1}]},
                 {"b": "x", "v": [{"m": "a", "k": 1}]},
-                {"m": 1}
+                {"m": 1},
             ],
             "query": {
-                "from": TEST_TABLE+".v",
+                "from": TEST_TABLE + ".v",
                 "groupby": {"name": "k", "value": "v.k"},
-                "where": [
-                    {"eq": {"b": "x"}},
-                    {"eq": {"k": 1}}
-                ],
-                "format": "list"
+                "where": [{"eq": {"b": "x"}}, {"eq": {"k": 1}}],
+                "format": "list",
             },
             "expecting_list": {
                 "meta": {"format": "list"},
-                "data": [
-                    {"k": 1, "count": 3},
-                ]
-            }
+                "data": [{"k": 1, "count": 3},],
+            },
         }
 
         self.utils.execute_tests(test)

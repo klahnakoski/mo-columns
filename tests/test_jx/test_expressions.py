@@ -10,13 +10,14 @@
 
 from __future__ import absolute_import, division, unicode_literals
 
+from mo_testing.fuzzytestcase import FuzzyTestCase
+
 from jx_base import Column
 from jx_base.expressions import FALSE, TRUE, jx_expression
 from jx_base.language import JX
 from jx_base.queries import is_variable_name
 from jx_python.expressions import Python
 from mo_json import INTEGER, ARRAY
-from mo_testing.fuzzytestcase import FuzzyTestCase
 from mo_times import Date, MONTH
 
 
@@ -34,9 +35,9 @@ class TestExpressions(FuzzyTestCase):
         self.assertTrue(is_variable_name("a-b"), "That's a good variable name!")
 
     def test_value_not_a_variable(self):
-        result = jx_expression(
-            {"eq": {"result.test": "/XMLHttpRequest/send-entity-body-document.htm"}}
-        ).vars()
+        result = jx_expression({"eq": {
+            "result.test": "/XMLHttpRequest/send-entity-body-document.htm"
+        }}).vars()
         expected = {"result.test"}
         self.assertEqual(result, expected, "expecting the one and only variable")
 
@@ -57,17 +58,19 @@ class TestExpressions(FuzzyTestCase):
         self.assertEqual(result, expected)
 
     def test_null_startswith(self):
-        filter = jx_expression(
-            {"prefix": [{"null": {}}, {"literal": "something"}]}
-        ).partial_eval(JX)
+        filter = jx_expression({"prefix": [
+            {"null": {}},
+            {"literal": "something"},
+        ]}).partial_eval(JX)
         expected = FALSE
         self.assertEqual(filter, expected)
         self.assertEqual(expected, filter)
 
     def test_null_startswith_null(self):
-        filter = jx_expression(
-            {"prefix": [{"null": {}}, {"literal": ""}]}
-        ).partial_eval(JX)
+        filter = jx_expression({"prefix": [
+            {"null": {}},
+            {"literal": ""},
+        ]}).partial_eval(JX)
         expected = TRUE
         self.assertEqual(filter, expected)
         self.assertEqual(expected, filter)
@@ -163,4 +166,3 @@ class S(object):
 
 
 no_schema = S()
-

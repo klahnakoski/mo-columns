@@ -24,9 +24,12 @@ class TestEdge2(BaseTestCase):
                 "from": TEST_TABLE,
                 "select": {"aggregate": "count"},
                 "edges": [
-                    {"value": "a", "domain": {"type": "set", "partitions": ["x", "y", "z"]}},
-                    "b"
-                ]
+                    {
+                        "value": "a",
+                        "domain": {"type": "set", "partitions": ["x", "y", "z"]},
+                    },
+                    "b",
+                ],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -42,8 +45,9 @@ class TestEdge2(BaseTestCase):
                     {"a": "z", "b": NULL, "count": 0},
                     {"a": NULL, "b": "m", "count": 1},
                     {"a": NULL, "b": "n", "count": 1},
-                    {"a": NULL, "b": NULL, "count": 0}
-                ]},
+                    {"a": NULL, "b": NULL, "count": 0},
+                ],
+            },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a", "b", "count"],
@@ -59,8 +63,8 @@ class TestEdge2(BaseTestCase):
                     ["z", NULL, 0],
                     [NULL, NULL, 0],
                     ["z", "m", 0],
-                    ["z", "n", 0]
-                ]
+                    ["z", "n", 0],
+                ],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
@@ -71,23 +75,11 @@ class TestEdge2(BaseTestCase):
                         "domain": {
                             "type": "set",
                             "partitions": [
-                                {
-                                    "dataIndex": 0,
-                                    "name": "x",
-                                    "value": "x"
-                                },
-                                {
-                                    "dataIndex": 1,
-                                    "name": "y",
-                                    "value": "y"
-                                },
-                                {
-                                    "dataIndex": 2,
-                                    "name": "z",
-                                    "value": "z"
-                                }
-                            ]
-                        }
+                                {"dataIndex": 0, "name": "x", "value": "x"},
+                                {"dataIndex": 1, "name": "y", "value": "y"},
+                                {"dataIndex": 2, "name": "z", "value": "z"},
+                            ],
+                        },
                     },
                     {
                         "name": "b",
@@ -95,29 +87,14 @@ class TestEdge2(BaseTestCase):
                         "domain": {
                             "type": "set",
                             "partitions": [
-                                {
-                                    "dataIndex": 0,
-                                    "name": "m",
-                                    "value": "m"
-                                },
-                                {
-                                    "dataIndex": 1,
-                                    "name": "n",
-                                    "value": "n"
-                                }
-                            ]
-                        }
-                    }
+                                {"dataIndex": 0, "name": "m", "value": "m"},
+                                {"dataIndex": 1, "name": "n", "value": "n"},
+                            ],
+                        },
+                    },
                 ],
-                "data": {
-                    "count": [
-                        [2, 1, 1],
-                        [1, 2, 1],
-                        [0, 0, 0],
-                        [1, 1, 0]
-                    ]
-                }
-            }
+                "data": {"count": [[2, 1, 1], [1, 2, 1], [0, 0, 0], [1, 1, 0]]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -129,7 +106,7 @@ class TestEdge2(BaseTestCase):
             "query": {
                 "from": TEST_TABLE,
                 "select": {"value": "v", "aggregate": "sum"},
-                "edges": ["a", "b"]
+                "edges": ["a", "b"],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -143,7 +120,8 @@ class TestEdge2(BaseTestCase):
                     {"a": NULL, "b": "m", "v": 17},
                     {"a": NULL, "b": "n", "v": 19},
                     {"a": NULL, "b": NULL, "v": NULL},
-                ]},
+                ],
+            },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a", "b", "v"],
@@ -156,8 +134,8 @@ class TestEdge2(BaseTestCase):
                     ["y", NULL, 13],
                     [NULL, "m", 17],
                     [NULL, "n", 19],
-                    [NULL, NULL, NULL]
-                ]
+                    [NULL, NULL, NULL],
+                ],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
@@ -169,9 +147,9 @@ class TestEdge2(BaseTestCase):
                             "type": "set",
                             "partitions": [
                                 {"name": "x", "value": "x", "dataIndex": 0},
-                                {"name": "y", "value": "y", "dataIndex": 1}
-                            ]
-                        }
+                                {"name": "y", "value": "y", "dataIndex": 1},
+                            ],
+                        },
                     },
                     {
                         "name": "b",
@@ -180,19 +158,13 @@ class TestEdge2(BaseTestCase):
                             "type": "set",
                             "partitions": [
                                 {"name": "m", "value": "m", "dataIndex": 0},
-                                {"name": "n", "value": "n", "dataIndex": 1}
-                            ]
-                        }
-                    }
+                                {"name": "n", "value": "n", "dataIndex": 1},
+                            ],
+                        },
+                    },
                 ],
-                "data": {
-                    "v": [
-                        [29, 3, 5],
-                        [7, 50, 13],
-                        [17, 19, NULL]
-                    ]
-                }
-            }
+                "data": {"v": [[29, 3, 5], [7, 50, 13], [17, 19, NULL]]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -209,12 +181,12 @@ class TestEdge2(BaseTestCase):
                 {"a": "y", "b": "n"},
                 {"a": "y", "v": 13},
                 {"b": "m", "v": 17},
-                {"b": "n", "v": 19}
+                {"b": "n", "v": 19},
             ],
             "query": {
                 "from": TEST_TABLE,
                 "select": {"value": "v", "aggregate": "average", "default": 0},
-                "edges": ["a", "b"]
+                "edges": ["a", "b"],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -227,8 +199,9 @@ class TestEdge2(BaseTestCase):
                     {"a": "y", "b": NULL, "v": 13},
                     {"a": NULL, "b": "m", "v": 17},
                     {"a": NULL, "b": "n", "v": 19},
-                    {"a": NULL, "b": NULL, "v": 0}
-                ]},
+                    {"a": NULL, "b": NULL, "v": 0},
+                ],
+            },
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a", "b", "v"],
@@ -241,8 +214,8 @@ class TestEdge2(BaseTestCase):
                     ["y", "n", 0],
                     [NULL, "m", 17],
                     [NULL, "n", 19],
-                    [NULL, NULL, 0]
-                ]
+                    [NULL, NULL, 0],
+                ],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
@@ -253,18 +226,10 @@ class TestEdge2(BaseTestCase):
                         "domain": {
                             "type": "set",
                             "partitions": [
-                                {
-                                    "dataIndex": 0,
-                                    "name": "x",
-                                    "value": "x"
-                                },
-                                {
-                                    "dataIndex": 1,
-                                    "name": "y",
-                                    "value": "y"
-                                }
-                            ]
-                        }
+                                {"dataIndex": 0, "name": "x", "value": "x"},
+                                {"dataIndex": 1, "name": "y", "value": "y"},
+                            ],
+                        },
                     },
                     {
                         "name": "b",
@@ -272,28 +237,14 @@ class TestEdge2(BaseTestCase):
                         "domain": {
                             "type": "set",
                             "partitions": [
-                                {
-                                    "dataIndex": 0,
-                                    "name": "m",
-                                    "value": "m"
-                                },
-                                {
-                                    "dataIndex": 1,
-                                    "name": "n",
-                                    "value": "n"
-                                }
-                            ]
-                        }
-                    }
+                                {"dataIndex": 0, "name": "m", "value": "m"},
+                                {"dataIndex": 1, "name": "n", "value": "n"},
+                            ],
+                        },
+                    },
                 ],
-                "data": {
-                    "v": [
-                        [2, 3, 0],
-                        [7, 0, 13],
-                        [17, 19, 0]
-                    ]
-                }
-            }
+                "data": {"v": [[2, 3, 0], [7, 0, 13], [17, 19, 0]]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -308,19 +259,10 @@ class TestEdge2(BaseTestCase):
                 "edges": [
                     {
                         "value": "a",
-                        "domain": {
-                            "type": "set",
-                            "partitions": ["x", "y", "z"]
-                        }
+                        "domain": {"type": "set", "partitions": ["x", "y", "z"]},
                     },
-                    {
-                        "value": "b",
-                        "domain": {
-                            "type": "set",
-                            "partitions": ["m", "n"]
-                        }
-                    }
-                ]
+                    {"value": "b", "domain": {"type": "set", "partitions": ["m", "n"]}},
+                ],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
@@ -336,8 +278,8 @@ class TestEdge2(BaseTestCase):
                     {"a": "z", "b": NULL, "v": NULL},
                     {"a": NULL, "b": "m", "v": 17},
                     {"a": NULL, "b": "n", "v": 19},
-                    {"a": NULL, "b": NULL, "v": NULL}
-                ]
+                    {"a": NULL, "b": NULL, "v": NULL},
+                ],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
@@ -354,8 +296,8 @@ class TestEdge2(BaseTestCase):
                     ["z", NULL, NULL],
                     [NULL, "m", 17],
                     [NULL, "n", 19],
-                    [NULL, NULL, NULL]
-                ]
+                    [NULL, NULL, NULL],
+                ],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
@@ -369,9 +311,9 @@ class TestEdge2(BaseTestCase):
                             "partitions": [
                                 {"name": "x", "value": "x", "dataIndex": 0},
                                 {"name": "y", "value": "y", "dataIndex": 1},
-                                {"name": "z", "value": "z", "dataIndex": 2}
-                            ]
-                        }
+                                {"name": "z", "value": "z", "dataIndex": 2},
+                            ],
+                        },
                     },
                     {
                         "name": "b",
@@ -381,20 +323,18 @@ class TestEdge2(BaseTestCase):
                             "key": "value",
                             "partitions": [
                                 {"name": "m", "value": "m", "dataIndex": 0},
-                                {"name": "n", "value": "n", "dataIndex": 1}
-                            ]
-                        }
-                    }
+                                {"name": "n", "value": "n", "dataIndex": 1},
+                            ],
+                        },
+                    },
                 ],
-                "data": {
-                    "v": [
-                        [29, 3, 5],
-                        [7, 50, 13],
-                        [NULL, NULL, NULL],
-                        [17, 19, NULL]
-                    ]
-                }
-            }
+                "data": {"v": [
+                    [29, 3, 5],
+                    [7, 50, 13],
+                    [NULL, NULL, NULL],
+                    [17, 19, NULL],
+                ]},
+            },
         }
         self.utils.execute_tests(test)
 
@@ -411,7 +351,7 @@ class TestEdge2(BaseTestCase):
                 {"url": "https://hg.mozilla.org/b/3"},
                 {"url": "https://hg.mozilla.org/c/"},
                 {"url": "https://hg.mozilla.org/d"},
-                {"url": "https://hg.mozilla.org/e"}
+                {"url": "https://hg.mozilla.org/e"},
             ],
             "query": {
                 "from": TEST_TABLE,
@@ -419,29 +359,40 @@ class TestEdge2(BaseTestCase):
                     {
                         "name": "filename",
                         "value": {
-                            "when": {"missing": {"between": {"url": ["https://hg.mozilla.org/", "/"]}}},
-                            "then": "url"
-                        }
+                            "when": {"missing": {"between": {"url": [
+                                "https://hg.mozilla.org/",
+                                "/",
+                            ]}}},
+                            "then": "url",
+                        },
                     },
                     {
                         "name": "subdir",
-                        "value": {"between": {"url": ["https://hg.mozilla.org/", "/"]}}
-                    }
+                        "value": {"between": {"url": ["https://hg.mozilla.org/", "/"]}},
+                    },
                 ],
                 "where": {"prefix": {"url": "https://hg.mozilla.org/"}},
-                "limit": 100
+                "limit": 100,
             },
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
-                    {"filename": "https://hg.mozilla.org/d", "subdir": NULL, "count": 1},
-                    {"filename": "https://hg.mozilla.org/e", "subdir": NULL, "count": 1},
+                    {
+                        "filename": "https://hg.mozilla.org/d",
+                        "subdir": NULL,
+                        "count": 1,
+                    },
+                    {
+                        "filename": "https://hg.mozilla.org/e",
+                        "subdir": NULL,
+                        "count": 1,
+                    },
                     {"filename": "https://hg.mozilla.org/", "subdir": NULL, "count": 1},
                     {"subdir": "a", "count": 1},
                     {"subdir": "b", "count": 4},
-                    {"subdir": "c", "count": 1}
-                ]}
-
+                    {"subdir": "c", "count": 1},
+                ],
+            },
         }
         self.utils.execute_tests(test)
 
@@ -458,31 +409,40 @@ class TestEdge2(BaseTestCase):
                 {"url": "https://hg.mozilla.org/b/3"},
                 {"url": "https://hg.mozilla.org/c/"},
                 {"url": "https://hg.mozilla.org/d"},
-                {"url": "https://hg.mozilla.org/e"}
+                {"url": "https://hg.mozilla.org/e"},
             ],
             "query": {
                 "from": TEST_TABLE,
-                "groupby": [
-                    {
-                        "name": "filename",
-                        "value": {
-                            "when": {"missing": {"between": {"url": ["https://hg.mozilla.org/", "/"]}}},
-                            "then": "url"
-                        }
-                    }
-                ],
+                "groupby": [{
+                    "name": "filename",
+                    "value": {
+                        "when": {"missing": {"between": {"url": [
+                            "https://hg.mozilla.org/",
+                            "/",
+                        ]}}},
+                        "then": "url",
+                    },
+                }],
                 "where": {"prefix": {"url": "https://hg.mozilla.org/"}},
-                "limit": 100
+                "limit": 100,
             },
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [
-                    {"filename": "https://hg.mozilla.org/d", "subdir": NULL, "count": 1},
-                    {"filename": "https://hg.mozilla.org/e", "subdir": NULL, "count": 1},
+                    {
+                        "filename": "https://hg.mozilla.org/d",
+                        "subdir": NULL,
+                        "count": 1,
+                    },
+                    {
+                        "filename": "https://hg.mozilla.org/e",
+                        "subdir": NULL,
+                        "count": 1,
+                    },
                     {"filename": "https://hg.mozilla.org/", "subdir": NULL, "count": 1},
-                    {"count": 6}
-                ]}
-
+                    {"count": 6},
+                ],
+            },
         }
         self.utils.execute_tests(test)
 
@@ -491,17 +451,18 @@ class TestEdge2(BaseTestCase):
             "data": [{"url": "/"}],
             "query": {
                 "from": TEST_TABLE,
-                "groupby": [
-                    {
-                        "name": "suffix missing",
-                        "value": {"missing": {"find": ["url", {"literal": "/"}], "start": {"literal": 23}}}
-                    }
-                ]
+                "groupby": [{
+                    "name": "suffix missing",
+                    "value": {"missing": {
+                        "find": ["url", {"literal": "/"}],
+                        "start": {"literal": 23},
+                    }},
+                }],
             },
             "expecting_list": {
                 "meta": {"format": "list"},
-                "data": [{"suffix missing": True}]}
-
+                "data": [{"suffix missing": True}],
+            },
         }
         self.utils.execute_tests(test)
 
@@ -516,24 +477,10 @@ two_dim_test_data = [
     {"a": None, "b": "m", "v": 17},
     {"a": None, "b": "n", "v": 19},
     {"a": "x", "b": "m", "v": 27},
-    {"a": "y", "b": "n", "v": 39}
+    {"a": "y", "b": "n", "v": 39},
 ]
 
-metadata = {
-    "properties": {
-        "a": {
-            "type": "string",
-            "domain": {
-                "type": "set",
-                "partitions": ["x", "y", "z"]
-            }
-        },
-        "b": {
-            "type": "string",
-            "domain": {
-                "type": "set",
-                "partitions": ["m", "n"]
-            }
-        }
-    }
-}
+metadata = {"properties": {
+    "a": {"type": "string", "domain": {"type": "set", "partitions": ["x", "y", "z"]}},
+    "b": {"type": "string", "domain": {"type": "set", "partitions": ["m", "n"]}},
+}}

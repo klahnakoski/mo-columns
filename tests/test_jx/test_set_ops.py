@@ -10,14 +10,14 @@
 
 from __future__ import absolute_import, division, unicode_literals
 
-from unittest import skip, skipIf
-
-from mo_future import first
+from unittest import skipIf
 
 import mo_math
+
 from jx_base.expressions import NULL
 from jx_base.expressions.query_op import DEFAULT_LIMIT, MAX_LIMIT
 from mo_dots import to_data, dict_to_data, list_to_data
+from mo_future import first
 from tests import STRING_TYPED_COLUMN
 from tests.test_jx import BaseTestCase, TEST_TABLE, global_settings
 
@@ -349,7 +349,7 @@ class TestSetOps(BaseTestCase):
         }
         self.utils.execute_tests(test)
 
-    @skipIf(global_settings.use in ('sqlite', 'elasticsearch'), "Too complicated")
+    @skipIf(global_settings.use in ("sqlite", "elasticsearch"), "Too complicated")
     def test_select_into_children(self):
         test = {
             "name": "select into children to table",
@@ -708,7 +708,12 @@ class TestSetOps(BaseTestCase):
             "expecting_table": {
                 "meta": {"format": "table"},
                 "header": ["a"],
-                "data": [[{"b": "x", "v": 2}], [{"b": "x", "v": 5}], [{"b": "x", "v": 7}], [NULL, NULL]],
+                "data": [
+                    [{"b": "x", "v": 2}],
+                    [{"b": "x", "v": 5}],
+                    [{"b": "x", "v": 7}],
+                    [NULL, NULL],
+                ],
             },
             "expecting_cube": {
                 "meta": {"format": "cube"},
@@ -720,7 +725,7 @@ class TestSetOps(BaseTestCase):
                     {"b": "x", "v": 2},
                     {"b": "x", "v": 5},
                     {"b": "x", "v": 7},
-                    NULL
+                    NULL,
                 ]},
             },
         }
@@ -986,19 +991,17 @@ class TestSetOps(BaseTestCase):
         }
         self.utils.execute_tests(test)
 
-
-
     def test_select_typed_column(self):
         test = {
             "data": [{"a": "test"}],
-            "query": {"select": ["a."+STRING_TYPED_COLUMN], "from": TEST_TABLE,},
+            "query": {"select": ["a." + STRING_TYPED_COLUMN], "from": TEST_TABLE,},
             "expecting_list": {
                 "meta": {"format": "list"},
                 "data": [{"a": {STRING_TYPED_COLUMN: "test"}}],
             },
             "expecting_table": {
                 "meta": {"format": "table"},
-                "header": ["a."+STRING_TYPED_COLUMN],
+                "header": ["a." + STRING_TYPED_COLUMN],
                 "data": [["test"]],
             },
         }
