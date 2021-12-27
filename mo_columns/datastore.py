@@ -10,8 +10,11 @@ import os
 import sys
 from math import floor, log
 
+from mo_logs import Log
+
 from jx_sqlite.sqlite import Sqlite, quote_column
 from mo_columns.cluster import Cluster, get_key_columns
+from mo_dots import Null
 from mo_future import sort_using_key
 from mo_threads import Lock, Till, Thread
 from mo_times import Timer
@@ -30,22 +33,24 @@ sql_code_to_sql_type = {}
 
 
 class Datastore(object):
-    def __init__(self, dir):
-        self.dir = dir
+    def __init__(self, name, dir):
+        self.name = name
+        self.dir = File(dir)
         self.schema = T_JSON
         self.active_cluster = None
-        self.cluster_locker = Lock(dir.abspath + " clusters")
+        self.cluster_locker = Lock(self.dir.abspath + " clusters")
         self.clusters = [
             Cluster(d)
-            for d in File(dir).decendants
+            for d in self.dir.children
             if d.is_directory() and not d.name.startswith(IGNORE_PREFIX)
         ]
         if not self.clusters:
             self.max_cluster = START_CLUSTER_NAME
             self.active_cluster = Cluster(self.dir / self._next_cluster())
-        self.max_cluster = max(int(c.dir.name) for c in self.clusters)
+        else:
+            self.max_cluster = max(int(c.dir.name) for c in self.clusters)
         self.merge_thread = Thread.run(
-            "merge daemon for " + dir.abspath, self._merge_worker
+            "merge daemon for " + self.dir.abspath, self._merge_worker
         )
         min_size = MAX_INT
         for c in self.clusters:
@@ -58,10 +63,10 @@ class Datastore(object):
         # TODO: SWITCH TO MERGE ALL DATABASES INTO ONE?  DOES IT MATTER?  DOES ZIP WORK?
 
     def _next_cluster(self):
-        self.max_cluster += 1
-        return (START_CLUSTER_NAME + str(self.max_cluster + 1))[-CLUSTER_NAME_LENGTH:]
+        self.max_cluster = (START_CLUSTER_NAME + str(int(self.max_cluster) + 1))[-CLUSTER_NAME_LENGTH:]
+        return self.max_cluster
 
-    def add(self, documents) -> Cluster:
+    def insert(self, documents) -> Cluster:
         """
         LOAD documents INTO SQLITE DATABASES REPRESENTING COLUMNS
         :param documents:
@@ -94,7 +99,7 @@ class Datastore(object):
                 t.execute(";\n".join(
                     f"ATTACH {f} AS db{i}" for i, f in enumerate(existing_column_files)
                 ))
-                new_cluster.add_column(path, db)
+                new_cluster._add_column(path, db)
                 key_columns = get_key_columns(path)
                 t.execute(
                     f"INSERT INTO {quote_column(path)}({key_columns}, value)"
@@ -142,6 +147,9 @@ class Datastore(object):
                         d.delete()
                     # END DANGER
 
+    def delete(self):
+        self.dir.delete()
+
     def query(self, query) -> Cluster:
         """
         SIMPLE AGGREGATE OVER SOME SUBSET, GROUPED BY SOME OTHER COLUMNS
@@ -149,14 +157,25 @@ class Datastore(object):
         :return: cluster
         """
 
-        # BROADCAST QUERY
-        # AGGREGATE RESULT
+
+        return Null
 
 
-    def get_document(self, uuid):
+    def get_document(self, _id):
         """
         RETURN DOCUMENT WITH GIVEN UUID
         """
+
+        # BROADCAST QUERY
+        result=[]
+        for c in self.clusters:
+            result.append(c.get_document)
+        result.append(self.active_cluster.query(query))
+        return result
+
+        # AGGREGATE RESULT
+        if query['from']!=self.name:
+            Log.error("please fix me")
 
 
 

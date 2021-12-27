@@ -375,7 +375,10 @@ class File(object):
 
     @property
     def children(self):
-        return [File(self._filename + "/" + c) for c in os.listdir(self.filename)]
+        try:
+            return [File(self._filename + "/" + c) for c in os.listdir(self.filename)]
+        except FileNotFoundError:
+            return []
 
     @property
     def decendants(self):

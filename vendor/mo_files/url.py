@@ -282,7 +282,7 @@ def url_param2value(param):
     for p in param.split("&"):
         if not p:
             continue
-        if p.find("=") == -1:
+        if "=" not in p:
             k = p
             v = True
         else:

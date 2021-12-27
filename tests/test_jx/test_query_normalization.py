@@ -10,12 +10,15 @@
 
 from __future__ import absolute_import, division, unicode_literals
 
+from unittest import skipIf
+
 from mo_testing.fuzzytestcase import FuzzyTestCase
 
 from jx_base.expressions.query_op import _normalize_edges
 from jx_base.expressions.select_op import SelectOp
 from mo_dots import Null
 from mo_json import json2value, value2json
+from tests.test_jx import global_settings
 
 
 class TestQueryNormalization(FuzzyTestCase):

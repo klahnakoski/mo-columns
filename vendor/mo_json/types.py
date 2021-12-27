@@ -360,5 +360,7 @@ python_type_to_json_type_key = {
     text: _S,
     NullType: _J,
     none_type: _J,
+    list: _A,
+    set: _A,
 }
 

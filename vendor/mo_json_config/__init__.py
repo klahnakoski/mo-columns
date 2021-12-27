@@ -12,7 +12,8 @@ from __future__ import absolute_import, division, unicode_literals
 
 import os
 
-from mo_dots import is_data, is_list, set_default, unwrap, to_data, is_sequence, coalesce, get_attr, listwrap, unwraplist, \
+from mo_dots import is_data, is_list, set_default, unwrap, to_data, is_sequence, coalesce, get_attr, listwrap, \
+    unwraplist, \
     dict_to_data
 from mo_files import File
 from mo_files.url import URL
@@ -38,7 +39,7 @@ def get(url):
     USE json.net CONVENTIONS TO LINK TO INLINE OTHER JSON
     """
     url = text(url)
-    if url.find("://") == -1:
+    if "://" not in url:
         Log.error("{{url}} must have a prototcol (eg http://) declared", url=url)
 
     base = URL("")
@@ -70,7 +71,7 @@ def expand(doc, doc_url="param://", params=None):
     :param params: EXTRA PARAMETERS NOT FOUND IN THE doc_url PARAMETERS (WILL SUPERSEDE PARAMETERS FROM doc_url)
     :return: EXPANDED JSON-SERIALIZABLE STRUCTURE
     """
-    if doc_url.find("://") == -1:
+    if "://" not in doc_url:
         Log.error("{{url}} must have a prototcol (eg http://) declared", url=doc_url)
 
     url = URL(doc_url)

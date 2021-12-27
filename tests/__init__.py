@@ -8,9 +8,6 @@
 # Author: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
 
-from __future__ import division
-from __future__ import unicode_literals
-
 import itertools
 import os
 
@@ -19,20 +16,8 @@ from mo_testing.fuzzytestcase import assertAlmostEqual
 import mo_json_config
 from jx_base.expressions import QueryOp
 from jx_python import jx
-from jx_sqlite.container import Container
-from jx_sqlite.query_table import QueryTable
-from mo_dots import (
-    wrap,
-    coalesce,
-    unwrap,
-    listwrap,
-    Data,
-    startswith_field,
-    to_data,
-    is_many,
-    is_sequence,
-    Null,
-)
+from mo_columns.datastore import Datastore
+from mo_dots import *
 from mo_files import File
 from mo_future import text
 from mo_json import json2value, types
@@ -43,14 +28,13 @@ from tests import test_jx
 from tests.test_jx import TEST_TABLE
 
 
-class SQLiteUtils(object):
+class MoColumnsUtils(object):
     @override
     def __init__(self, kwargs=None):
         self._index = None
 
     def setUp(self):
-        container = Container(db=test_jx.global_settings.db)
-        self._index = QueryTable(name="testing", container=container)
+        self._index = Datastore("testing", "temp/testing")
 
     def tearDown(self):
 
@@ -310,7 +294,7 @@ try:
         Log.error('Must have a {"use": type} set in the config file')
 
     Log.start(test_jx.global_settings.debug)
-    test_jx.utils = SQLiteUtils(test_jx.global_settings)
+    test_jx.utils = MoColumnsUtils(test_jx.global_settings)
 except Exception as e:
     Log.warning("problem", e)
 

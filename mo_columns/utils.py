@@ -6,18 +6,19 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-from datetime import datetime, date
-from decimal import Decimal
+from mo_math import randoms
 
-from mo_dots import NullType
-from mo_future import text, none_type
-from mo_json.types import _B, _I, _N, _T, _S, _J
-from mo_times import Date
+from mo_json.types import _B, _I, _N, _T, _S
 
-json_type_key_to_sql_type = {
+json_type_key_to_sqlite_type = {
     _B: "TINYINT",
     _I: "INTEGER",
     _N: "REAL",
     _S: "TEXT",
     _T: "REAL"
 }
+
+
+def uuid():
+    return randoms.base64(10)
+

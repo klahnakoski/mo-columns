@@ -6,8 +6,14 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
+from jx_base.expressions import QueryOp
+from jx_python.jx import chunk
+
+from mo_dots.datas import leaves
+
 from jx_sqlite.sqlite import Sqlite, quote_column, quote_value
-from mo_dots import concat_field
+from mo_columns.utils import json_type_key_to_sqlite_type, uuid
+from mo_dots import concat_field, split_field, to_data, from_data
 
 from vendor.mo_files import File
 from vendor.mo_json.types import T_JSON, to_json_type, python_type_to_json_type_key, _A
@@ -57,52 +63,73 @@ class Cluster(object):
     def delete(self):
         self.dir.delete()
 
-    def add(self, documents):
+    def insert(self, documents):
         column_values = {}
 
         def _add(parent_path, key, doc):
-            for path, value in doc.leaves():
-                data_key = python_type_to_json_type_key[type(value)]
-                full_path = concat_field(concat_field(parent_path, path), data_key)
-                if data_key is _A:
+            for path, value in leaves(doc):
+                type_key = python_type_to_json_type_key[type(value)]
+                full_path = concat_field(concat_field(parent_path, path), type_key)
+                if type_key is _A:
                     for i, d in enumerate(value):
                         _add(full_path, key + (i,), d)
                 else:
                     column_values.get(full_path, []).append((key, value))
 
-        for d in documents:
-            doc_id = (self.next_id,)
-            self.next_id += 1
-            _add(".", doc_id, d)
+        for docs in chunk(documents, 1000):
+            for d in docs:
+                d = from_data(d)
+                doc_id = (self.next_id,)
+                self.next_id += 1
+                _id = d.get("_id")
+                if not _id:
+                    _add(".", doc_id, d)
+                    _id = uuid()
+                else:
+                    _add(".", doc_id, {k: v for k, v in d.items() if k != "_id"})
+                    _id = str(_id)
 
-        for full_path, data in column_values:
-            db = self.columns.get(full_path)
-            if db is None:
-                # CREATE DATABASE
-                db = self.columns[full_path] = Sqlite(full_path)
-                self.add_column(len(data[0][0]), full_path, db)
-            acc = ",".join(
-                f"({kk}, {quote_value(v)})"
-                for k, v in data
-                for kk in [",".join(quote_value(c) for c in k)]
-            )
-            with db.transaction() as t:
-                t.execute(f"INSERT INTO {quote_column(full_path)} VALUES {acc}")
+                full_path = concat_field("_id", python_type_to_json_type_key[str])
+                column_values.get(full_path, []).append((doc_id, _id))
+
+            for full_path, data in column_values:
+                db = self.columns.get(full_path)
+                if db is None:
+                    # CREATE DATABASE
+                    db = self.columns[full_path] = Sqlite(full_path)
+                    self._add_column(len(data[0][0]), full_path, db)
+                acc = ",".join(
+                    f"({kk}, {quote_value(v)})"
+                    for k, v in data
+                    for kk in [",".join(quote_value(c) for c in k)]
+                )
+                with db.transaction() as t:
+                    t.execute(f"INSERT INTO {quote_column(full_path)} VALUES {acc}")
         return self
 
-    def add_column(self, path, db):
+    def _add_column(self, path, db):
         with db.transaction() as t:
             # CREATE TABLE
             key_columns = get_key_columns(path)
+            sqlite_type = json_type_key_to_sqlite_type[split_field(path)[-1]]
             t.execute(
                 f"CREATE TABLE {quote_column(path)} ({key_columns}, value"
-                f" {}, PRIMARY KEY {key_columns}) WITHOUT ROWID"
+                f" {sqlite_type}, PRIMARY KEY {key_columns}) WITHOUT ROWID"
             )
             # CREATE INDEX
             t.execute(
                 f'CREATE INDEX {quote_column(f"index_{path}")} ON (value,'
                 f" {key_columns}"
             )
+
+    def query(self, query):
+        norm = QueryOp.define(query)
+
+        # OPEN NEW DATABSE
+        # ATTACHED REQUIRED COLUMNS
+        # PROCESS WHERE CLAUSE, FINDING DOCS
+        # SELECT COLUMNS
+        norm.where
 
 
 def get_key_columns(path):
