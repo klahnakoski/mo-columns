@@ -206,7 +206,7 @@ SQL_STRING_KEY = "s"
 SQL_OBJECT_KEY = "j"
 SQL_ARRAY_KEY = "a"
 
-json_type_to_sql_key = {
+json_type_to_sql_type_key = {
     IS_NULL: SQL_IS_NULL_KEY,
     BOOLEAN: SQL_BOOLEAN_KEY,
     NUMBER: SQL_NUMBER_KEY,
@@ -223,7 +223,7 @@ json_type_to_sql_key = {
     T_TEXT: SQL_STRING_KEY,
 }
 
-sql_type_to_json_type = {
+sql_type_key_to_json_type = {
     None: None,
     "0": IS_NULL,
     "b": BOOLEAN,

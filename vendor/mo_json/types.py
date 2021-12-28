@@ -6,7 +6,7 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-
+import re
 from datetime import datetime, date
 from decimal import Decimal
 
@@ -81,7 +81,7 @@ class JsonType(object):
         return output
 
     def __hash__(self):
-        return hash(self.tuple())
+        return hash(tuple(sorted(self.__dict__.keys())))
 
     def leaves(self):
         if self in T_PRIMITIVE:
@@ -90,12 +90,6 @@ class JsonType(object):
             for k, v in self.__dict__.items():
                 for p, t in v.leaves():
                     yield concat_field(k, p), t
-
-    def tuple(self):
-        return tuple(
-            (k, v.tuple() if isinstance(v, JsonType) else v)
-            for k, v in sorted(self.__dict__.items(), key=lambda p: p[0])
-        )
 
     def __contains__(self, item):
         if not isinstance(item, JsonType):
@@ -146,9 +140,10 @@ class JsonType(object):
         RETURN self AT THE END OF path
         :param path
         """
-
         acc = self
         for step in reversed(split_field(path)):
+            if IS_PRIMITIVE_KEY.match(step):
+                continue
             acc = JsonType(**{step: acc})
         return acc
 
@@ -175,7 +170,7 @@ def base_type(type_):
     ld = len(d)
     while ld == 1:
         n, t = first(d.items())
-        if n in _primitive_type_codes:
+        if IS_PRIMITIVE_KEY.match(n):
             return type_
         if n in (_A, _J):
             return type_
@@ -238,7 +233,7 @@ INTERNAL = (EXISTS, OBJECT, ARRAY)
 STRUCT = (OBJECT, ARRAY)
 
 _B, _I, _N, _T, _D, _S, _A, _J = "~b~", "~i~", "~n~", "~t~", "~d~", "~s~", "~a~", "~j~"
-_primitive_type_codes = (_B, _I, _N, _T, _D, _S)
+IS_PRIMITIVE_KEY = re.compile(r"^~[bintds]~$")
 
 T_IS_NULL = _new(JsonType)
 T_BOOLEAN = _primitive(_B, BOOLEAN)

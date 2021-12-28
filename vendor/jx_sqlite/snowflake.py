@@ -285,7 +285,7 @@ class Snowflake(jx_base.Snowflake):
 
         best = first(p for p in self.query_paths if untype_field(p)[0] == path)
         if not best:
-            Log.error("Can not find table with name {{table}}", table=best)
+            Log.error("Can not find table with name {{table|quote}}", table=best)
         nested_path = list(reversed(sorted(
             p for p in self.query_paths if startswith_field(best, p)
         )))

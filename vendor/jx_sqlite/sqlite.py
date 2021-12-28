@@ -119,7 +119,12 @@ class Sqlite(DB):
 
             _ = _sqlite3
 
-        self.filename = File(filename).abspath if filename else None
+        if filename is None:
+            self.filename = None
+        else:
+            file = File(filename)
+            file.parent.create()
+            self.filename = file.abspath
         if known_databases.get(self.filename):
             Log.error(
                 "Not allowed to create more than one Sqlite instance for {{file}}",
@@ -230,7 +235,7 @@ class Sqlite(DB):
                     if t.thread is current_thread:
                         Log.error(DOUBLE_TRANSACTION_ERROR)
 
-        self.queue.add(CommandItem(command, result, signal, trace, None))
+        self.queue.add(CommandItem(str(command), result, signal, trace, None))
         signal.acquire()
 
         if result.exception:
@@ -526,7 +531,7 @@ class Transaction(object):
             Log.error("Transaction is dead")
         trace = get_stacktrace(1) if self.db.trace else None
         with self.locker:
-            self.todo.append(CommandItem(command, None, None, trace, self))
+            self.todo.append(CommandItem(str(command), None, None, trace, self))
 
     def do_all(self):
         # ENSURE PARENT TRANSACTION IS UP TO DATE
@@ -546,7 +551,7 @@ class Transaction(object):
                 self.db.debug and Log.note(
                     FORMAT_COMMAND, command=c.command, **c.trace[0]
                 )
-                self.db.db.execute(text(c.command))
+                self.db.db.execute(c.command)
         except Exception as e:
             Log.error("problem running commands", current=c, cause=e)
 
@@ -558,7 +563,7 @@ class Transaction(object):
         signal.acquire()
         result = Data()
         trace = get_stacktrace(1) if self.db.trace else None
-        self.db.queue.add(CommandItem(query, result, signal, trace, self))
+        self.db.queue.add(CommandItem(str(query), result, signal, trace, self))
         signal.acquire()
         if result.exception:
             Log.error("Problem with Sqlite call", cause=result.exception)

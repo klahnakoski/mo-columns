@@ -21,9 +21,8 @@ from jx_base.meta_columns import (
     SIMPLE_METADATA_COLUMNS,
 )
 from jx_python import jx
-from jx_sqlite.expressions._utils import sql_type_to_json_type
 from jx_sqlite.sqlite import sql_query
-from jx_sqlite.utils import untyped_column
+from jx_sqlite.utils import untyped_column, sqlite_type_to_simple_type
 from mo_dots import (
     Data,
     Null,
@@ -36,7 +35,7 @@ from mo_dots import (
     wrap,
     list_to_data,
 )
-from mo_json import STRUCT, IS_NULL
+from mo_json import STRUCT, IS_NULL, OBJECT
 from mo_json.typed_encoder import unnest_path, untyped
 from mo_logs import Log
 from mo_threads import Lock, Queue
@@ -113,7 +112,7 @@ class ColumnList(Table, Container):
                     last_nested_path = []
 
             full_nested_path = [nested_path] + last_nested_path
-            self._snowflakes.setdefault(base_table, []).append(full_nested_path)
+            self._snowflakes.setdefault(base_table, []).extend(full_nested_path)
 
             # LOAD THE COLUMNS
             details = self.db.about(table.name)
@@ -125,9 +124,9 @@ class ColumnList(Table, Container):
                 self.add(Column(
                     name=cname,
                     jx_type=coalesce(
-                        sql_type_to_json_type.get(ctype),
-                        sql_type_to_json_type.get(dtype),
-                        IS_NULL,
+                        sqlite_type_to_simple_type.get(ctype),
+                        sqlite_type_to_simple_type.get(dtype),
+                        OBJECT,
                     ),
                     nested_path=full_nested_path,
                     es_type=dtype,

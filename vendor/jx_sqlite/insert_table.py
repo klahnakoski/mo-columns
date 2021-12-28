@@ -15,7 +15,7 @@ from typing import Dict, List
 
 from jx_base import Column, generateGuid, Facts
 from jx_base.expressions import jx_expression, TRUE
-from jx_sqlite.expressions._utils import json_type_to_sql_key
+from jx_sqlite.expressions._utils import json_type_to_sql_type_key
 from jx_sqlite.sqlite import (
     SQL_AND,
     SQL_FROM,
@@ -376,7 +376,7 @@ class InsertTable(Facts):
                         es_type=json_type_to_sqlite_type.get(jx_type, jx_type),
                         es_column=typed_column(
                             concat_field(nested_path[0], rel_name),
-                            json_type_to_sql_key.get(jx_type),
+                            json_type_to_sql_type_key.get(jx_type),
                         ),
                         es_index=table_name,
                         cardinality=0,
@@ -433,7 +433,7 @@ class InsertTable(Facts):
                         if es_column in r:
                             deeper_es_column = typed_column(
                                 concat_field(nested_path[0], rel_name),
-                                json_type_to_sql_key.get(jx_type),
+                                json_type_to_sql_type_key.get(jx_type),
                             )
 
                             row1 = {

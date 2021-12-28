@@ -9,16 +9,17 @@
 from mo_math import randoms
 
 from mo_json.types import _B, _I, _N, _T, _S
+from mo_sql import SQL
 
 json_type_key_to_sqlite_type = {
-    _B: "TINYINT",
-    _I: "INTEGER",
-    _N: "REAL",
-    _S: "TEXT",
-    _T: "REAL"
+    _B: SQL("TINYINT"),
+    _I: SQL("INTEGER"),
+    _N: SQL("REAL"),
+    _S: SQL("TEXT"),
+    _T: SQL("REAL")
 }
 
 
 def uuid():
-    return randoms.base64(10)
+    return randoms.base64(20)
 

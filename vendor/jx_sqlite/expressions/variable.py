@@ -9,7 +9,7 @@
 #
 from __future__ import absolute_import, division, unicode_literals
 
-from jx_base.expressions import NULL, Variable as Variable_, SelectOp, FALSE, NullOp
+from jx_base.expressions import NULL, Variable as Variable_, SelectOp, FALSE
 from jx_sqlite.expressions._utils import check, SQLScript
 from jx_sqlite.sqlite import quote_column
 from jx_sqlite.utils import GUID
@@ -43,7 +43,7 @@ class Variable(Variable_):
             return NULL.to_sql(schema)
         elif len(select) == 1:
             rel_name0, col0 = cols[0]
-            type0=concat_field(col0.name, rel_name0) + to_json_type(col0.jx_type)
+            type0 = concat_field(col0.name, rel_name0) + to_json_type(col0.jx_type)
             output = SQLScript(
                 data_type=type0,
                 expr=quote_column(col0.es_column),

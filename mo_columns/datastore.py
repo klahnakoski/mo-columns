@@ -12,17 +12,17 @@ from math import floor, log
 
 from mo_logs import Log
 
-from jx_sqlite.sqlite import Sqlite, quote_column
+from jx_sqlite.sqlite import Sqlite, quote_column, sql_list
 from mo_columns.cluster import Cluster, get_key_columns
 from mo_dots import Null
 from mo_future import sort_using_key
 from mo_threads import Lock, Till, Thread
 from mo_times import Timer
-from vendor.mo_files import File
-from vendor.mo_json.types import T_JSON, union_type
+from mo_files import File
+from mo_json.types import T_JSON, union_type
 
 MAX_INT = sys.maxsize
-MAX_CLUSTER_SIZE = 1_000_000
+MIN_CLUSTER_SIZE = 7 * 1024 * 1024
 CLUSTER_NAME_LENGTH = 5
 START_CLUSTER_NAME = "0" * CLUSTER_NAME_LENGTH
 MERGE_RATIO = 3
@@ -72,7 +72,7 @@ class Datastore(object):
         :param documents:
         :return: cluster
         """
-        if self.active_cluster.bytes() > MAX_CLUSTER_SIZE:
+        if self.active_cluster.bytes() > MIN_CLUSTER_SIZE:
             # MAKE NEW CLUSTER
             self.active_cluster.close()
             self.clusters.append(self.active_cluster)
@@ -100,7 +100,7 @@ class Datastore(object):
                     f"ATTACH {f} AS db{i}" for i, f in enumerate(existing_column_files)
                 ))
                 new_cluster._add_column(path, db)
-                key_columns = get_key_columns(path)
+                key_columns = sql_list(list(map(quote_column, get_key_columns(path))))
                 t.execute(
                     f"INSERT INTO {quote_column(path)}({key_columns}, value)"
                     + " UNION ALL ".join(

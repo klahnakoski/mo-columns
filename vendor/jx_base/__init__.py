@@ -32,7 +32,7 @@ from mo_json import (
     OBJECT,
     ARRAY,
 )
-from mo_json.typed_encoder import EXISTS_TYPE
+from mo_json.typed_encoder import EXISTS_KEY
 from mo_logs import Log
 from mo_logs.strings import expand_template, quote
 
@@ -293,12 +293,12 @@ Column = DataClass(
         {"not": {"eq": {"es_column": "string"}}},
         {"not": {"eq": {"es_type": "object", "jx_type": "exists"}}},
         {
-            "when": {"suffix": {"es_column": "." + EXISTS_TYPE}},
+            "when": {"suffix": {"es_column": "." + EXISTS_KEY}},
             "then": {"eq": {"jx_type": EXISTS}},
             "else": True,
         },
         {
-            "when": {"suffix": {"es_column": "." + EXISTS_TYPE}},
+            "when": {"suffix": {"es_column": "." + EXISTS_KEY}},
             "then": {"exists": "cardinality"},
             "else": True,
         },

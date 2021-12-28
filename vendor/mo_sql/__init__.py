@@ -8,7 +8,7 @@
 
 from __future__ import absolute_import, division, unicode_literals
 
-from mo_future import is_text
+from mo_future import is_text, first
 from mo_logs import Log
 
 ENABLE_TYPE_CHECKING = True
@@ -149,7 +149,7 @@ class ConcatSQL(SQL):
         """
         if ENABLE_TYPE_CHECKING:
             if any(not isinstance(s, SQL) for s in concat):
-                Log.error("Can only join other SQL")
+                Log.error("Can only join other SQL not {value}", value=first(s for s in concat if not isinstance(s, SQL)))
         self.concat = concat
 
     def __iter__(self):
@@ -246,6 +246,10 @@ class DB(object):
 
 def sql_list(list_):
     return ConcatSQL(SQL_SPACE, JoinSQL(SQL_COMMA, list_), SQL_SPACE)
+
+
+def sql_join(sep, list_):
+    return JoinSQL(SQL_COMMA, list_)
 
 
 def sql_iso(*sql):

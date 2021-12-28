@@ -28,7 +28,7 @@ from mo_dots import (
     missing, is_missing, coalesce,
 )
 from mo_future import is_text, text
-from mo_json import BOOLEAN, ARRAY, NUMBER, OBJECT, STRING, json2value, T_BOOLEAN
+from mo_json import BOOLEAN, ARRAY, NUMBER, OBJECT, STRING, json2value, T_BOOLEAN, INTEGER
 from mo_json.typed_encoder import untype_path
 from mo_logs import Log
 from mo_math import randoms
@@ -312,12 +312,11 @@ ColumnMapping = DataClass(
     ]},
 )
 
-sqlite_types_to_json_types = {
-    "TEXT": "string",
-    "REAL": "number",
-    "INTEGER": "integer",
-    "TINYINT": "boolean",
-    "OBJECT": "nested",
+sqlite_type_to_simple_type = {
+    "TEXT": STRING,
+    "REAL": NUMBER,
+    "INTEGER": INTEGER,
+    "TINYINT": BOOLEAN,
 }
 
 
