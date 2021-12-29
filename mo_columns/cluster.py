@@ -6,6 +6,9 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
+
+from mo_math import randoms
+
 from jx_base.expressions import QueryOp
 from jx_python.jx import chunk
 from jx_sqlite import Container
@@ -32,15 +35,26 @@ from jx_sqlite.sqlite import (
     SQL_EQ,
     SQL_AS,
     SQL_LEFT_JOIN,
+    sql_create,
+    sql_insert,
+    sql_call,
+    SQL_WHERE, sql_eq,
 )
-from jx_sqlite.utils import UID, GUID
+from jx_sqlite.utils import (
+    UID,
+    GUID,
+    sqlite_type_to_type_key,
+)
 from mo_columns.utils import json_type_key_to_sqlite_type, uuid
-from mo_dots import concat_field, split_field, from_data, Null
+from mo_dots import concat_field, split_field, from_data, Null, is_data
 from mo_dots.datas import leaves
 from mo_files import File
+from mo_json import value2json
 from mo_json.types import T_JSON, to_json_type, python_type_to_json_type_key, _A
 from mo_logs import Log
+from mo_times import Timer
 
+DEBUG = True
 ID_COLUMN = concat_field(GUID, python_type_to_json_type_key[str])
 WORKSPACE_DIR = File("temp")
 
@@ -98,18 +112,139 @@ class Cluster(object):
     def delete(self):
         self.dir.delete()
 
+    def insert_using_json(self, documents):
+        name = randoms.base64(10, "-_")
+        file = self.dir / (name + ".sqlite")
+        db_source = Sqlite(filename=file)
+
+        with Timer("load data"):
+            # CREATE TEMP TABLE
+            db_source.query("PRAGMA synchronous = OFF")
+            with db_source.transaction() as t:
+                t.execute(sql_create(name, {"data": "text"}))
+
+            # LOAD WITH DATA
+            for g, docs in chunk(documents, 1000):
+                with db_source.transaction() as t:
+                    t.execute(sql_insert(name, [{"data": value2json(add_id(d))} for d in docs]))
+                DEBUG and Log.note("Inserted {{rows}} rows", rows=len(docs))
+
+        # TRANSFORM TO COLUMNS
+        table_name = str(quote_column(name))
+        with db_source.transaction() as t:
+            t.execute(
+                "CREATE TABLE breakdown AS"
+                " WITH RECURSIVE split(rowid, path, keys, atom, type) AS ("
+                f"   SELECT {table_name}.rowid, fullkey, json_array(), atom, type"
+                f"   FROM {table_name}, json_tree({table_name}.data)"
+                "    WHERE json_tree.type NOT IN ('object','array')"
+                "    UNION ALL"
+                "    SELECT"
+                "        rowid,"
+                "        SUBSTR(path, 1, INSTR(path, '[') - 1) || '.~a~' || SUBSTR(path, INSTR(path, ']') + 1 ),"
+                "        json_insert(keys, '$[#]', CAST(SUBSTR(path, INSTR(path, '[')+1, INSTR(path, ']') - INSTR(path, '[') - 1) AS INTEGER)),"
+                "        atom,"
+                "        type"
+                "    FROM split"
+                "    WHERE INSTR(path, '[')"
+                " )"
+                " SELECT rowid, path, keys, atom, type"
+                " FROM split"
+                " WHERE NOT INSTR(path, '[')"
+            )
+
+            columns = t.query(
+                " WITH RECURSIVE split(path, type) AS ("
+                f"   SELECT fullkey, type"
+                f"   FROM {table_name}, json_tree({table_name}.data)"
+                "    WHERE json_tree.type NOT IN ('object','array')"
+                "    UNION ALL"
+                "    SELECT"
+                "        SUBSTR(path, 1, INSTR(path, '[') - 1) || '.~a~' || SUBSTR(path, INSTR(path, ']') + 1 ),"
+                "        type"
+                "    FROM split"
+                "    WHERE INSTR(path, '[')"
+                " )"
+                " SELECT path, type"
+                " FROM split"
+                " WHERE NOT INSTR(path, '[')"
+                " GROUP BY path, type"
+            )
+        db_source.stop()
+
+        for path, type in columns.data:
+            full_path = concat_field(path[2:], sqlite_type_to_type_key[type.upper()])
+            db = self.columns.get(full_path)
+            dims = path.count(_A)
+            if db is None:
+                # CREATE DATABASE
+                db = self.columns[full_path] = Sqlite(
+                    self.dir / concat_field(full_path, "sqlite")
+                )
+                self._add_column(full_path, db)
+
+            with db.transaction() as t:
+                key_columns = list(get_key_columns(full_path))
+                column_names = list(map(quote_column, key_columns))
+                column_names.append(quote_column("value"))
+                selects =[quote_column("rowid")]
+                for d in range(dims):
+                    selects.append(SQL(f"json_extract(keys, '$[{d}]')"))
+                selects.append(quote_column("atom"))
+
+                t.execute(ConcatSQL(
+                    SQL("ATTACH "),
+                    quote_value(file.abspath),
+                    SQL_AS,
+                    quote_column("db0"),
+                ))
+                t.execute(str(ConcatSQL(
+                    SQL_INSERT,
+                    quote_column(full_path),
+                    sql_iso(sql_list(column_names)),
+                    SQL(
+                        " WITH RECURSIVE split(rowid, path, keys, atom, type) AS ("
+                        f"   SELECT db0.{table_name}.rowid, fullkey, json_array(), atom, type"
+                        f"   FROM db0.{table_name}, json_tree(db0.{table_name}.data)"
+                        "    WHERE json_tree.type NOT IN ('object','array')"
+                        "    UNION ALL"
+                        "    SELECT"
+                        "        rowid,"
+                        "        SUBSTR(path, 1, INSTR(path, '[') - 1) || '.~a~' || SUBSTR(path, INSTR(path, ']') + 1 ),"
+                        "        json_insert(keys, '$[#]', CAST(SUBSTR(path, INSTR(path, '[')+1, INSTR(path, ']') - INSTR(path, '[') - 1) AS INTEGER)),"
+                        "        atom,"
+                        "        type"
+                        "    FROM split"
+                        "    WHERE INSTR(path, '[')"
+                        " )"
+                    ),
+                    SQL_SELECT,
+                    sql_list(selects),
+                    SQL_WHERE,
+                    sql_eq(type=type, path=path),
+                )))
+
     def insert(self, documents):
         column_values = {}
 
         def _add(parent_path, key, doc):
-            for path, value in leaves(doc):
-                type_key = python_type_to_json_type_key[type(value)]
-                full_path = concat_field(concat_field(parent_path, path), type_key)
+            if is_data(doc):
+                for path, value in leaves(doc):
+                    type_key = python_type_to_json_type_key[type(value)]
+                    full_path = concat_field(concat_field(parent_path, path), type_key)
+                    if type_key is _A:
+                        for i, d in enumerate(value):
+                            _add(full_path, key + (i,), d)
+                    else:
+                        column_values.setdefault(full_path, []).append((key, value))
+            else:
+                type_key = python_type_to_json_type_key[type(doc)]
+                full_path = concat_field(parent_path, type_key)
                 if type_key is _A:
-                    for i, d in enumerate(value):
+                    for i, d in enumerate(doc):
                         _add(full_path, key + (i,), d)
                 else:
-                    column_values.setdefault(full_path, []).append((key, value))
+                    column_values.setdefault(full_path, []).append((key, doc))
 
         for g, docs in chunk(documents, 1000):
             for d in docs:
@@ -140,46 +275,41 @@ class Cluster(object):
                     for kk in [sql_list([quote_value(c) for c in k])]
                 ))
                 columns = sql_iso(sql_list(
-                    list(map(quote_value, get_key_columns(full_path))) + [quote_value("value")]
+                    list(map(quote_value, get_key_columns(full_path)))
+                    + [quote_value("value")]
                 ))
                 with db.transaction() as t:
                     t.execute(str(ConcatSQL(
                         SQL_INSERT, quote_column(full_path), columns, SQL_VALUES, acc
                     )))
+            DEBUG and Log.note(
+                "Inserted {{rows}} rows {{cols}} columns",
+                rows=len(docs),
+                cols=len(column_values),
+            )
             column_values = {}
         return self
 
     def _add_column(self, path, db):
         with db.transaction() as t:
-            # CREATE TABLE
-            key_columns = list(map(quote_column, get_key_columns(path)))
-            key_sql = sql_list([ConcatSQL(k, SQL("INTEGER")) for k in key_columns])
-            key_list = sql_list(key_columns)
             sqlite_type = json_type_key_to_sqlite_type[split_field(path)[-1]]
-            t.execute(ConcatSQL(
-                SQL_CREATE,
-                quote_column(path),
-                sql_iso(ConcatSQL(
-                    key_sql,
-                    SQL_COMMA,
-                    quote_column("value"),
-                    sqlite_type,
-                    SQL_COMMA,
-                    SQL("PRIMARY KEY"),
-                    sql_iso(key_list),
-                )),
-                SQL("WITHOUT ROWID"),
+            t.execute(sql_create(
+                path,
+                {**{k: "INTEGER" for k in get_key_columns(path)}, "value": sqlite_type},
+                list(get_key_columns(path)),
             ))
+
             # CREATE INDEX
+            key_columns = list(map(quote_column, get_key_columns(path)))
+            key_list = sql_list(key_columns)
             t.execute(
                 f"""CREATE INDEX {quote_column(f"index_{path}")} ON {quote_column(path)} (value, {key_list})"""
             )
 
-    def find(self, where, name) -> Container:
+    def to_rows(self, name) -> Container:
         """
-        RETURN DOC IDS THAT MATCH where CLAUSE
+        COPY COLUMNAR CLUSTER TO ROW-BASED DATABASE
         """
-        # MAKE CONTAINER
         file = WORKSPACE_DIR / f"{name}.sqlite"
         file.delete()
         result_db = Sqlite(filename=file)
@@ -249,6 +379,17 @@ class Cluster(object):
         # PROCESS WHERE CLAUSE, FINDING DOCS
         # SELECT COLUMNS
         return Null
+
+
+def add_id(d):
+    """
+    ENSURE doc HAS _id
+    """
+    _id = d.get(GUID)
+    if _id:
+        return d
+    else:
+        return {"_id": uuid(), **d}
 
 
 def get_key_columns(path):

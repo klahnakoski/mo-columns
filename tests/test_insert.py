@@ -10,8 +10,8 @@
 from mo_math import randoms
 from mo_testing.fuzzytestcase import FuzzyTestCase
 
+from jx_sqlite import sqlite
 from mo_columns.cluster import Cluster
-from mo_columns.datastore import Datastore
 from mo_files import File
 from mo_times import Timer
 
@@ -19,7 +19,6 @@ CLUSTER_DIR = "temp/testing"
 
 
 class TestInsert(FuzzyTestCase):
-
     def setUp(self):
         File(CLUSTER_DIR).delete()
 
@@ -33,14 +32,77 @@ class TestInsert(FuzzyTestCase):
 
         self.assertEqual(cluster.count(), 20)
         with Timer("get all records"):
-            extract = cluster.find({"where": {"exists": "a"}}, result_name)
+            extract = cluster.to_rows(result_name)
             facts = extract.get_table(result_name)
-            result = facts.query({"from": result_name, "where": {"exists": "a"}, "format": "list", "limit": 1000})
+            result = facts.query({
+                "from": result_name,
+                "where": {"exists": "a"},
+                "format": "list",
+                "limit": 1000,
+            })
             self.assertEqual(len(result.data), 20)
 
     def test_insert_many(self):
-        db = Datastore("testing", "temp/testing")
-        db.insert([{"a": randoms.base64(8), "b": randoms.base64(12)} for _ in range(5_000)])
-        db.insert([{"a": randoms.base64(8), "b": randoms.base64(12)} for _ in range(10_000)])
-        db.insert([{"a": randoms.base64(8), "b": randoms.base64(12)} for _ in range(20_000)])
-        db.insert([{"a": randoms.base64(8), "b": randoms.base64(12)} for _ in range(40_000)])
+        sqlite.DEBUG = False
+        num = 10_000
+        result_name = "temp_result"
+        File(f"{result_name}.sqlite").delete()
+
+        cluster = Cluster(File(CLUSTER_DIR) / "0")
+        with Timer("insert {{num}} records", {"num": num}):
+            cluster.insert((
+                {
+                    "a": randoms.base64(6),
+                    "b": randoms.float(),
+                    "c": [randoms.float(), {"x": randoms.float()}],
+                }
+                for _ in range(num)
+            ))
+
+        with Timer("time to count"):
+            self.assertEqual(cluster.count(), num)
+
+        with Timer("extract records"):
+            extract = cluster.to_rows(result_name)
+
+    def test_insert_million(self):
+        sqlite.DEBUG = False
+        num = 1_000  # million = took 419.861 seconds
+        result_name = "temp_result"
+        File(f"{result_name}.sqlite").delete()
+
+        cluster = Cluster(File(CLUSTER_DIR) / "0")
+        with Timer("insert records"):
+            cluster.insert_using_json((
+                {
+                    "a": randoms.base64(6),
+                    "b": randoms.float(),
+                    "]": True,
+                    "c": [randoms.float(), {"x": randoms.float()}],
+                }
+                for _ in range(num)
+            ))
+
+        with Timer("time to count"):
+            self.assertEqual(cluster.count(), num)
+
+        with Timer("extract records"):
+            extract = cluster.to_rows(result_name)
+
+    def test_multiply(self):
+        # INSERT GRIDS
+        sqlite.DEBUG = False
+        num = 100
+        result_name = "temp_result"
+        File(f"{result_name}.sqlite").delete()
+
+        cluster = Cluster(File(CLUSTER_DIR) / "0")
+        with Timer("insert records"):
+            cluster.insert_using_json((
+                {
+                    "d": [[randoms.float() for _ in range(100)] for _ in range(100)]
+                }
+                for _ in range(num)
+            ))
+        # MULTIPLY
+        pass

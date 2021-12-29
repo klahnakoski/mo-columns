@@ -47,6 +47,7 @@ class BetweenOp(Expression):
 
     @classmethod
     def define(cls, expr):
+        expr = to_data(expr)
         term = expr.between
         if is_sequence(term):
             return BetweenOp(

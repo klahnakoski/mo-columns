@@ -10,6 +10,7 @@ from jx_sqlite.expressions.basic_mul_op import BasicMulOp
 from jx_sqlite.expressions.basic_not_op import BasicNotOp
 from jx_sqlite.expressions.basic_starts_with_op import BasicStartsWithOp
 from jx_sqlite.expressions.basic_substring_op import BasicSubstringOp
+from jx_sqlite.expressions.between_op import BetweenOp
 from jx_sqlite.expressions.case_op import CaseOp
 from jx_sqlite.expressions.coalesce_op import CoalesceOp
 from jx_sqlite.expressions.concat_op import ConcatOp
@@ -39,8 +40,8 @@ from jx_sqlite.expressions.max_op import MaxOp
 from jx_sqlite.expressions.min_op import MinOp
 from jx_sqlite.expressions.missing_op import MissingOp
 from jx_sqlite.expressions.mul_op import MulOp
-from jx_sqlite.expressions.nested_op import NestedOp
 from jx_sqlite.expressions.ne_op import NeOp
+from jx_sqlite.expressions.nested_op import NestedOp
 from jx_sqlite.expressions.not_left_op import NotLeftOp
 from jx_sqlite.expressions.not_left_op import NotLeftOp
 from jx_sqlite.expressions.not_op import NotOp

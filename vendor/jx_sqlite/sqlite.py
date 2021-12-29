@@ -245,8 +245,7 @@ class Sqlite(DB):
     def stop(self):
         """
         OPTIONAL COMMIT-AND-CLOSE
-        IF THIS IS NOT DONE, THEN THE THREAD THAT SPAWNED THIS INSTANCE
-        :return:
+        IF THIS IS NOT DONE, THEN THE THREAD THAT SPAWNED THIS INSTANCE WILL
         """
         self.closed = True
         signal = _allocate_lock()
@@ -378,8 +377,8 @@ class Sqlite(DB):
                     break
                 try:
                     self._process_command_item(command_item)
-                except Exception as e:
-                    Log.warning("worker can not execute command", cause=e)
+                except Exception as cause:
+                    Log.warning("can not execute command {{command}}", command=command_item.command, cause=cause)
         except Exception as e:
             e = Except.wrap(e)
             if not please_stop:
@@ -728,6 +727,8 @@ def sql_create(table, properties, primary_key=None, unique=None):
         acc.append(sql_iso(sql_list([quote_column(c) for c in listwrap(unique)])))
 
     acc.append(SQL_CP)
+    if primary_key:
+        acc.append(SQL(" WITHOUT ROWID"))
     return ConcatSQL(*acc)
 
 

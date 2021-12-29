@@ -13,7 +13,7 @@ from math import floor, log
 from mo_logs import Log
 
 from jx_sqlite.sqlite import Sqlite, quote_column, sql_list
-from mo_columns.cluster import Cluster, get_key_columns
+from mo_columns.cluster import Cluster
 from mo_dots import Null
 from mo_future import sort_using_key
 from mo_threads import Lock, Till, Thread

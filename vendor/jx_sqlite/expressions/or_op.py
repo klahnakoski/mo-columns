@@ -29,7 +29,8 @@ class OrOp(OrOp_):
                 SQL_OR,
                 [sql_iso(t.partial_eval(SQLang).to_sql(schema)) for t in self.terms],
             ),
-            frum=self, schema=schema
+            frum=self,
+            schema=schema
         )
 
 

@@ -7,7 +7,6 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-from __future__ import absolute_import, division, unicode_literals
 
 from copy import copy
 from typing import Set, Tuple
@@ -77,10 +76,9 @@ class Schema(object):
         pull leaves, including parent leaves
         pull the head of any tree by name
         :param name:
-        :return:
         """
 
-        return list(self.lookup_leaves.get(unnest_path(name), Null))
+        return self.lookup_leaves.get(unnest_path(name), Null)
 
     def map_to_es(self):
         """
@@ -123,9 +121,9 @@ def _indexer(columns, query_path):
                 and (c.es_column != "_id" or full_name == "_id")
             ):
                 cs = lookup_leaves.setdefault(full_name, set())
-                cs.add(c)
+                cs.add((relative_field(full_name, cname), c))
                 cs = lookup_leaves.setdefault(untype_path(full_name), set())
-                cs.add(c)
+                cs.add((relative_field(full_name, cname), c))
 
     lookup_variables = {}  # ALL NOT-NESTED VARIABLES
     for full_name in all_names:
