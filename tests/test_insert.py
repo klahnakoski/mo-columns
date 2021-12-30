@@ -49,7 +49,7 @@ class TestInsert(FuzzyTestCase):
 
     def test_insert_many(self):
         sqlite.DEBUG = False
-        num = 10_000
+        num = 10_000  # insert 100000 records (took 31.121 seconds)
         result_name = "temp_result"
         File(f"{result_name}.sqlite").delete()
 
@@ -72,7 +72,7 @@ class TestInsert(FuzzyTestCase):
 
     def test_insert_million(self):
         sqlite.DEBUG = False
-        num = 1_000  # million = took 419.861 seconds
+        num = 1_000_000  # million => load data (took 69.137 seconds), insert records (took 123.053 seconds)
         result_name = "temp_result"
         File(f"{result_name}.sqlite").delete()
 
@@ -83,6 +83,7 @@ class TestInsert(FuzzyTestCase):
                     "a": randoms.base64(6),
                     "b": randoms.float(),
                     "]": True,
+                    "k": randoms.sample(("apple", "orange", "pear", "grape", "melon", "cheese", "steak"), 1)[0],
                     "c": [randoms.float(), {"x": randoms.float()}],
                 }
                 for _ in range(num)
@@ -111,6 +112,9 @@ class TestInsert(FuzzyTestCase):
             ))
 
     def test_multiply(self):
+        """
+        TEST MULTIPLY GRID WHERE EACH ELEMENT IS ROW (postal_code, attribute, value)
+        """
         sqlite.DEBUG = False
         num_post = 50_000
         attributes = [randoms.base64(10) for _ in range(1_000)]
@@ -216,5 +220,109 @@ class TestInsert(FuzzyTestCase):
                     SQL("f.post"),
                 ))
             timer.stop()
+
+    def test_multiply_ints(self):
+        """
+        TEST MULTIPLY GRID WHERE EACH ELEMENT IS ROW (x, y, value)
+        """
+        sqlite.DEBUG = False
+        num_post = 50_000
+        attributes = [i for i in range(1_000)]
+
+        sqlite.DEBUG = True
+        db = Sqlite(filename=File(CLUSTER_DIR)/"pre_data.sqlite")
+        # db = Sqlite()
+        db.query("PRAGMA synchronous = OFF")
+        with db.transaction() as t:
+            t.execute(sql_create("attr", {"name": "integer"}))
+            t.execute(sql_insert("attr", [{"name": a} for a in attributes]))
+            t.execute(sql_create("post", {"name": "integer"}, ["name"]))
+            t.execute(ConcatSQL(
+                SQL_INSERT,
+                quote_column("post"),
+                SQL("(name)"),
+                SQL(f"""
+                    WITH RECURSIVE counter(value) AS (
+                    SELECT 1 
+                    UNION ALL
+                    SELECT value+1 FROM counter WHERE value<{num_post}
+                    )
+                """),
+                SQL_SELECT,
+                SQL("value"),
+                SQL_FROM,
+                quote_column("counter")
+            ))
+
+        # MAIN MATRIX
+        with db.transaction() as t:
+            # PRIMARY KEY LENGTHENS TIME CREATE THE grid
+            # 50K => (took 30.728 seconds)
+            t.execute(sql_create("grid", {"post": "integer", "attr": "integer", "value": "integer"}, ["post", "attr"]))
+            t.execute(ConcatSQL(
+                SQL_INSERT,
+                quote_column("grid"),
+                SQL_SELECT,
+                sql_list([
+                    sql_alias(quote_column("p", "name"), "post"),
+                    sql_alias(quote_column("a", "name"), "attr"),
+                    SQL("abs(random() % 50) as value")
+                ]),
+                SQL_FROM,
+                # ENSURE THESE ARE IN SAME ORDER AS PRIMARY KEY, OR IT WILL BE SLOW
+                SQL("(SELECT name FROM post ORDER BY name) AS p"),
+                SQL_CROSS_JOIN,  # CROSS JOIN ENFORCES LOOP ORDER
+                sql_alias(quote_column("attr"), "a"),
+            ))
+            # INDEX DOES NOT GO FASTER
+            # t.execute("CREATE INDEX aaa ON grid (post, attr, value)")
+
+        with db.transaction() as t:
+            t.execute(sql_create("file", {"file": "text", "post": "text", "value": "integer"}))
+            t.execute(ConcatSQL(
+                SQL_INSERT,
+                quote_column("file"),
+                SQL("(file, post, value)"),
+                SQL_SELECT,
+                sql_list([quote_value("file1"), quote_column("p", "name"), SQL("random()%50")]),
+                SQL_FROM,
+                sql_alias(quote_column("post"), "p"),
+            ))
+
+        def counter(please_stop):
+            start = Date.now()
+            while not please_stop:
+                (please_stop | Till(seconds=3)).wait()
+                Log.note("waiting for {{seconds}}", seconds=(Date.now()-start).seconds)
+
+        # With primary key on grid
+        # 10k => multiply (took 7.926 seconds)
+        # 50k => multiply (took 43.481 seconds)
+        with Timer("multiply"):
+            timer = Thread.run("monitor", counter)
+            with db.transaction() as t:
+                t.execute(ConcatSQL(
+                    SQL_CREATE,
+                    quote_column("result"),
+                    SQL_AS,
+                    SQL_SELECT,
+                    SQL("f.file"),
+                    SQL_COMMA,
+                    SQL("f.post"),
+                    SQL_COMMA,
+                    SQL("sum(g.value*f.value)/count(g.value) AS value"),
+                    SQL_FROM,
+                    sql_alias(quote_column("file"), "f"),
+                    SQL_CROSS_JOIN,
+                    sql_alias(quote_column("grid"), "g"),
+                    SQL_ON,
+                    SQL("f.post=g.post"),
+                    SQL_GROUPBY,
+                    SQL("f.file"),
+                    SQL_COMMA,
+                    SQL("f.post"),
+                ))
+            timer.stop()
+
 
 

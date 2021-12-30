@@ -52,7 +52,7 @@ from mo_files import File
 from mo_json import value2json
 from mo_json.types import T_JSON, to_json_type, python_type_to_json_type_key, _A
 from mo_logs import Log
-from mo_threads import Thread
+from mo_threads import Thread, Lock
 from mo_times import Timer
 
 DEBUG = True
@@ -70,6 +70,7 @@ class Cluster(object):
         self.name = dir.name
         self.schema = T_JSON
         self.next_id = 0
+        self.columns_locker = Lock()
         self.columns = {}
         for c in dir.children:
             self.schema |= to_json_type(c.name)
@@ -122,24 +123,25 @@ class Cluster(object):
     def insert_using_json(self, documents):
         name = randoms.base64(10, "-_")
         file = self.dir / (name + ".sqlite")
-        db_source = Sqlite(filename=file)
+        source = Sqlite(filename=file)
 
         with Timer("load data"):
             # CREATE TEMP TABLE
-            db_source.query("PRAGMA synchronous = OFF")
-            with db_source.transaction() as t:
+            source.query("PRAGMA synchronous = OFF")
+            source.query("PRAGMA journal_mode = OFF")
+            with source.transaction() as t:
                 t.execute(sql_create(name, {"rowid": "INTEGER", "data": "text"}, ["rowid"]))
 
             # LOAD WITH DATA
             for g, docs in chunk(documents, 1000):
-                with db_source.transaction() as t:
+                with source.transaction() as t:
                     t.execute(sql_insert(name, [{"rowid": self.get_next_id(), "data": value2json(add_id(d))} for d in docs]))
                 DEBUG and Log.note("Inserted {{rows}} rows", rows=len(docs))
 
         # TRANSFORM TO COLUMNS
         table_name = str(quote_column(name))
         with Timer("get columns"):
-            columns = db_source.query(
+            columns = source.query(
                 " WITH RECURSIVE split(path, type) AS ("
                 f"   SELECT fullkey, type"
                 f"   FROM {table_name}, json_tree({table_name}.data)"
@@ -156,11 +158,12 @@ class Cluster(object):
                 " WHERE NOT INSTR(path, '[')"
                 " GROUP BY path, type"
             )
-            db_source.stop()
+            source.stop()
 
-        for path, type in columns.data:
+        def extract_column(path, type, please_stop):
             full_path = concat_field(path[2:], sqlite_type_to_type_key[type.upper()])
-            db = self.columns.get(full_path)
+            with self.columns_locker:
+                db = self.columns.get(full_path)
             prefix = path
             if _A in prefix:
                 prefix = prefix[:prefix.find(_A)-1]
@@ -168,9 +171,10 @@ class Cluster(object):
             dims = path.count(_A)
             if db is None:
                 # CREATE DATABASE
-                db = self.columns[full_path] = Sqlite(
-                    self.dir / concat_field(full_path, "sqlite")
-                )
+                with self.columns_locker:
+                    db = self.columns[full_path] = Sqlite(
+                        self.dir / concat_field(full_path, "sqlite")
+                    )
                 self._add_column(full_path, db)
 
             with db.transaction() as t:
@@ -217,8 +221,17 @@ class Cluster(object):
                     SQL_WHERE,
                     sql_eq(type=type, path=path),
                 )))
-            db.stop()
+            db.query("VACUUM")
+
+        threads = [
+            Thread.run(f"{path}", extract_column, path, type)
+            for path, type in columns.data
+        ]
+        for t in threads:
+            t.join()
+
         Thread.run("delete "+file.abspath, delete_file, file)
+
 
     def insert(self, documents):
         column_values = {}
