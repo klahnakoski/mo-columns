@@ -52,6 +52,7 @@ from mo_files import File
 from mo_json import value2json
 from mo_json.types import T_JSON, to_json_type, python_type_to_json_type_key, _A
 from mo_logs import Log
+from mo_threads import Thread
 from mo_times import Timer
 
 DEBUG = True
@@ -73,6 +74,12 @@ class Cluster(object):
         for c in dir.children:
             self.schema |= to_json_type(c.name)
             self.columns[c.name] = Sqlite(c)
+
+    def get_next_id(self):
+        try:
+            return self.next_id
+        finally:
+            self.next_id += 1
 
     def bytes(self):
         """
@@ -121,39 +128,18 @@ class Cluster(object):
             # CREATE TEMP TABLE
             db_source.query("PRAGMA synchronous = OFF")
             with db_source.transaction() as t:
-                t.execute(sql_create(name, {"data": "text"}))
+                t.execute(sql_create(name, {"rowid": "INTEGER", "data": "text"}, ["rowid"]))
 
             # LOAD WITH DATA
             for g, docs in chunk(documents, 1000):
                 with db_source.transaction() as t:
-                    t.execute(sql_insert(name, [{"data": value2json(add_id(d))} for d in docs]))
+                    t.execute(sql_insert(name, [{"rowid": self.get_next_id(), "data": value2json(add_id(d))} for d in docs]))
                 DEBUG and Log.note("Inserted {{rows}} rows", rows=len(docs))
 
         # TRANSFORM TO COLUMNS
         table_name = str(quote_column(name))
-        with db_source.transaction() as t:
-            t.execute(
-                "CREATE TABLE breakdown AS"
-                " WITH RECURSIVE split(rowid, path, keys, atom, type) AS ("
-                f"   SELECT {table_name}.rowid, fullkey, json_array(), atom, type"
-                f"   FROM {table_name}, json_tree({table_name}.data)"
-                "    WHERE json_tree.type NOT IN ('object','array')"
-                "    UNION ALL"
-                "    SELECT"
-                "        rowid,"
-                "        SUBSTR(path, 1, INSTR(path, '[') - 1) || '.~a~' || SUBSTR(path, INSTR(path, ']') + 1 ),"
-                "        json_insert(keys, '$[#]', CAST(SUBSTR(path, INSTR(path, '[')+1, INSTR(path, ']') - INSTR(path, '[') - 1) AS INTEGER)),"
-                "        atom,"
-                "        type"
-                "    FROM split"
-                "    WHERE INSTR(path, '[')"
-                " )"
-                " SELECT rowid, path, keys, atom, type"
-                " FROM split"
-                " WHERE NOT INSTR(path, '[')"
-            )
-
-            columns = t.query(
+        with Timer("get columns"):
+            columns = db_source.query(
                 " WITH RECURSIVE split(path, type) AS ("
                 f"   SELECT fullkey, type"
                 f"   FROM {table_name}, json_tree({table_name}.data)"
@@ -170,11 +156,15 @@ class Cluster(object):
                 " WHERE NOT INSTR(path, '[')"
                 " GROUP BY path, type"
             )
-        db_source.stop()
+            db_source.stop()
 
         for path, type in columns.data:
             full_path = concat_field(path[2:], sqlite_type_to_type_key[type.upper()])
             db = self.columns.get(full_path)
+            prefix = path
+            if _A in prefix:
+                prefix = prefix[:prefix.find(_A)-1]
+            prefix = sql_call("INSTR", quote_column("fullkey"), quote_value(prefix))
             dims = path.count(_A)
             if db is None:
                 # CREATE DATABASE
@@ -198,15 +188,17 @@ class Cluster(object):
                     SQL_AS,
                     quote_column("db0"),
                 ))
+                table_name = str(quote_column("db0", name))
+                rowid = str(quote_column("db0", name, "rowid"))
                 t.execute(str(ConcatSQL(
                     SQL_INSERT,
                     quote_column(full_path),
                     sql_iso(sql_list(column_names)),
                     SQL(
                         " WITH RECURSIVE split(rowid, path, keys, atom, type) AS ("
-                        f"   SELECT db0.{table_name}.rowid, fullkey, json_array(), atom, type"
-                        f"   FROM db0.{table_name}, json_tree(db0.{table_name}.data)"
-                        "    WHERE json_tree.type NOT IN ('object','array')"
+                        f"   SELECT {rowid}, fullkey, json_array(), atom, type"
+                        f"   FROM {table_name}, json_tree({table_name}.data)"
+                        f"   WHERE {str(sql_eq(type=type))} AND {str(prefix)}"
                         "    UNION ALL"
                         "    SELECT"
                         "        rowid,"
@@ -220,9 +212,13 @@ class Cluster(object):
                     ),
                     SQL_SELECT,
                     sql_list(selects),
+                    SQL_FROM,
+                    quote_column("split"),
                     SQL_WHERE,
                     sql_eq(type=type, path=path),
                 )))
+            db.stop()
+        Thread.run("delete "+file.abspath, delete_file, file)
 
     def insert(self, documents):
         column_values = {}
@@ -249,8 +245,7 @@ class Cluster(object):
         for g, docs in chunk(documents, 1000):
             for d in docs:
                 d = from_data(d)
-                doc_id = (self.next_id,)
-                self.next_id += 1
+                doc_id = (self.get_next_id(),)
                 _id = d.get(GUID)
                 if not _id:
                     _add(".", doc_id, d)
@@ -399,3 +394,12 @@ def get_key_columns(path):
     yield UID
     for i in range(1, path.count(_A) + 1):
         yield f"_id{i}"
+
+
+def delete_file(file, please_stop):
+    while True:
+        try:
+            file.delete()
+            break
+        except Exception:
+            pass

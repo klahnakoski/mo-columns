@@ -250,7 +250,7 @@ class Sqlite(DB):
         self.closed = True
         signal = _allocate_lock()
         signal.acquire()
-        self.queue.add(CommandItem(COMMIT, None, signal, None, None))
+        self.queue.add(CommandItem(COMMIT, Data(), signal, None, None))
         signal.acquire()
         self.worker.stop()
         return
