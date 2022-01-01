@@ -33,7 +33,7 @@ from mo_json.typed_encoder import untype_path
 from mo_logs import Log
 from mo_math import randoms
 from mo_times import Date
-from mo_json.types import _B, _I, _N, _T, _S
+from mo_json.types import _B, _I, _N, _T, _S, _A
 
 DIGITS_TABLE = "__digits__"
 ABOUT_TABLE = "meta.about"
@@ -321,6 +321,7 @@ sqlite_type_to_simple_type = {
 }
 
 sqlite_type_to_type_key = {
+    "ARRAY": _A,
     "TEXT": _S,
     "REAL": _N,
     "INTEGER": _I,

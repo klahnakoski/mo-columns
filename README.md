@@ -4,7 +4,7 @@ More Columns!  Experiments with columnar datastores
 
 ## Problem 
 
-We want a way to cheaply query a Petabyte of data a 10K times a day.  
+We want a way to cheaply query a Petabyte of data at 10K times a day.  
 
 * Target price: $250/day
 * Target latency: < 1 sec for full scan
@@ -27,8 +27,8 @@ We want a way to cheaply query a Petabyte of data a 10K times a day.
 
 ## Desired Tests
 
-1. Single node, multiple shards - how fast can it `SELECT SUM(A) FROM T WHERE Y GROUP BY A, B`
-2. Single node, multiple shards - speed to load 10K x 1M grid
+1. Single node, multiple shards - how fast can it perform `SELECT SUM(A) FROM T WHERE Y GROUP BY A, B`
+2. Single node, multiple shards - speed to load 10K x 1M grid 
 3. Single node, multiple shards - speed multiply grids
 4. Multiple nodes - distribute query, return results, aggregate results
 
@@ -44,9 +44,9 @@ Can load simple JSON (6 properties) at 14K/sec (1M/69sec) by making a single col
   * `a` - 6char - 29M - 29bytes/row
   * `b` - float - 33M - 33bytes/row (float is 8bytes)
   * 2 bytes per byte makes sense with index
-  * 17 bytes to store nothing (8 bytes for primary key + 4 bytes for indexed `__id__` + 5 ?control? )
+  * 17 bytes to store nothing (8 bytes for primary key + 4 bytes for indexed `rowid` + 5 ?control? )
   * 2x compression on zip, which makes sense given the high entropy values
-  * 4x compression on low entropy column (7 unique values) 
+  * 4x compression on cardinality=7 column 
 
 ### Dot Product
 
@@ -60,4 +60,4 @@ Notes
 * Rows and columns as INTEGER made little difference
 * CROSS JOIN is required to force query planner to iterate through table properly
 * :memory: database made little difference
-* 
+

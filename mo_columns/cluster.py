@@ -22,7 +22,6 @@ from jx_sqlite.sqlite import (
     SQL,
     SQL_CREATE,
     sql_iso,
-    SQL_COMMA,
     sql_list,
     SQL_SELECT,
     sql_count,
@@ -38,16 +37,19 @@ from jx_sqlite.sqlite import (
     sql_create,
     sql_insert,
     sql_call,
-    SQL_WHERE, sql_eq,
+    SQL_WHERE,
+    sql_eq,
 )
 from jx_sqlite.utils import (
     UID,
     GUID,
     sqlite_type_to_type_key,
+    PARENT,
+    ORDER,
 )
 from mo_columns.utils import json_type_key_to_sqlite_type, uuid
 from mo_dots import concat_field, split_field, from_data, Null, is_data
-from mo_dots.datas import leaves
+from mo_dots.datas import leaves, Data
 from mo_files import File
 from mo_json import value2json
 from mo_json.types import T_JSON, to_json_type, python_type_to_json_type_key, _A
@@ -130,33 +132,43 @@ class Cluster(object):
             source.query("PRAGMA synchronous = OFF")
             source.query("PRAGMA journal_mode = OFF")
             with source.transaction() as t:
-                t.execute(sql_create(name, {"rowid": "INTEGER", "data": "text"}, ["rowid"]))
+                t.execute(sql_create(
+                    name, {"rowid": "INTEGER", "data": "text"}, ["rowid"]
+                ))
 
             # LOAD WITH DATA
             for g, docs in chunk(documents, 1000):
                 with source.transaction() as t:
-                    t.execute(sql_insert(name, [{"rowid": self.get_next_id(), "data": value2json(add_id(d))} for d in docs]))
+                    t.execute(sql_insert(
+                        name,
+                        [
+                            {"rowid": self.get_next_id(), "data": value2json(add_id(d))}
+                            for d in docs
+                        ],
+                    ))
                 DEBUG and Log.note("Inserted {{rows}} rows", rows=len(docs))
 
-        # TRANSFORM TO COLUMNS
+        # USE JSONI TO TRANSFORM TO COLUMNS
         table_name = str(quote_column(name))
         with Timer("get columns"):
             columns = source.query(
-                " WITH RECURSIVE split(path, type) AS ("
-                f"   SELECT fullkey, type"
-                f"   FROM {table_name}, json_tree({table_name}.data)"
-                "    WHERE json_tree.type NOT IN ('object','array')"
-                "    UNION ALL"
-                "    SELECT"
-                "        SUBSTR(path, 1, INSTR(path, '[') - 1) || '.~a~' || SUBSTR(path, INSTR(path, ']') + 1 ),"
-                "        type"
-                "    FROM split"
-                "    WHERE INSTR(path, '[')"
-                " )"
-                " SELECT path, type"
-                " FROM split"
-                " WHERE NOT INSTR(path, '[')"
-                " GROUP BY path, type"
+                f"""
+                WITH RECURSIVE split(path, type) AS (
+                    SELECT fullkey, type
+                    FROM {table_name}, json_tree({table_name}.data)
+                    WHERE json_tree.type != 'object'
+                    UNION ALL
+                    SELECT
+                        SUBSTR(path, 1, INSTR(path, '[') - 1) || '.~a~' || SUBSTR(path, INSTR(path, ']') + 1 ),
+                        type
+                    FROM split
+                    WHERE INSTR(path, '[') 
+                ) 
+                SELECT path, type 
+                FROM split 
+                WHERE NOT INSTR(path, '[') 
+                GROUP BY path, type
+            """
             )
             source.stop()
 
@@ -166,25 +178,30 @@ class Cluster(object):
                 db = self.columns.get(full_path)
             prefix = path
             if _A in prefix:
-                prefix = prefix[:prefix.find(_A)-1]
+                prefix = prefix[: prefix.find(_A) - 1]
             prefix = sql_call("INSTR", quote_column("fullkey"), quote_value(prefix))
-            dims = path.count(_A)
+            dims = full_path.count(_A)
             if db is None:
                 # CREATE DATABASE
                 with self.columns_locker:
                     db = self.columns[full_path] = Sqlite(
                         self.dir / concat_field(full_path, "sqlite")
                     )
-                self._add_column(full_path, db)
+                if type == "array":
+                    self._add_exists(full_path, db)
+                else:
+                    self._add_column(full_path, db)
 
             with db.transaction() as t:
                 key_columns = list(get_key_columns(full_path))
                 column_names = list(map(quote_column, key_columns))
-                column_names.append(quote_column("value"))
-                selects =[quote_column("rowid")]
+                selects = [quote_column("rowid")]
                 for d in range(dims):
                     selects.append(SQL(f"json_extract(keys, '$[{d}]')"))
-                selects.append(quote_column("atom"))
+
+                if type != "array":
+                    column_names.append(quote_column("value"))
+                    selects.append(quote_column("atom"))
 
                 t.execute(ConcatSQL(
                     SQL("ATTACH "),
@@ -199,41 +216,51 @@ class Cluster(object):
                     quote_column(full_path),
                     sql_iso(sql_list(column_names)),
                     SQL(
-                        " WITH RECURSIVE split(rowid, path, keys, atom, type) AS ("
-                        f"   SELECT {rowid}, fullkey, json_array(), atom, type"
-                        f"   FROM {table_name}, json_tree({table_name}.data)"
-                        f"   WHERE {str(sql_eq(type=type))} AND {str(prefix)}"
-                        "    UNION ALL"
-                        "    SELECT"
-                        "        rowid,"
-                        "        SUBSTR(path, 1, INSTR(path, '[') - 1) || '.~a~' || SUBSTR(path, INSTR(path, ']') + 1 ),"
-                        "        json_insert(keys, '$[#]', CAST(SUBSTR(path, INSTR(path, '[')+1, INSTR(path, ']') - INSTR(path, '[') - 1) AS INTEGER)),"
-                        "        atom,"
-                        "        type"
-                        "    FROM split"
-                        "    WHERE INSTR(path, '[')"
-                        " )"
+                        f"""
+                        WITH RECURSIVE split(rowid, path, keys, atom, type) AS (
+                            SELECT {rowid}, fullkey, json_array(), atom, type
+                            FROM {table_name}, json_tree({table_name}.data)
+                            WHERE {str(sql_eq(type=type))} AND {str(prefix)}
+                            UNION ALL   
+                            SELECT
+                                rowid,
+                                SUBSTR(path, 1, INSTR(path, '[') - 1) || '.~a~' || SUBSTR(path, INSTR(path, ']') + 1 ),      
+                                json_insert(keys, '$[#]', CAST(SUBSTR(path, INSTR(path,'[')+1, INSTR(path, ']') - INSTR(path, '[') - 1) AS INTEGER)),
+                                atom,
+                                type
+                            FROM 
+                                split
+                            WHERE
+                                INSTR(path, '[') )
+                    """
                     ),
                     SQL_SELECT,
                     sql_list(selects),
                     SQL_FROM,
                     quote_column("split"),
                     SQL_WHERE,
-                    sql_eq(type=type, path=path),
+                    sql_eq(path=path + "." + _A)
+                    if type == "array"
+                    else sql_eq(type=type, path=path),
                 )))
             db.query("VACUUM")
 
-        threads = [
-            Thread.run(f"{path}", extract_column, path, type)
-            for path, type in columns.data
-        ]
-        for t in threads:
-            t.join()
+        for path, type in columns.data:
+            extract_column(path, type, False)
 
-        Thread.run("delete "+file.abspath, delete_file, file)
+        # threads = [
+        #     Thread.run(f"{path}", extract_column, path, type)
+        #     for path, type in columns.data
+        # ]
+        # for t in threads:
+        #     t.join()
 
+        Thread.run("delete " + file.abspath, delete_file, file)
 
     def insert(self, documents):
+        """
+        SLOWER THEN OTHER INSERT BECAUSE PYTHON DOES TOO MUCH OF THE WORK
+        """
         column_values = {}
 
         def _add(parent_path, key, doc):
@@ -314,68 +341,176 @@ class Cluster(object):
                 f"""CREATE INDEX {quote_column(f"index_{path}")} ON {quote_column(path)} (value, {key_list})"""
             )
 
+    def _add_exists(self, path, db):
+        """
+        TABLE TO TRACK THE EXISTING NESTED OBJECTS, NOT VALUES
+        """
+        with db.transaction() as t:
+            t.execute(sql_create(
+                path,
+                {**{k: "INTEGER" for k in get_key_columns(path)}},
+                list(get_key_columns(path)),
+            ))
+
     def to_rows(self, name) -> Container:
         """
         COPY COLUMNAR CLUSTER TO ROW-BASED DATABASE
         """
-        file = WORKSPACE_DIR / f"{name}.sqlite"
-        file.delete()
+        file = (WORKSPACE_DIR / f"{name}.sqlite").delete()
         result_db = Sqlite(filename=file)
-
+        pre_tables = {}
+        temp_name = "__temp__"
         with result_db.transaction() as t:
             # FIND _id TABLE
-            selects = []
-            frum_alias = None
-            frum = None
             for i, (path, db) in enumerate(self.columns.items()):
                 if path == ID_COLUMN:
+                    file = self.dir / concat_field(path, "sqlite")
                     db_alias = f"db{i}"
-                    table_name = quote_column(db_alias, path)
-                    frum_alias = f"c{i}"
-                    frum = sql_alias(table_name, frum_alias)
-                    selects.append(sql_alias(quote_column(frum_alias, UID), UID))
+                    t.execute(ConcatSQL(
+                        SQL("ATTACH "), sql_alias(quote_value(file.abspath), db_alias)
+                    ))
+                    table_alias = f"c{i}"
+                    pre_tables["."] = Data(
+                        dest=concat_field(temp_name, _A),
+                        selects=[sql_alias(quote_column(table_alias, UID), UID)],
+                        frum=sql_alias(quote_column(db_alias, path), table_alias),
+                        name=concat_field(name, path),
+                        alias=table_alias,
+                        joins=[],
+                    )
 
-            joins = []
-            # COMPOSE
+            # MAP KEY COLUMNS TO NEW rowid
             for i, (path, db) in enumerate(self.columns.items()):
-                if _A in path:
-                    Log.error("not supported")
+                if not path.endswith(_A):
+                    continue
 
                 file = self.dir / concat_field(path, "sqlite")
                 db_alias = f"db{i}"
                 t.execute(ConcatSQL(
                     SQL("ATTACH "), sql_alias(quote_value(file.abspath), db_alias)
                 ))
+
                 table_alias = f"c{i}"
-                selects.append(sql_alias(quote_column(table_alias, "value"), path))
-                if path == ID_COLUMN:
+                parent_path = "."
+                table_path = "."
+                acc = ""
+                for prefix in path.split(_A)[:-1]:
+                    parent_path = table_path
+                    acc = acc + prefix + _A
+                    table_path = acc
+
+                parent = pre_tables[parent_path]
+                key_columns = list(get_key_columns(table_path))
+                parent_keys, order = key_columns[:-1], key_columns[-1]
+
+                pre_tables[table_path] = Data(
+                    dest=concat_field(temp_name, table_path),
+                    selects=[
+                        sql_alias(quote_column(parent.alias, "rowid"), PARENT),
+                        sql_alias(quote_column(table_alias, order), ORDER),
+                        *(quote_column(table_alias, k) for k in key_columns),
+                    ],
+                    frum=sql_alias(quote_column(parent.dest), parent.alias),
+                    name=concat_field(name, path),
+                    alias=table_alias,
+                    joins=[ConcatSQL(
+                        sql_alias(quote_column(db_alias, table_path), table_alias),
+                        SQL_ON,
+                        JoinSQL(
+                            SQL_AND,
+                            [
+                                ConcatSQL(
+                                    quote_column(table_alias, k),
+                                    SQL_EQ,
+                                    quote_column(parent.alias, k),
+                                )
+                                for k in parent_keys
+                            ],
+                        ),
+                    )],
+                )
+
+            for path, table in pre_tables.items():
+                t.execute(ConcatSQL(
+                    SQL_CREATE,
+                    quote_column(table.dest),
+                    SQL_AS,
+                    SQL_SELECT,
+                    sql_list(table.selects),
+                    SQL_FROM,
+                    table.frum,
+                    ConcatSQL(*(ConcatSQL(SQL_LEFT_JOIN, j) for j in table.joins)),
+                ))
+
+        tables = {}
+        for path, table in pre_tables.items():
+            tables[path] = Data(
+                dest=concat_field(name, path),
+                selects=[]
+                if path == "."
+                else [
+                    quote_column(table.alias, PARENT),
+                    quote_column(table.alias, ORDER),
+                ],
+                frum=sql_alias(quote_column(table.dest), table.alias),
+                name=concat_field(name, path),
+                alias=table.alias,
+                joins=[],
+            )
+
+        with result_db.transaction() as t:
+            # JOIN VALUES TO TABLES
+            for i, (path, db) in enumerate(self.columns.items()):
+                if path.endswith(_A):
                     continue
+
+                file = self.dir / concat_field(path, "sqlite")
+                db_alias = f"db{i}"
+                if path != ID_COLUMN:  # ALREADY ATTACHED
+                    t.execute(ConcatSQL(
+                        SQL("ATTACH "), sql_alias(quote_value(file.abspath), db_alias)
+                    ))
+
+                table_alias = f"c{i}"
+                p = path.rfind(_A)
+                if p == -1:
+                    parent_path = "."
+                else:
+                    parent_path = path[:p] + _A
+
+                tables[parent_path].selects.append(sql_alias(
+                    quote_column(table_alias, "value"), path
+                ))
 
                 table_name = quote_column(db_alias, path)
                 key_columns = get_key_columns(path)
-                ons = JoinSQL(
-                    SQL_AND,
-                    [
-                        ConcatSQL(
-                            quote_column(table_alias, k),
-                            SQL_EQ,
-                            quote_column(frum_alias, k),
-                        )
-                        for k in key_columns
-                    ],
-                )
-                joins.append(ConcatSQL(sql_alias(table_name, table_alias), SQL_ON, ons))
+                tables[parent_path].joins.append(ConcatSQL(
+                    sql_alias(table_name, table_alias),
+                    SQL_ON,
+                    JoinSQL(
+                        SQL_AND,
+                        [
+                            ConcatSQL(
+                                quote_column(table_alias, k),
+                                SQL_EQ,
+                                quote_column(pre_tables[parent_path].alias, k),
+                            )
+                            for k in key_columns
+                        ],
+                    ),
+                ))
 
-            t.execute(ConcatSQL(
-                SQL_CREATE,
-                quote_column(name),
-                SQL_AS,
-                SQL_SELECT,
-                sql_list(selects),
-                SQL_FROM,
-                frum,
-                ConcatSQL(*(ConcatSQL(SQL_LEFT_JOIN, j) for j in joins)),
-            ))
+            for path, table in tables.items():
+                t.execute(ConcatSQL(
+                    SQL_CREATE,
+                    quote_column(table.dest),
+                    SQL_AS,
+                    SQL_SELECT,
+                    sql_list(table.selects),
+                    SQL_FROM,
+                    table.frum,
+                    ConcatSQL(*(ConcatSQL(SQL_LEFT_JOIN, j) for j in table.joins)),
+                ))
 
         return Container(db=result_db)
 

@@ -71,8 +71,8 @@ class TestInsert(FuzzyTestCase):
             extract = cluster.to_rows(result_name)
 
     def test_insert_million(self):
-        sqlite.DEBUG = False
-        num = 1_000_000  # million => load data (took 69.137 seconds), insert records (took 123.053 seconds)
+        # sqlite.DEBUG = False
+        num = 1_000  # million => load data (took 69.137 seconds), insert records (took 123.053 seconds)
         result_name = "temp_result"
         File(f"{result_name}.sqlite").delete()
 
@@ -97,7 +97,7 @@ class TestInsert(FuzzyTestCase):
 
     def test_grid(self):
         # INSERT GRIDS
-        sqlite.DEBUG = False
+        # sqlite.DEBUG = False
         num = 10
         result_name = "temp_result"
         File(f"{result_name}.sqlite").delete()
@@ -110,6 +110,9 @@ class TestInsert(FuzzyTestCase):
                 }
                 for _ in range(num)
             ))
+
+        with Timer("extract records"):
+            extract = cluster.to_rows(result_name)
 
     def test_multiply(self):
         """

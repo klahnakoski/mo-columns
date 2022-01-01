@@ -15,11 +15,13 @@ import re
 import sys
 from collections import Mapping, namedtuple
 
+from mo_math.stats import percentile
+
 from jx_base import jx_expression
 from jx_python.convert import table2csv
 from mo_dots import Data, coalesce, unwraplist, listwrap, to_data
 from mo_files import File
-from mo_future import allocate_lock as _allocate_lock, text, first, zip_longest
+from mo_future import allocate_lock as _allocate_lock, text, zip_longest
 from mo_json import (
     BOOLEAN,
     INTEGER,
@@ -37,7 +39,6 @@ from mo_json import (
 from mo_kwargs import override
 from mo_logs.exceptions import ERROR, Except, get_stacktrace, format_trace
 from mo_logs.strings import quote
-from mo_math.stats import percentile
 from mo_sql import *
 from mo_threads import Lock, Queue, Thread, Till
 from mo_times import Date, Duration, Timer
@@ -716,18 +717,19 @@ def sql_create(table, properties, primary_key=None, unique=None):
         SQL_OP,
         sql_list([quote_column(k) + SQL(v) for k, v in properties.items()]),
     ]
+    primary_key = listwrap(primary_key)
 
     if primary_key:
         acc.append(SQL_COMMA),
         acc.append(SQL(" PRIMARY KEY ")),
-        acc.append(sql_iso(sql_list([quote_column(c) for c in listwrap(primary_key)])))
+        acc.append(sql_iso(sql_list([quote_column(c) for c in primary_key])))
     if unique:
         acc.append(SQL_COMMA),
         acc.append(SQL(" UNIQUE ")),
         acc.append(sql_iso(sql_list([quote_column(c) for c in listwrap(unique)])))
 
     acc.append(SQL_CP)
-    if primary_key:
+    if primary_key and not (len(primary_key) == 1 and properties[primary_key[0]] == 'INTEGER'):
         acc.append(SQL(" WITHOUT ROWID"))
     return ConcatSQL(*acc)
 
