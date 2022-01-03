@@ -316,6 +316,7 @@ ColumnMapping = DataClass(
 sqlite_type_to_simple_type = {
     "TEXT": STRING,
     "REAL": NUMBER,
+    "INT": INTEGER,
     "INTEGER": INTEGER,
     "TINYINT": BOOLEAN,
 }

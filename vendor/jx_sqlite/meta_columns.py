@@ -11,7 +11,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 from copy import copy
 
-from jx_base.schema import Schema
+from pyLibrary.meta import _FakeLock
 
 import jx_base
 from jx_base import Table, Container, Column
@@ -20,6 +20,7 @@ from jx_base.meta_columns import (
     META_COLUMNS_NAME,
     SIMPLE_METADATA_COLUMNS,
 )
+from jx_base.schema import Schema
 from jx_python import jx
 from jx_sqlite.sqlite import sql_query
 from jx_sqlite.utils import untyped_column, sqlite_type_to_simple_type
@@ -35,12 +36,11 @@ from mo_dots import (
     wrap,
     list_to_data,
 )
-from mo_json import STRUCT, IS_NULL, OBJECT
+from mo_json import STRUCT, OBJECT
 from mo_json.typed_encoder import unnest_path, untyped
 from mo_logs import Log
-from mo_threads import Lock, Queue
+from mo_threads import Queue
 from mo_times.dates import Date
-from pyLibrary.meta import _FakeLock
 
 DEBUG = False
 singlton = None
@@ -112,7 +112,11 @@ class ColumnList(Table, Container):
                     last_nested_path = []
 
             full_nested_path = [nested_path] + last_nested_path
-            self._snowflakes.setdefault(base_table, []).extend(full_nested_path)
+            paths = self._snowflakes.get(base_table)
+            if not paths:
+                self._snowflakes[base_table] = list(sorted(full_nested_path))
+            else:
+                self._snowflakes[base_table] = list(sorted(set(paths) | set(full_nested_path)))
 
             # LOAD THE COLUMNS
             details = self.db.about(table.name)

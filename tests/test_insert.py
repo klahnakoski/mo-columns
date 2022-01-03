@@ -106,13 +106,16 @@ class TestInsert(FuzzyTestCase):
         with Timer("insert records"):
             cluster.insert_using_json((
                 {
+                    "i": i,
                     "d": [[randoms.float() for _ in range(100)] for _ in range(100)]
                 }
-                for _ in range(num)
+                for i in range(num)
             ))
 
         with Timer("extract records"):
             extract = cluster.to_rows(result_name)
+            rows = extract.get_table(result_name).query({"sort": "i", "limit":num})
+            self.assertEqual(len(rows), num)
 
     def test_multiply(self):
         """

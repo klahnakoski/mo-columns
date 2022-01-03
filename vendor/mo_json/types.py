@@ -172,7 +172,7 @@ def base_type(type_):
         n, t = first(d.items())
         if IS_PRIMITIVE_KEY.match(n):
             return type_
-        if n in (_A, _J):
+        if t in (ARRAY, JSON):
             return type_
         type_ = t
         d = t.__dict__
@@ -213,6 +213,7 @@ STRING = "string"
 OBJECT = "object"
 ARRAY = "nested"
 EXISTS = "exists"
+JSON = "any json"
 
 ALL_TYPES = {
     IS_NULL: IS_NULL,
@@ -243,7 +244,7 @@ T_TIME = _primitive(_T, TIME)
 T_INTERVAL = _primitive(_D, INTERVAL)  # d FOR DELTA
 T_TEXT = _primitive(_S, STRING)
 T_ARRAY = _primitive(_A, ARRAY)
-T_JSON = _primitive(_J, "any json")
+T_JSON = _primitive(_J, JSON)
 
 T_PRIMITIVE = _new(JsonType)
 T_PRIMITIVE.__dict__ = [
