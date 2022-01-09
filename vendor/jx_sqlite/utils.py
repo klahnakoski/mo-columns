@@ -33,7 +33,7 @@ from mo_json.typed_encoder import untype_path
 from mo_logs import Log
 from mo_math import randoms
 from mo_times import Date
-from mo_json.types import _B, _I, _N, _T, _S, _A
+from mo_json.types import _B, _I, _N, _T, _S, _A, T_ARRAY, T_TEXT, T_NUMBER, T_INTEGER, IS_PRIMITIVE_KEY
 
 DIGITS_TABLE = "__digits__"
 ABOUT_TABLE = "meta.about"
@@ -145,15 +145,18 @@ def typed_column(name, sql_key):
 def untyped_column(column_name):
     """
     :param column_name:  DATABASE COLUMN NAME
-    :return: (NAME, TYPE) PAIR
+    :return: (NAME, JSON_TYPE) PAIR
     """
-    if "$" in column_name:
-        path = split_field(column_name)
-        return join_field([p for p in path[:-1] if p != "$a"]), path[-1][1:]
-    elif column_name in [GUID]:
-        return column_name, "n"
+    if column_name in [GUID]:
+        return column_name, T_TEXT
+
+    path = split_field(column_name)
+    if not path:
+        return '.', None
+    elif not IS_PRIMITIVE_KEY.match(path[-1]):
+        return join_field([p for p in path if p != _A]), None
     else:
-        return column_name, None
+        return join_field([p for p in path[:-1] if p != _A]), type_key_json_type[path[-1]]
 
 
 untype_field = untyped_column
@@ -329,6 +332,14 @@ sqlite_type_to_type_key = {
     "TINYINT": _B,
     "TRUE": _B,
     "FALSE": _B,
+}
+
+type_key_json_type = {
+    _A: T_ARRAY,
+    _S: T_TEXT,
+    _N: T_NUMBER,
+    _I: T_INTEGER,
+    _B: T_BOOLEAN,
 }
 
 

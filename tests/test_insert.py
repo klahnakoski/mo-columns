@@ -114,7 +114,7 @@ class TestInsert(FuzzyTestCase):
 
         with Timer("extract records"):
             extract = cluster.to_rows(result_name)
-            rows = extract.get_table(result_name).query({"sort": "i", "limit":num})
+            rows = extract.get_table(result_name).query({"sort": "i", "limit": 1})
             self.assertEqual(len(rows), num)
 
     def test_multiply(self):

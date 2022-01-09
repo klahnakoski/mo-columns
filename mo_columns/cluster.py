@@ -37,7 +37,7 @@ from jx_sqlite.sqlite import (
     sql_create,
     sql_insert,
     SQL_WHERE,
-    sql_eq,
+    sql_eq, sql_call, SQL_GROUPBY, SQL_COMMA,
 )
 from jx_sqlite.utils import (
     UID,
@@ -173,30 +173,89 @@ class Cluster(object):
 
         def extract_column(path, type, please_stop):
             full_path = concat_field("." if path=="$" else _A+path[1:], sqlite_type_to_type_key[type.upper()])
-            with self.columns_locker:
-                db = self.columns.get(full_path)
+            key_columns = list(get_key_columns(full_path))
+            column_names = list(map(quote_column, key_columns))
+
             dims = full_path.count(_A)
+            selects = [quote_column("rowid")]
+            for d in range(dims - 1):
+                selects.append(SQL(f"json_extract(keys, '$[{d}]')"))
+
+            table_name = str(quote_column("db0", name))
+            rowid = quote_column("db0", name, "rowid")
+
+            # MAKE ID COLUMN IF NOT EXISTS
+            parent_full_path = full_path[:full_path.rfind(_A)]+_A
+            parent_path = "$"+parent_full_path[3:]
+
+            with self.columns_locker:
+                db = self.columns.get(parent_full_path)
             if db is None:
-                # CREATE DATABASE
+                # MAKE ID COLUMN TABLE (ROW EXISTS)
                 with self.columns_locker:
-                    db = self.columns[full_path] = Sqlite(
-                        self.dir / concat_field(full_path, "sqlite")
+                    db = self.columns[parent_full_path] = Sqlite(
+                        self.dir / concat_field(parent_full_path, "sqlite")
                     )
-                if type == "array":
-                    self._add_exists(full_path, db)
-                else:
-                    self._add_column(full_path, db)
+                self._add_exists(parent_full_path, db)
+
+                with db.transaction() as t:
+                    t.execute(ConcatSQL(
+                        SQL("ATTACH "),
+                        quote_value(file.abspath),
+                        SQL_AS,
+                        quote_column("db0"),
+                    ))
+                    t.execute(str(ConcatSQL(
+                        SQL_INSERT,
+                        quote_column(parent_full_path),
+                        sql_iso(sql_list(column_names)),
+                        SQL(
+                            f"""
+                            WITH RECURSIVE split(rowid, path, keys, atom, type) AS (
+                                SELECT {rowid}, fullkey, json_array(), atom, type
+                                FROM {table_name}, json_tree({table_name}.data)
+                                WHERE LENGTH(fullkey)-LENGTH(REPLACE(fullkey, '[', '')) == {dims-1}
+                                UNION ALL   
+                                SELECT
+                                    rowid,
+                                    SUBSTR(path, 1, INSTR(path, '[') - 1) || '.~a~' || SUBSTR(path, INSTR(path, ']') + 1 ),      
+                                    json_insert(keys, '$[#]', CAST(SUBSTR(path, INSTR(path,'[')+1, INSTR(path, ']') - INSTR(path, '[') - 1) AS INTEGER)),
+                                    atom,
+                                    type
+                                FROM 
+                                    split
+                                WHERE
+                                    INSTR(path, '[') )
+                        """
+                        ),
+                        SQL_SELECT,
+                        sql_list(selects),
+                        SQL_FROM,
+                        quote_column("split"),
+                        SQL_WHERE,
+                        sql_call("INSTR", quote_column("path"), quote_value(parent_path)),
+                        SQL_EQ,
+                        SQL_ONE,
+                        SQL_GROUPBY,
+                        quote_column("rowid"),
+                        SQL_COMMA,
+                        quote_column("keys")
+                    )))
+                db.query("VACUUM")
+
+            if type == 'array':
+                return
+
+            # CREATE DATABASE FOR COLUMN
+            with self.columns_locker:
+                db = self.columns[full_path] = Sqlite(
+                    self.dir / concat_field(full_path, "sqlite")
+                )
+            self._add_column(full_path, db)
 
             with db.transaction() as t:
-                key_columns = list(get_key_columns(full_path))
-                column_names = list(map(quote_column, key_columns))
-                selects = [quote_column("rowid")]
-                for d in range(dims-1):
-                    selects.append(SQL(f"json_extract(keys, '$[{d}]')"))
-
-                if type != "array":
-                    column_names.append(quote_column("value"))
-                    selects.append(quote_column("atom"))
+                column_names.append(quote_column("value"))
+                selects.append(quote_column("atom"))
 
                 t.execute(ConcatSQL(
                     SQL("ATTACH "),
@@ -204,8 +263,6 @@ class Cluster(object):
                     SQL_AS,
                     quote_column("db0"),
                 ))
-                table_name = str(quote_column("db0", name))
-                rowid = str(quote_column("db0", name, "rowid"))
                 t.execute(str(ConcatSQL(
                     SQL_INSERT,
                     quote_column(full_path),
@@ -215,7 +272,7 @@ class Cluster(object):
                         WITH RECURSIVE split(rowid, path, keys, atom, type) AS (
                             SELECT {rowid}, fullkey, json_array(), atom, type
                             FROM {table_name}, json_tree({table_name}.data)
-                            WHERE {str(sql_eq(type=type))}
+                            WHERE {str(sql_eq(type=type))} AND LENGTH(fullkey)-LENGTH(REPLACE(fullkey, '[', '')) == {quote_value(dims-1)}
                             UNION ALL   
                             SELECT
                                 rowid,
@@ -234,13 +291,10 @@ class Cluster(object):
                     SQL_FROM,
                     quote_column("split"),
                     SQL_WHERE,
-                    sql_eq(path=path + "." + _A)
-                    if type == "array"
-                    else sql_eq(type=type, path=path),
+                    sql_eq(type=type, path=path),
                 )))
             db.query("VACUUM")
 
-        extract_column("$", 'array', False)
         for path, type in columns.data:
             extract_column(path, type, False)
 
