@@ -69,6 +69,9 @@ class Container(_Container):
         self.about = QueryTable("meta.about", self)
         self.next_uid = self._gen_ids()  # A DELIGHTFUL SOURCE OF UNIQUE INTEGERS
 
+    def close(self):
+        self.db.stop()
+
     def _gen_ids(self):
         def output():
             while True:

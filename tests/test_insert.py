@@ -13,31 +13,43 @@ from mo_testing.fuzzytestcase import FuzzyTestCase
 from jx_sqlite import sqlite
 from jx_sqlite.sqlite import sql_create, Sqlite, sql_insert, ConcatSQL, SQL_CREATE, quote_column, sql_alias, sql_list, \
     SQL_SELECT, SQL_AS, SQL, SQL_FROM, SQL_INSERT, quote_value, SQL_COMMA, SQL_LEFT_JOIN, SQL_ON, SQL_GROUPBY, \
-    SQL_CROSS_JOIN
+    SQL_CROSS_JOIN, known_databases
 from mo_columns.cluster import Cluster
 from mo_files import File
 from mo_logs import Log
 from mo_threads import Till, Thread
 from mo_times import Timer, Date
 
-CLUSTER_DIR = "temp/testing"
+CLUSTER_DIR = File("temp/testing")
 
 
 class TestInsert(FuzzyTestCase):
     def setUp(self):
-        File(CLUSTER_DIR).delete()
+        while True:
+            try:
+                CLUSTER_DIR.delete()
+                break
+            except Exception:
+                known_databases
+                Log.info("Could not delete {{file}}", file=CLUSTER_DIR.abspath)
+                Till(seconds=1).wait()
+        self.cluster = Cluster(CLUSTER_DIR / "0")
+
+    def tearDown(self):
+        self.cluster.close()
+        if known_databases:
+            Log.error("not expected")
 
     def test_insert_into_cluster(self):
         result_name = "temp_result"
         File(f"{result_name}.sqlite").delete()
 
-        cluster = Cluster(File(CLUSTER_DIR) / "0")
         data = [{"a": randoms.base64(6), "b": randoms.base64(12)} for _ in range(20)]
-        cluster.insert(data)
+        self.cluster.insert(data)
 
-        self.assertEqual(cluster.count(), 20)
+        self.assertEqual(self.cluster.count(), 20)
         with Timer("get all records"):
-            extract = cluster.to_rows(result_name)
+            extract = self.cluster.to_rows(result_name)
             facts = extract.get_table(result_name)
             result = facts.query({
                 "from": result_name,
@@ -46,16 +58,16 @@ class TestInsert(FuzzyTestCase):
                 "limit": 1000,
             })
             self.assertEqual(len(result.data), 20)
+            extract.close()
 
     def test_insert_many(self):
         sqlite.DEBUG = False
-        num = 10_000  # insert 100000 records (took 31.121 seconds)
+        num = 10_000  # insert 100_000 records (took 31.121 seconds)
         result_name = "temp_result"
         File(f"{result_name}.sqlite").delete()
 
-        cluster = Cluster(File(CLUSTER_DIR) / "0")
         with Timer("insert {{num}} records", {"num": num}):
-            cluster.insert((
+            self.cluster.insert((
                 {
                     "a": randoms.base64(6),
                     "b": randoms.float(),
@@ -65,20 +77,20 @@ class TestInsert(FuzzyTestCase):
             ))
 
         with Timer("time to count"):
-            self.assertEqual(cluster.count(), num)
+            self.assertEqual(self.cluster.count(), num)
 
         with Timer("extract records"):
-            extract = cluster.to_rows(result_name)
+            extract = self.cluster.to_rows(result_name)
+            extract.close()
 
     def test_insert_million(self):
         # sqlite.DEBUG = False
-        num = 1_000  # million => load data (took 69.137 seconds), insert records (took 123.053 seconds)
+        num = 10_000  # million => load data (took 69.137 seconds), insert records (took 123.053 seconds)
         result_name = "temp_result"
         File(f"{result_name}.sqlite").delete()
 
-        cluster = Cluster(File(CLUSTER_DIR) / "0")
         with Timer("insert records"):
-            cluster.insert_using_json((
+            self.cluster.insert_using_json((
                 {
                     "a": randoms.base64(6),
                     "b": randoms.float(),
@@ -90,10 +102,11 @@ class TestInsert(FuzzyTestCase):
             ))
 
         with Timer("time to count"):
-            self.assertEqual(cluster.count(), num)
+            self.assertEqual(self.cluster.count(), num)
 
         with Timer("extract records"):
-            extract = cluster.to_rows(result_name)
+            extract = self.cluster.to_rows(result_name)
+            extract.close()
 
     def test_grid(self):
         # INSERT GRIDS
@@ -102,9 +115,8 @@ class TestInsert(FuzzyTestCase):
         result_name = "temp_result"
         File(f"{result_name}.sqlite").delete()
 
-        cluster = Cluster(File(CLUSTER_DIR) / "0")
         with Timer("insert records"):
-            cluster.insert_using_json((
+            self.cluster.insert_using_json((
                 {
                     "i": i,
                     "d": [[randoms.float() for _ in range(100)] for _ in range(100)]
@@ -113,9 +125,10 @@ class TestInsert(FuzzyTestCase):
             ))
 
         with Timer("extract records"):
-            extract = cluster.to_rows(result_name)
-            rows = extract.get_table(result_name).query({"sort": "i", "limit": 1})
-            self.assertEqual(len(rows), num)
+            extract = self.cluster.to_rows(result_name)
+            result = extract.get_table(result_name).query({"sort": "i", "limit": num})
+            self.assertEqual(len(result.data), num)
+            extract.close()
 
     def test_multiply(self):
         """
@@ -126,7 +139,7 @@ class TestInsert(FuzzyTestCase):
         attributes = [randoms.base64(10) for _ in range(1_000)]
 
         sqlite.DEBUG = True
-        db = Sqlite(filename=File(CLUSTER_DIR)/"pre_data.sqlite")
+        db = Sqlite(filename=CLUSTER_DIR/"pre_data.sqlite")
         db.query("PRAGMA synchronous = OFF")
         with db.transaction() as t:
             t.execute(sql_create("attr", {"name": "text"}))
@@ -226,17 +239,18 @@ class TestInsert(FuzzyTestCase):
                     SQL("f.post"),
                 ))
             timer.stop()
+        db.stop()
 
     def test_multiply_ints(self):
         """
         TEST MULTIPLY GRID WHERE EACH ELEMENT IS ROW (x, y, value)
         """
         sqlite.DEBUG = False
-        num_post = 50_000
+        num_post = 10_000
         attributes = [i for i in range(1_000)]
 
         sqlite.DEBUG = True
-        db = Sqlite(filename=File(CLUSTER_DIR)/"pre_data.sqlite")
+        db = Sqlite(filename=CLUSTER_DIR/"pre_data.sqlite")
         # db = Sqlite()
         db.query("PRAGMA synchronous = OFF")
         with db.transaction() as t:
@@ -329,6 +343,6 @@ class TestInsert(FuzzyTestCase):
                     SQL("f.post"),
                 ))
             timer.stop()
-
+        db.stop()
 
 

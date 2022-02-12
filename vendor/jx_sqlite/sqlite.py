@@ -57,7 +57,7 @@ TOO_LONG_TO_HOLD_TRANSACTION = 10
 _sqlite3 = None
 _load_extension_warning_sent = False
 _upgraded = False
-known_databases = {None: None}
+known_databases = {}
 
 
 def _upgrade():
@@ -131,6 +131,8 @@ class Sqlite(DB):
                 "Not allowed to create more than one Sqlite instance for {{file}}",
                 file=self.filename,
             )
+        else:
+            known_databases[self.filename] = self
         self.debug = debug | DEBUG
         self.trace = coalesce(trace, TRACE) or self.debug
 
@@ -253,8 +255,11 @@ class Sqlite(DB):
         signal.acquire()
         self.queue.add(CommandItem(COMMIT, Data(), signal, None, None))
         signal.acquire()
-        self.worker.stop()
-        return
+        self.worker.stop().join()
+
+    def remove_child(self, child):
+        if child is self.worker:
+            self.worker = None
 
     def close(self):
         Log.error("Use stop()")
@@ -388,6 +393,7 @@ class Sqlite(DB):
             self.closed = True
             self.debug and Log.note("Database is closed")
             self.db.close()
+            del known_databases[self.filename]
 
     def _process_command_item(self, command_item):
         query, result, signal, trace, transaction = command_item

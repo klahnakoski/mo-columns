@@ -10,7 +10,7 @@ import re
 from datetime import datetime, date
 from decimal import Decimal
 
-from mo_dots import split_field, NullType, is_many, is_data, concat_field
+from mo_dots import split_field, NullType, is_many, is_data, concat_field, FlatList
 from mo_future import text, none_type, PY2, long, items, first
 from mo_logs import Log
 from mo_times import Date
@@ -357,6 +357,7 @@ python_type_to_json_type_key = {
     NullType: _J,
     none_type: _J,
     list: _A,
+    FlatList: _A,
     set: _A,
 }
 

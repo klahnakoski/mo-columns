@@ -116,7 +116,7 @@ class Cluster(object):
         :return:
         """
         for path, db in self.columns.items():
-            db.close()
+            db.stop()
 
     def delete(self):
         self.dir.delete()
@@ -314,11 +314,13 @@ class Cluster(object):
         column_values = {_A: []}
 
         def _add(parent_path, key, doc):
+            column_values[parent_path].append(key)
             if is_data(doc):
                 for path, value in leaves(doc):
                     type_key = python_type_to_json_type_key[type(value)]
                     full_path = concat_field(parent_path, path, type_key)
                     if type_key is _A:
+                        column_values.setdefault(full_path, [])
                         for i, d in enumerate(value):
                             _add(full_path, key + (i,), d)
                     else:
@@ -327,6 +329,7 @@ class Cluster(object):
                 type_key = python_type_to_json_type_key[type(doc)]
                 full_path = concat_field(parent_path, type_key)
                 if type_key is _A:
+                    column_values.setdefault(full_path, [])
                     for i, d in enumerate(doc):
                         _add(full_path, key + (i,), d)
                 else:
@@ -336,7 +339,6 @@ class Cluster(object):
             for d in docs:
                 d = from_data(d)
                 doc_id = (self.get_next_id(),)
-                column_values[_A].append(doc_id)
 
                 _id = d.get(GUID)
                 if not _id:
@@ -391,7 +393,7 @@ class Cluster(object):
                 rows=len(docs),
                 cols=len(column_values),
             )
-            column_values = {}
+            column_values = {_A: []}
         return self
 
     def _add_column(self, path, db):
@@ -551,7 +553,7 @@ class Cluster(object):
 
             table_alias = f"c{i}"
             parent_path = path[:path.rfind(_A)] + _A
-            parent =tables[parent_path]
+            parent = tables[parent_path]
             column_name = tail_field(path)[1]
             parent.selects.append(sql_alias(
                 quote_column(table_alias, "value"), column_name

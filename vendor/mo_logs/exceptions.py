@@ -25,6 +25,7 @@ ERROR = "ERROR"
 WARNING = "WARNING"
 ALARM = "ALARM"
 UNEXPECTED = "UNEXPECTED"
+INFO = "INFO"
 NOTE = "NOTE"
 
 
@@ -133,23 +134,25 @@ class Except(Exception):
         if self.trace:
             output += indent(format_trace(self.trace))
 
-        if self.cause:
-            cause_strings = []
-            for c in listwrap(self.cause):
-                try:
-                    cause_strings.append(text(c))
-                except Exception as e:
-                    sys.stderr("Problem serializing cause" + text(c))
-
-            output += "caused by\n\t" + "and caused by\n\t".join(cause_strings)
-
+        output += self.cause_text
         return output
 
-    if PY2:
-        __unicode__ = __str__
+    @property
+    def trace_text(self):
+        return format_trace(self.trace)
 
-        def __str__(self):
-            return self.__unicode__().encode("latin1", "replace")
+    @property
+    def cause_text(self):
+        if not self.cause:
+            return ""
+        cause_strings = []
+        for c in listwrap(self.cause):
+            try:
+                cause_strings.append(text(c))
+            except Exception as e:
+                sys.stderr("Problem serializing cause" + text(c))
+
+        return "caused by\n\t" + "and caused by\n\t".join(cause_strings)
 
     def __data__(self):
         output = to_data({k: getattr(self, k) for k in vars(self)})
@@ -254,15 +257,15 @@ class Explanation(object):
 
     def __enter__(self):
         if self.debug:
-            from mo_logs import Log
+            from mo_logs import logger
 
-            Log.note(self.template, default_params=self.more_params, stack_depth=1)
+            logger.info(self.template, default_params=self.more_params, stack_depth=1)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if isinstance(exc_val, Exception):
-            from mo_logs import Log
+            from mo_logs import logger
 
-            Log.error(
+            logger.error(
                 template="Failure in " + self.template,
                 default_params=self.more_params,
                 cause=exc_val,
@@ -285,15 +288,15 @@ class WarnOnException(object):
 
     def __enter__(self):
         if self.debug:
-            from mo_logs import Log
+            from mo_logs import logger
 
-            Log.note(self.template, default_params=self.more_params, stack_depth=1)
+            logger.info(self.template, default_params=self.more_params, stack_depth=1)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if isinstance(exc_val, Exception):
-            from mo_logs import Log
+            from mo_logs import logger
 
-            Log.warning(
+            logger.warning(
                 template="Ignored failure while " + self.template,
                 default_params=self.more_params,
                 cause=exc_val,
@@ -316,9 +319,9 @@ class AssertNoException(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if isinstance(exc_val, Exception):
-            from mo_logs import Log
+            from mo_logs import logger
 
-            Log.error(template="Not expected to fail", cause=exc_val, stack_depth=1)
+            logger.error(template="Not expected to fail", cause=exc_val, stack_depth=1)
 
             return True
 
