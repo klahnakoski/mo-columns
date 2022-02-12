@@ -6,6 +6,8 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
+import urllib
+from urllib.parse import urlencode
 
 from mo_dots import Data, Null, coalesce, is_data, is_list, to_data, is_many, unwraplist, is_null
 from mo_future import PY2, is_text, text, unichr, urlparse, is_binary
@@ -354,6 +356,7 @@ def value2url_param(value):
         )
     elif is_text(value):
         try:
+            # IF STRING LOOKS LIKE JSON, THEN IT IS AMBIGUOUS, ENCODE IT
             json2value(value)
             output = _encode(value2json(value))
         except Exception:

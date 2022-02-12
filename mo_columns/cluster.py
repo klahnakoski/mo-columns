@@ -57,7 +57,7 @@ from mo_threads import Thread, Lock
 from mo_times import Timer
 
 DEBUG = True
-ID_COLUMN = concat_field(GUID, python_type_to_json_type_key[str])
+ID_COLUMN = concat_field(_A, GUID, python_type_to_json_type_key[str])
 WORKSPACE_DIR = File("temp")
 
 
@@ -311,13 +311,13 @@ class Cluster(object):
         """
         SLOWER THEN OTHER INSERT BECAUSE PYTHON DOES TOO MUCH OF THE WORK
         """
-        column_values = {}
+        column_values = {_A: []}
 
         def _add(parent_path, key, doc):
             if is_data(doc):
                 for path, value in leaves(doc):
                     type_key = python_type_to_json_type_key[type(value)]
-                    full_path = concat_field(concat_field(parent_path, path), type_key)
+                    full_path = concat_field(parent_path, path, type_key)
                     if type_key is _A:
                         for i, d in enumerate(value):
                             _add(full_path, key + (i,), d)
@@ -336,33 +336,52 @@ class Cluster(object):
             for d in docs:
                 d = from_data(d)
                 doc_id = (self.get_next_id(),)
+                column_values[_A].append(doc_id)
+
                 _id = d.get(GUID)
                 if not _id:
-                    _add(".", doc_id, d)
+                    _add(_A, doc_id, d)
                     _id = uuid()
                 else:
-                    _add(".", doc_id, {k: v for k, v in d.items() if k != GUID})
+                    del d[GUID]
+                    _add(_A, doc_id, d)
+                    d[GUID] = _id
                     _id = str(_id)
 
                 column_values.setdefault(ID_COLUMN, []).append((doc_id, _id))
 
             for full_path, data in column_values.items():
                 db = self.columns.get(full_path)
-                if db is None:
-                    # CREATE DATABASE
-                    db = self.columns[full_path] = Sqlite(
-                        self.dir / concat_field(full_path, "sqlite")
-                    )
-                    self._add_column(full_path, db)
-                acc = sql_list((
-                    sql_iso(sql_list((kk, quote_value(v))))
-                    for k, v in data
-                    for kk in [sql_list([quote_value(c) for c in k])]
-                ))
-                columns = sql_iso(sql_list(
-                    list(map(quote_value, get_key_columns(full_path)))
-                    + [quote_value("value")]
-                ))
+                if full_path.endswith(_A):
+                    if db is None:
+                        # CREATE DATABASE
+                        db = self.columns[full_path] = Sqlite(
+                            self.dir / concat_field(full_path, "sqlite")
+                        )
+                        self._add_exists(full_path, db)
+                    acc = sql_list((
+                        sql_iso(sql_list([quote_value(c) for c in k]))
+                        for k in data
+                    ))
+                    columns = sql_iso(sql_list(
+                        list(map(quote_column, get_key_columns(full_path)))
+                    ))
+                else:
+                    if db is None:
+                        # CREATE DATABASE
+                        db = self.columns[full_path] = Sqlite(
+                            self.dir / concat_field(full_path, "sqlite")
+                        )
+                        self._add_column(full_path, db)
+                    acc = sql_list((
+                        sql_iso(sql_list((kk, quote_value(v))))
+                        for k, v in data
+                        for kk in [sql_list([quote_value(c) for c in k])]
+                    ))
+                    columns = sql_iso(sql_list(
+                        list(map(quote_column, get_key_columns(full_path)))
+                        + [quote_column("value")]
+                    ))
                 with db.transaction() as t:
                     t.execute(str(ConcatSQL(
                         SQL_INSERT, quote_column(full_path), columns, SQL_VALUES, acc

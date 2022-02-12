@@ -16,7 +16,7 @@ from math import isnan
 
 from jx_base import DataClass
 from jx_base import Snowflake
-from jx_sqlite.sqlite import quote_column, SQL
+from jx_sqlite.sqlite import quote_column, SQL, SQL_DESC, SQL_ASC
 from mo_dots import (
     Data,
     concat_field,
@@ -342,6 +342,11 @@ type_key_json_type = {
     _B: T_BOOLEAN,
 }
 
+sort_to_sqlite_order = {
+    -1: SQL_DESC,
+    0: SQL_ASC,
+    1: SQL_ASC
+}
 
 class BasicSnowflake(Snowflake):
     def __init__(self, query_paths, columns):

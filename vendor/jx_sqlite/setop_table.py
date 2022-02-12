@@ -50,7 +50,7 @@ from jx_sqlite.utils import (
     UID,
     PARENT,
     table_alias,
-    untype_field,
+    untype_field, sort_to_sqlite_order,
 )
 from mo_dots import (
     Data,
@@ -306,10 +306,7 @@ class SetOpTable(InsertTable):
                 column_alias = _make_column_name(column_number)
                 sql_selects.append(sql_alias(sql, column_alias))
                 sorts.append(quote_column(column_alias) + SQL_IS_NULL)
-                if sort.sort == -1:
-                    sorts.append(quote_column(column_alias) + SQL_DESC)
-                else:
-                    sorts.append(quote_column(column_alias))
+                sorts.append(quote_column(column_alias) + sort_to_sqlite_order[sort.sort])
         for n, _ in self.snowflake.tables:
             sorts.append(quote_column(COLUMN + text(index_to_uid[n])))
         unsorted_sql = self._make_sql_for_one_nest_in_set_op(

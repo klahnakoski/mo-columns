@@ -18,7 +18,7 @@ from mo_future import (
     is_binary,
     text,
     OrderedDict,
-    none_type,
+    none_type, flatten,
 )
 from mo_imports import export
 
@@ -133,7 +133,7 @@ def unliteral_field(field):
 
 def tail_field(field):
     """
-    RETURN THE FIRST STEP IN PATH, ALONG WITH THE REMAINING TAIL
+    RETURN THE FIRST STEP IN PATH, ALONG WITH THE REMAINING TAILf
     IN (first, rest) PAIR
     """
     if field == "." or field == None:
@@ -155,10 +155,12 @@ def split_field(field):
         if field.startswith(".."):
             remainder = field.lstrip(".")
             back = len(field) - len(remainder) - 1
-            return [-1] * back + [UNESCAPE_DOTS.sub(".", k) for k in SPLIT_DOTS.split(remainder) if k]
+            return [".."] * back + [
+                UNESCAPE_DOTS.sub(".", k) for k in SPLIT_DOTS.split(remainder) if k
+            ]
         else:
             return [UNESCAPE_DOTS.sub(".", k) for k in SPLIT_DOTS.split(field) if k]
-    except Exception as cause:
+    except Exception:
         return []
 
 
@@ -172,27 +174,21 @@ def join_field(path):
     if not path:
         return "."
 
-    if path[0] == -1:
-        for i, step in enumerate(path):
-            if step != -1:
-                parents = "." + ("." * i)
-                return parents + ".".join(literal_field(f) for f in path if f != None)
-        return "." + ("." * len(path))
-    output = ".".join(literal_field(f) for f in path if f != None)
-    return output if output else "."
+    prefix = ""
+    while True:
+        try:
+            i = path.index("..")
+            if i==0:
+                prefix += "."
+                path = path[1:]
+            else:
+                path = path[: i - 1] + path[i + 1 :]
+        except ValueError:
+            return ("." if prefix else "") + prefix + ".".join(literal_field(f) for f in path)
 
 
-def concat_field(prefix, suffix):
-    if suffix.startswith(".."):
-        remainder = suffix.lstrip(".")
-        back = len(suffix) - len(remainder) - 1
-        prefix_path = split_field(prefix)
-        if len(prefix_path) >= back:
-            return join_field(split_field(prefix)[:-back] + split_field(remainder))
-        else:
-            return "." * (back - len(prefix_path)) + "." + remainder
-    else:
-        return join_field(split_field(prefix) + split_field(suffix))
+def concat_field(*fields):
+    return join_field(flatten(split_field(f) for f in fields))
 
 
 def startswith_field(field, prefix):
@@ -468,14 +464,13 @@ def _get_attr(obj, path):
         obj = obj[attr_name]
         return _get_attr(obj, path[1:])
     except Exception as f:
-        return None
+        return NullType(obj, attr_name)
 
 
 def _set_attr(obj_, path, value):
     obj = _get_attr(obj_, path[:-1])
-    if (
-        obj is None
-    ):  # DELIBERATE USE OF `is`: WE DO NOT WHAT TO CATCH Null HERE (THEY CAN BE SET)
+    if obj is None:
+        # DELIBERATE USE OF `is`: WE DO NOT WHAT TO CATCH Null HERE (THEY CAN BE SET)
         obj = _get_attr(obj_, path[:-1])
         if obj is None:
             get_logger().error(PATH_NOT_FOUND + " tried to get attribute of None")
@@ -738,6 +733,7 @@ null_types = (none_type, NullType)
 # EXPORT
 export("mo_dots.nones", to_data)
 export("mo_dots.nones", null_types)
+export("mo_dots.nones", get_attr)
 
 export("mo_dots.datas", list_to_data)
 export("mo_dots.datas", dict_to_data)
