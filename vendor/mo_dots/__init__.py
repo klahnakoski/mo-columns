@@ -18,7 +18,7 @@ from mo_future import (
     is_binary,
     text,
     OrderedDict,
-    none_type, flatten,
+    none_type, flatten, first,
 )
 from mo_imports import export
 
@@ -236,11 +236,11 @@ def relative_field(field, parent):
 
 def hash_value(v):
     if is_many(v):
-        return hash(tuple(hash_value(vv) for vv in v))
-    elif _get(v, CLASS) not in data_types:
-        return hash(v)
+        return hash_value(first(v))
+    elif _get(v, CLASS) in data_types:
+        return hash_value(first(v.values()))
     else:
-        return hash(tuple(sorted(hash_value(vv) for vv in v.values())))
+        return hash(v)
 
 
 def fromkeys(keys, value=None):
