@@ -14,7 +14,7 @@ from jx_sqlite import sqlite
 from jx_sqlite.sqlite import sql_create, Sqlite, sql_insert, ConcatSQL, SQL_CREATE, quote_column, sql_alias, sql_list, \
     SQL_SELECT, SQL_AS, SQL, SQL_FROM, SQL_INSERT, quote_value, SQL_COMMA, SQL_LEFT_JOIN, SQL_ON, SQL_GROUPBY, \
     SQL_CROSS_JOIN, known_databases
-from mo_columns.cluster import Cluster
+from mo_columns.shard import Shard
 from mo_files import File
 from mo_logs import Log
 from mo_threads import Till, Thread
@@ -33,23 +33,23 @@ class TestInsert(FuzzyTestCase):
                 known_databases
                 Log.info("Could not delete {{file}}", file=CLUSTER_DIR.abspath)
                 Till(seconds=1).wait()
-        self.cluster = Cluster(CLUSTER_DIR / "0")
+        self.shard = Shard(CLUSTER_DIR / "0")
 
     def tearDown(self):
-        self.cluster.close()
+        self.shard.close()
         if known_databases:
             Log.error("not expected")
 
-    def test_insert_into_cluster(self):
+    def test_insert_into_shard(self):
         result_name = "temp_result"
         File(f"{result_name}.sqlite").delete()
 
         data = [{"a": randoms.base64(6), "b": randoms.base64(12)} for _ in range(20)]
-        self.cluster.insert(data)
+        self.shard.insert(data)
 
-        self.assertEqual(self.cluster.count(), 20)
+        self.assertEqual(self.shard.count(), 20)
         with Timer("get all records"):
-            extract = self.cluster.to_rows(result_name)
+            extract = self.shard.to_rows(result_name)
             facts = extract.get_table(result_name)
             result = facts.query({
                 "from": result_name,
@@ -67,7 +67,7 @@ class TestInsert(FuzzyTestCase):
         File(f"{result_name}.sqlite").delete()
 
         with Timer("insert {{num}} records", {"num": num}):
-            self.cluster.insert((
+            self.shard.insert((
                 {
                     "a": randoms.base64(6),
                     "b": randoms.float(),
@@ -77,10 +77,10 @@ class TestInsert(FuzzyTestCase):
             ))
 
         with Timer("time to count"):
-            self.assertEqual(self.cluster.count(), num)
+            self.assertEqual(self.shard.count(), num)
 
         with Timer("extract records"):
-            extract = self.cluster.to_rows(result_name)
+            extract = self.shard.to_rows(result_name)
             extract.close()
 
     def test_insert_million(self):
@@ -90,7 +90,7 @@ class TestInsert(FuzzyTestCase):
         File(f"{result_name}.sqlite").delete()
 
         with Timer("insert records"):
-            self.cluster.insert_using_json((
+            self.shard.insert_using_json((
                 {
                     "a": randoms.base64(6),
                     "b": randoms.float(),
@@ -102,10 +102,10 @@ class TestInsert(FuzzyTestCase):
             ))
 
         with Timer("time to count"):
-            self.assertEqual(self.cluster.count(), num)
+            self.assertEqual(self.shard.count(), num)
 
         with Timer("extract records"):
-            extract = self.cluster.to_rows(result_name)
+            extract = self.shard.to_rows(result_name)
             extract.close()
 
     def test_grid(self):
@@ -116,7 +116,7 @@ class TestInsert(FuzzyTestCase):
         File(f"{result_name}.sqlite").delete()
 
         with Timer("insert records"):
-            self.cluster.insert_using_json((
+            self.shard.insert_using_json((
                 {
                     "i": i,
                     "d": [[randoms.float() for _ in range(100)] for _ in range(100)]
@@ -125,7 +125,7 @@ class TestInsert(FuzzyTestCase):
             ))
 
         with Timer("extract records"):
-            extract = self.cluster.to_rows(result_name)
+            extract = self.shard.to_rows(result_name)
             result = extract.get_table(result_name).query({"sort": "i", "limit": num})
             self.assertEqual(len(result.data), num)
             extract.close()

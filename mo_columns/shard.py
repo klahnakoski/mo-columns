@@ -61,7 +61,7 @@ ID_COLUMN = concat_field(_A, GUID, python_type_to_json_type_key[str])
 WORKSPACE_DIR = File("temp")
 
 
-class Cluster(object):
+class Shard(object):
     """
     A database
     """
@@ -106,7 +106,7 @@ class Cluster(object):
 
     def open(self):
         """
-        open cluster for record insertion
+        open shard for record insertion
         :return:
         """
 

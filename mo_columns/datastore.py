@@ -13,7 +13,7 @@ from math import floor, log
 from mo_logs import Log
 
 from jx_sqlite.sqlite import Sqlite, quote_column, sql_list
-from mo_columns.cluster import Cluster
+from mo_columns.shard import Shard
 from mo_dots import Null
 from mo_future import sort_using_key
 from mo_threads import Lock, Till, Thread
@@ -37,108 +37,108 @@ class Datastore(object):
         self.name = name
         self.dir = File(dir)
         self.schema = T_JSON
-        self.active_cluster = None
-        self.cluster_locker = Lock(self.dir.abspath + " clusters")
-        self.clusters = [
-            Cluster(d)
+        self.active_shard = None
+        self.shard_locker = Lock(self.dir.abspath + " shards")
+        self.shards = [
+            Shard(d)
             for d in self.dir.children
             if d.is_directory() and not d.name.startswith(IGNORE_PREFIX)
         ]
-        if not self.clusters:
-            self.max_cluster = START_CLUSTER_NAME
-            self.active_cluster = Cluster(self.dir / self._next_cluster())
+        if not self.shards:
+            self.max_shard = START_CLUSTER_NAME
+            self.active_shard = Shard(self.dir / self._next_shard())
         else:
-            self.max_cluster = max(int(c.dir.name) for c in self.clusters)
+            self.max_shard = max(int(c.dir.name) for c in self.shards)
         self.merge_thread = Thread.run(
             "merge daemon for " + self.dir.abspath, self._merge_worker
         )
         min_size = MAX_INT
-        for c in self.clusters:
+        for c in self.shards:
             bs = c.bytes()
             if bs < min_size:
-                self.active_cluster = c
+                self.active_shard = c
                 min_size = bs
 
-        self.active_cluster.open()
+        self.active_shard.open()
         # TODO: SWITCH TO MERGE ALL DATABASES INTO ONE?  DOES IT MATTER?  DOES ZIP WORK?
 
-    def _next_cluster(self):
-        self.max_cluster = (START_CLUSTER_NAME + str(int(self.max_cluster) + 1))[-CLUSTER_NAME_LENGTH:]
-        return self.max_cluster
+    def _next_shard(self):
+        self.max_shard = (START_CLUSTER_NAME + str(int(self.max_shard) + 1))[-CLUSTER_NAME_LENGTH:]
+        return self.max_shard
 
-    def insert(self, documents) -> Cluster:
+    def insert(self, documents) -> Shard:
         """
         LOAD documents INTO SQLITE DATABASES REPRESENTING COLUMNS
         :param documents:
-        :return: cluster
+        :return: shard
         """
-        if self.active_cluster.bytes() > MIN_CLUSTER_SIZE:
+        if self.active_shard.bytes() > MIN_CLUSTER_SIZE:
             # MAKE NEW CLUSTER
-            self.active_cluster.close()
-            self.clusters.append(self.active_cluster)
-            self.active_cluster = Cluster(self.dir / self._next_cluster())
+            self.active_shard.close()
+            self.shards.append(self.active_shard)
+            self.active_shard = Shard(self.dir / self._next_shard())
 
-        return self.active_cluster.add(documents)
+        return self.active_shard.add(documents)
 
-    def _merge(self, *clusters) -> Cluster:
+    def _merge(self, *shards) -> Shard:
         """
         MERGE A NUMBER OF CLUSTERS INTO ONE
-        :param clusters: list of clusters
-        :return: merged cluster
+        :param shards: list of shards
+        :return: merged shard
         """
-        new_schema = union_type(*(c.schema for c in clusters))
-        new_cluster = Cluster(File(IGNORE_PREFIX + self._next_cluster()))
+        new_schema = union_type(*(c.schema for c in shards))
+        new_shard = Shard(File(IGNORE_PREFIX + self._next_shard()))
 
         for path in new_schema:
             # ATTACH CLUSTERS WITH COLUMN
             existing_column_files = [
-                c.dir / path for c in self.clusters if path in c.schema
+                c.dir / path for c in self.shards if path in c.schema
             ]
-            db = new_cluster.columns[path] = Sqlite(new_cluster.dir / path)
+            db = new_shard.columns[path] = Sqlite(new_shard.dir / path)
             with db.transaction() as t:
                 t.execute(";\n".join(
                     f"ATTACH {f} AS db{i}" for i, f in enumerate(existing_column_files)
                 ))
-                new_cluster._add_column(path, db)
+                new_shard._add_column(path, db)
                 key_columns = sql_list(list(map(quote_column, get_key_columns(path))))
                 t.execute(
                     f"INSERT INTO {quote_column(path)}({key_columns}, value)"
                     + " UNION ALL ".join(
                         f"SELECT {key_columns}, value FROM db{i}.{quote_column(path)}"
-                        for i, _ in enumerate(clusters)
+                        for i, _ in enumerate(shards)
                     )
                 )
             db.close()
-        return new_cluster
+        return new_shard
 
     def _merge_worker(self, please_stop):
         while not please_stop:
             (please_stop | Till(seconds=30)).wait()
-            if not self.clusters:
+            if not self.shards:
                 continue
 
             while not please_stop:
-                clusters = list(sort_using_key(
-                    [(c.bytes(), c) for c in self.clusters], lambda s: s[0]
+                shards = list(sort_using_key(
+                    [(c.bytes(), c) for c in self.shards], lambda s: s[0]
                 ))
-                scale = floor(log(clusters[0][0]) / log(3))
+                scale = floor(log(shards[0][0]) / log(3))
                 min_size = pow(3, scale)
                 max_size = min_size * MERGE_RATIO
-                if any(b >= max_size for b, _ in clusters[0:MERGE_RATIO]):
+                if any(b >= max_size for b, _ in shards[0:MERGE_RATIO]):
                     break
 
-                old_clusters = self.clusters[0:MERGE_RATIO]
-                merged = self._merge(*old_clusters)
-                with self.cluster_locker:
+                old_shards = self.shards[0:MERGE_RATIO]
+                merged = self._merge(*old_shards)
+                with self.shard_locker:
                     # DROP OLD CLUSTERS
                     new_dir = merged.dir.parent / merged.dir.name[len(IGNORE_PREFIX) :]
-                    self.clusters = [Cluster(new_dir)] + self.clusters[MERGE_RATIO:]
+                    self.shards = [Shard(new_dir)] + self.shards[MERGE_RATIO:]
                     os.rename(merged.dir.abspath, new_dir.abspath)
                     # START DANGER - RESTART WILL SCAN THIS dir WITH EXTRA CLUSTERS
 
-                with Timer("delete old clusters"):
+                with Timer("delete old shards"):
                     to_delete = []
-                    for c in old_clusters:
+                    for c in old_shards:
                         c.db.close()
                         temp = c.dir.parent / (IGNORE_PREFIX + c.dir.name)
                         to_delete.append(temp)
@@ -150,11 +150,11 @@ class Datastore(object):
     def delete(self):
         self.dir.delete()
 
-    def query(self, query) -> Cluster:
+    def query(self, query) -> Shard:
         """
         SIMPLE AGGREGATE OVER SOME SUBSET, GROUPED BY SOME OTHER COLUMNS
         :param query:
-        :return: cluster
+        :return: shard
         """
 
 
@@ -168,9 +168,9 @@ class Datastore(object):
 
         # BROADCAST QUERY
         result=[]
-        for c in self.clusters:
+        for c in self.shards:
             result.append(c.get_document)
-        result.append(self.active_cluster.query(query))
+        result.append(self.active_shard.query(query))
         return result
 
         # AGGREGATE RESULT
@@ -180,7 +180,7 @@ class Datastore(object):
 
 
 
-    def matmul(self, a, b) -> Cluster:
+    def matmul(self, a, b) -> Shard:
         """
         ASSUMING a AND b REFER TO MULTIDIMENSIONAL ARRAYS
         :return: MATRIX MULTIPLY IN A CLUSTER
