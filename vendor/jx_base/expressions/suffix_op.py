@@ -34,7 +34,7 @@ class SuffixOp(Expression):
     data_type = T_BOOLEAN
 
     def __init__(self, expr, suffix):
-        Expression.__init__(self, (expr, suffix))
+        Expression.__init__(self, expr, suffix)
         self.expr = expr
         self.suffix = suffix
 

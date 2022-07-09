@@ -25,7 +25,7 @@ WhenOp = expect("WhenOp")
 
 class FirstOp(Expression):
     def __init__(self, term):
-        Expression.__init__(self, [term])
+        Expression.__init__(self, term)
         self.term = term
         self.data_type = self.term.type
 

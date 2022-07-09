@@ -20,7 +20,7 @@ from mo_json import OBJECT
 
 class LastOp(Expression):
     def __init__(self, term):
-        Expression.__init__(self, [term])
+        Expression.__init__(self, term)
         self.term = term
         self.data_type = self.term.type
 

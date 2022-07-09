@@ -87,14 +87,14 @@ class Variable(Expression):
                     "name": self.var,
                     "value": QueryOp(
                         frum=schema.container.get_table(path),
-                        select=SelectOp([
+                        select=SelectOp(schema, (
                             {
                                 "name": rel_name,
                                 "value": Variable(leaf.es_column, leaf.jx_type),
                                 "aggregate": NULL
                             }
                             for rel_name, leaf in leaves
-                        ])
+                        ))
                     ),
                     "aggregate": NULL
                 })

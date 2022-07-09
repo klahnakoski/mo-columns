@@ -12,11 +12,11 @@ from __future__ import absolute_import, division, unicode_literals
 from uuid import uuid4
 
 from jx_base.expressions import jx_expression
-from jx_base.facts import Facts
-from jx_base.namespace import Namespace
-from jx_base.snowflake import Snowflake
-from jx_base.table import Table
-from jx_base.container import Container
+from jx_base.models.facts import Facts
+from jx_base.models.namespace import Namespace
+from jx_base.models.snowflake import Snowflake
+from jx_base.models.table import Table
+from jx_base.models.container import Container
 from jx_python.expressions import Literal
 from mo_dots import coalesce, listwrap, to_data
 from mo_dots.datas import register_data
@@ -261,7 +261,7 @@ TableDesc = DataClass(
 )
 
 
-from jx_base.container import Container
+from jx_base.models.container import Container
 
 Column = DataClass(
     "Column",

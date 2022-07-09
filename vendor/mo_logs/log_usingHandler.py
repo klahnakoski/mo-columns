@@ -13,7 +13,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 import logging
 
-from mo_dots import unwrap, dict_to_data
+from mo_dots import from_data, dict_to_data
 from mo_imports import delay_import
 from mo_kwargs import override
 
@@ -24,20 +24,22 @@ from mo_logs.strings import expand_template
 
 Log = delay_import("mo_logs.Log")
 
+
 # WRAP PYTHON CLASSIC logger OBJECTS
 class StructuredLogger_usingHandler(StructuredLogger):
     @override("settings")
     def __init__(self, settings):
-        dummy = Log.trace  # REMOVE ME
-        Log.trace = True  # ENSURE TRACING IS ON SO DETAILS ARE CAPTURED
+        try:
+            Log.trace = True  # ENSURE TRACING IS ON SO DETAILS ARE CAPTURED
+        except Exception as cause:
+            Log.trace = True
         self.count = 0
-        self.logger = logging.Logger("mo-logs", level=logging.INFO)
-        self.logger.addHandler(make_handler_from_settings(settings))
+        self.handler = make_handler_from_settings(settings)
 
     def write(self, template, params):
         record = logging.LogRecord(
             name="mo-logs",
-            level=_context_to_level[params.context],
+            level=_severity_to_level[params.severity],
             pathname=params.location.file,
             lineno=params.location.line,
             msg=expand_template(template.replace(STACKTRACE, ""), params),
@@ -52,12 +54,12 @@ class StructuredLogger_usingHandler(StructuredLogger):
         record.exc_text=expand_template(template, params)
         for k, v in params.params.leaves():
             setattr(record, k, v)
-        self.logger.handle(record)
+        self.handler.handle(record)
         self.count += 1
 
     def stop(self):
-        # self.logger.shutdown()
-        pass
+        self.handler.flush()
+        self.handler.close()
 
 
 def make_handler_from_settings(settings):
@@ -89,7 +91,7 @@ def make_handler_from_settings(settings):
     settings["cls"] = None
     settings["log_type"] = None
     settings["settings"] = None
-    params = unwrap(settings)
+    params = from_data(settings)
     try:
         log_instance = constructor(**params)
         return log_instance
@@ -97,7 +99,7 @@ def make_handler_from_settings(settings):
         logger.error("problem with making handler", cause=cause)
 
 
-_context_to_level = {
+_severity_to_level = {
     FATAL: logging.CRITICAL,
     ERROR: logging.ERROR,
     WARNING: logging.WARNING,

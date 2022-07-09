@@ -13,7 +13,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 from mo_threads import Queue, THREAD_STOP, Thread, Till
 
-from mo_logs import Except, logger
+from mo_logs import Except, Log
 from mo_logs.log_usingNothing import StructuredLogger
 
 DEBUG = False
@@ -52,10 +52,10 @@ class StructuredLogger_usingThread(StructuredLogger):
             self.queue.add(THREAD_STOP)  # BE PATIENT, LET REST OF MESSAGE BE SENT
             self.thread.join()
         except Exception as e:
-            logger.info("problem in threaded logger" + str(e))
+            Log.info("problem in threaded logger" + str(e))
 
 
-def worker(logger, queue, period, please_stop):
+def worker(logger: StructuredLogger, queue, period, please_stop):
     please_stop.then(lambda: queue.close)
 
     try:
@@ -74,8 +74,11 @@ def worker(logger, queue, period, please_stop):
         for log in queue.pop_all():
             if log is not THREAD_STOP:
                 logger.write(**log)
+
+        logger.stop()
     except Exception as e:
         import sys
+        e = Except.wrap(e)
 
         sys.stderr.write(
             "problem in " + StructuredLogger_usingThread.__name__ + ": " + str(e)

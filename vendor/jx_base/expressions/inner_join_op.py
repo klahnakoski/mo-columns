@@ -28,7 +28,7 @@ class InnerJoinOp(Expression):
 
     __slots__ = ["frum", "nests"]
 
-    def __init__(self, frum, nests):
+    def __init__(self, *frum, nests):
         """
         A SEQUENCE OF NESTED (INNER) JOINS FOR A QUERY
         :param frum: THE TABLE OF DOCUMENTS

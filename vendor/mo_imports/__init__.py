@@ -12,7 +12,7 @@ from __future__ import absolute_import, division, unicode_literals
 import importlib
 import sys
 from threading import Thread, Event
-from time import time, sleep
+from time import time
 
 from mo_future import text, allocate_lock
 
@@ -217,7 +217,6 @@ def delay_import(module):
     """
     globals = sys._getframe(1).f_globals
     caller_name = globals["__name__"]
-
     return DelayedImport(caller_name, module)
 
 
@@ -225,14 +224,15 @@ class DelayedImport(object):
     __slots__ = ["caller", "module"]
 
     def __init__(self, caller, module):
+        if not caller:
+            _error("Can not get name of calling module")
+
         _set(self, "caller", caller)
         _set(self, "module", module)
 
     def _import_now(self):
         module = _get(self, "module")
         caller_name = _get(self, "caller")
-        if not caller_name:
-            return module
 
         # FIND MODULE VARIABLE THAT HOLDS self
         caller = importlib.import_module(caller_name)
@@ -248,18 +248,23 @@ class DelayedImport(object):
             _error("Can not find variable holding a " + self.__class__.__name__)
 
         path = module.split(".")
-        module_name, short_name = ".".join(path[:-1]), path[-1]
         try:
-            m = importlib.import_module(module_name)
-            val = getattr(m, short_name)
-            _set(self, "module", val)
-            _set(self, "caller", None)
-
-            for n in names:
-                setattr(caller, n, val)
-            return val
+            if len(path)==1:
+                module_name = path[0]
+                val = importlib.import_module(module_name)
+            else:
+                module_name, short_name = ".".join(path[:-1]), path[-1]
+                m = importlib.import_module(module_name)
+                val = getattr(m, short_name)
         except Exception as cause:
             _error("Can not load " + _get(self, "module") + " caused by " + text(cause))
+
+        _set(self, "module", val)
+        _set(self, "caller", None)
+
+        for n in names:
+            setattr(caller, n, val)
+        return val
 
     def __call__(self, *args, **kwargs):
         m = DelayedImport._import_now(self)
@@ -270,5 +275,67 @@ class DelayedImport(object):
         return m[item]
 
     def __getattribute__(self, item):
+        if item == "__class__":
+            # reflective code, like in unittest, need to know what this is
+            return DelayedImport
         m = DelayedImport._import_now(self)
         return getattr(m, item)
+
+    def __setattr__(self, item, value):
+        m = DelayedImport._import_now(self)
+        return setattr(m, item, value)
+
+
+class DelayedValue(object):
+    """
+    can be used on module-level variables to delay creation
+    """
+    __slots__ = ["builder", "caller"]
+
+    def __init__(self, builder):
+        globals = sys._getframe(1).f_globals
+        caller_name = globals["__name__"]
+        caller = importlib.import_module(caller_name)
+        _set(self, "builder", builder)
+        _set(self, "caller", caller)
+
+    def _build(self):
+        caller = _get(self, "caller")
+        name = ""
+        for n in dir(caller):
+            try:
+                if getattr(caller, n) is self:
+                    name = n
+                    break
+            except Exception:
+                pass
+        else:
+            _error("Can not find variable holding a " + self.__class__.__name__)
+
+        value = _get(self, "builder")()
+        setattr(caller, name, value)
+        return value
+
+    def __call__(self, *args, **kwargs):
+        m = DelayedValue._build(self)
+        return m(*args, **kwargs)
+
+    def __contains__(self, item):
+        m = DelayedValue._build(self)
+        return item in m
+
+    def __getitem__(self, item):
+        m = DelayedValue._build(self)
+        return m[item]
+
+    def __getattribute__(self, item):
+        if item == "__class__":
+            # reflective code, like in unittest, need to know what this is
+            return DelayedImport
+        m = DelayedValue._build(self)
+        return getattr(m, item)
+
+    def __setattr__(self, item, value):
+        m = DelayedValue._build(self)
+        return setattr(m, item, value)
+

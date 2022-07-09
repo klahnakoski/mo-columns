@@ -36,7 +36,7 @@ class BasicInOp(Expression):
                 return EqOp([name, Literal([value.value])])
         return object.__new__(cls)
 
-    def __init__(self, term):
+    def __init__(self, *term):
         Expression.__init__(self, term)
         self.value, self.superset = term
         if self.value is None:

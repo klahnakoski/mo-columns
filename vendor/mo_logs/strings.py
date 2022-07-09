@@ -46,7 +46,6 @@ from mo_logs.convert import (
 )
 
 Log = delay_import("mo_logs.Log")
-json_encoder = delay_import("mo_json.encoder.json_encoder")
 Except = delay_import("mo_logs.exceptions.Except")
 Duration = delay_import("mo_times.durations.Duration")
 
@@ -186,7 +185,7 @@ def json(value, pretty=True):
     :param pretty:
     :return:
     """
-    return json_encoder(value, pretty=pretty)
+    return _json_encoder(value, pretty=pretty)
 
 
 @formatter
@@ -243,7 +242,7 @@ def outdent(value):
                 num = min(num, len(l) - len(l.lstrip()))
         return CR.join([l[num:] for l in lines])
     except Exception as e:
-        logger.error("can not outdent value", e)
+        Log.error("can not outdent value", e)
 
 
 @formatter
@@ -509,7 +508,7 @@ def limit(value, length):
             rhs = length - len(_SNIP) - lhs
             return value[:lhs] + _SNIP + value[-rhs:]
     except Exception as e:
-        logger.error("Not expected", cause=e)
+        Log.error("Not expected", cause=e)
 
 
 @formatter
@@ -625,7 +624,7 @@ def _expand(template, seq):
     elif is_list(template):
         return "".join(_expand(t, seq) for t in template)
     else:
-        logger.error("can not handle")
+        Log.error("can not handle")
 
 
 def _simple_expand(template, seq):
@@ -665,7 +664,7 @@ def _simple_expand(template, seq):
                     val = toString(val)
                     return val
             except Exception as f:
-                logger.warning(
+                Log.warning(
                     "Can not expand "
                     + "|".join(ops)
                     + " in template: {{template_|json}}",
@@ -681,9 +680,9 @@ def toString(val):
     if val == None:
         return ""
     elif is_data(val) or is_many(val):
-        return json_encoder(val, pretty=True)
+        return json(val, pretty=True)
     elif hasattr(val, "__data__"):
-        return json_encoder(val.__data__(), pretty=True)
+        return json(val.__data__(), pretty=True)
     elif hasattr(val, "__json__"):
         return val.__json__()
     elif isinstance(val, Duration):
@@ -702,14 +701,14 @@ def toString(val):
         try:
             return val.decode("latin1")
         except Exception as e:
-            logger.error(
+            Log.error(
                 text(type(val)) + " type can not be converted to unicode", cause=e
             )
     else:
         try:
             return text(val)
         except Exception as e:
-            logger.error(
+            Log.error(
                 text(type(val)) + " type can not be converted to unicode", cause=e
             )
 
@@ -786,7 +785,7 @@ def apply_diff(text, diff, reverse=False, verify=True):
     for header, hunk_body in reversed(hunks) if reverse else hunks:
         matches = DIFF_PREFIX.match(header.strip())
         if not matches:
-            logger.error("Can not handle \n---\n{{diff}}\n---\n", diff=diff)
+            Log.error("Can not handle \n---\n{{diff}}\n---\n", diff=diff)
 
         removes = tuple(
             int(i.strip()) for i in matches.group(1).split(",")
@@ -875,7 +874,7 @@ def apply_diff(text, diff, reverse=False, verify=True):
                 if t in ["reports: https://goo.gl/70o6w6\r"]:
                     break  # KNOWN INCONSISTENCIES
                 if t != o:
-                    logger.error("logical verification check failed")
+                    Log.error("logical verification check failed")
                     break
 
     return output
@@ -896,3 +895,22 @@ def pairwise(values):
     for b in i:
         yield (a, b)
         a = b
+
+
+def _json_encoder(value, pretty):
+    global _json_encoder
+
+    try:
+        from mo_json.encoder import json_encoder as encoder
+    except:
+        from json import dumps
+
+        def encoder(value, pretty):
+            if pretty:
+                return dumps(value, indent=4)
+
+    _json_encoder = encoder
+    return encoder(value, pretty)
+
+
+

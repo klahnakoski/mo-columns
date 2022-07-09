@@ -19,7 +19,7 @@ from mo_json.types import T_TEXT
 class IsTextOp(Expression):
     data_type = T_TEXT
 
-    def __init__(self, term):
+    def __init__(self, *term):
         Expression.__init__(self, [term])
         self.term = term
 

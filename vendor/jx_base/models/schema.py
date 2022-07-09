@@ -156,7 +156,7 @@ def _indexer(columns, query_path):
 
     if query_path != ".":
         # ADD ABSOLUTE NAMES TO THE NAMESAPCE
-        absolute_lookup, more_leaves, more_variables = _indexer(columns, ".")
+        absolute_lookup, more_leaves, more_variables = _indexer(columns, "..")
         for k, cs in absolute_lookup.items():
             if k not in relative_lookup:
                 relative_lookup[k] = cs

@@ -25,10 +25,10 @@ from mo_logs import Log
 
 
 class WhenOp(Expression):
-    def __init__(self, term, **clauses):
-        Expression.__init__(self, [term])
+    def __init__(self, when, **clauses):
+        Expression.__init__(self, when)
 
-        self.when = term
+        self.when = when
         self.then = clauses.get("then", NULL)
         self.els_ = clauses.get("else", NULL)
         self.data_type = self.then.type | self.els_.type

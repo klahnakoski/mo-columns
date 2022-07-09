@@ -24,8 +24,8 @@ class OrOp(Expression):
     data_type = T_BOOLEAN
     default = FALSE  # ADD THIS TO terms FOR NO EEFECT
 
-    def __init__(self, terms):
-        Expression.__init__(self, terms)
+    def __init__(self, *terms):
+        Expression.__init__(self, *terms)
         self.terms = terms
 
     def __data__(self):

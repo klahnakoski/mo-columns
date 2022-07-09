@@ -20,7 +20,7 @@ from mo_json.types import T_BOOLEAN
 class SqlNotOp(Expression):
     data_type = T_BOOLEAN
 
-    def __init__(self, term):
+    def __init__(self, *term):
         """
         EMPTY STRINGS AND `0` ARE TREATED AS FALSE
         """
