@@ -84,8 +84,9 @@ class TestInsert(FuzzyTestCase):
             extract.close()
 
     def test_insert_million(self):
-        # sqlite.DEBUG = False
-        num = 100_000  # million => load data (took 69.137 seconds), insert records (took 123.053 seconds)
+        # million => load data (took 69.137 seconds), insert records (took 123.053 seconds)
+        # million (no index) => load data (took 78.568 seconds), insert records (took 183.952 seconds)
+        num = 100_000
         result_name = "temp_result"
         File(f"{result_name}.sqlite").delete()
 

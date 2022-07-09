@@ -406,11 +406,12 @@ class Shard(object):
             ))
 
             # CREATE INDEX
-            key_columns = list(map(quote_column, get_key_columns(path)))
-            key_list = sql_list(key_columns)
-            t.execute(
-                f"""CREATE INDEX {quote_column(f"index_{path}")} ON {quote_column(path)} (value, {key_list})"""
-            )
+            Log.info("index is not created")
+            # key_columns = list(map(quote_column, get_key_columns(path)))
+            # key_list = sql_list(key_columns)
+            # t.execute(
+            #     f"""CREATE INDEX {quote_column(f"index_{path}")} ON {quote_column(path)} (value, {key_list})"""
+            # )
 
     def _add_exists(self, path, db):
         """
