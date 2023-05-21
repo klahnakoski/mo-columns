@@ -2,3 +2,5 @@
 .svn
 temp/
 /million.sqlite
+__pycache__
+/zstd.exe
