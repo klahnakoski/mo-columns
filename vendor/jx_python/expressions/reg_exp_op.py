@@ -9,11 +9,11 @@
 #
 from __future__ import absolute_import, division, unicode_literals
 
-from jx_base.expressions import RegExpOp as RegExpOp_
+from jx_base.expressions import RegExpOp as _RegExpOp
 from mo_logs.strings import quote
 
 
-class RegExpOp(RegExpOp_):
+class RegExpOp(_RegExpOp):
     def to_python(self, not_null=False, boolean=False, many=False):
         return (
             "re.match("

@@ -7,11 +7,19 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
+<<<<<<< .mine
 from __future__ import absolute_import, division, unicode_literals
 
 from jx_base.expressions import MulOp as MulOp_
+||||||| .r1729
+
+
+from jx_base.expressions import MulOp as MulOp_
+=======
+from jx_base.expressions import MulOp as _MulOp
+>>>>>>> .r2071
 from jx_sqlite.expressions._utils import multiop_to_sql
 
 
-class MulOp(MulOp_):
+class MulOp(_MulOp):
     to_sql = multiop_to_sql

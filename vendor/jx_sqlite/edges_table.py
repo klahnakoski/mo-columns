@@ -7,12 +7,20 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
+<<<<<<< .mine
 
 
 from __future__ import absolute_import, division, unicode_literals
 
 import mo_math
 
+||||||| .r1729
+
+
+
+
+=======
+>>>>>>> .r2071
 from jx_base.expressions import (
     ToBooleanOp,
     NULL,
@@ -21,6 +29,7 @@ from jx_base.expressions import (
     FALSE,
     SelectOp,
     WhenOp,
+<<<<<<< .mine
     CaseOp,
     CountOp,
     PercentileOp,
@@ -29,14 +38,32 @@ from jx_base.expressions import (
     AndOp,
     UnionOp,
 )
+||||||| .r1729
+    CaseOp, CountOp, PercentileOp, CardinalityOp, OrOp, AndOp, UnionOp, )
+=======
+    CaseOp,
+    CountOp,
+    PercentileOp,
+    CardinalityOp,
+    OrOp,
+    AndOp,
+    UnionOp,
+    ZERO,
+)
+>>>>>>> .r2071
 from jx_base.language import is_op
 from jx_python import jx
 from jx_sqlite.expressions._utils import SQLang
 from jx_sqlite.expressions.tuple_op import TupleOp
 from jx_sqlite.expressions.variable import Variable
 from jx_sqlite.setop_table import SetOpTable
+<<<<<<< .mine
 from jx_sqlite.sqlite import *
 from jx_sqlite.sqlite import quote_column, quote_value, sql_alias
+||||||| .r1729
+from mo_sqlite import quote_column, quote_value, sql_alias
+=======
+>>>>>>> .r2071
 from jx_sqlite.utils import (
     ColumnMapping,
     STATS,
@@ -53,19 +80,34 @@ from jx_sqlite.utils import (
 )
 from mo_dots import (
     coalesce,
-    concat_field,
     startswith_field,
-    to_data,
     is_missing,
     Null,
 )
 from mo_future import text
 from mo_json import (
+<<<<<<< .mine
     NUMBER,
     T_BOOLEAN,
     json_type_to_simple_type,
+||||||| .r1729
+    NUMBER, JX_BOOLEAN,
+    jx_type_to_json_type,
+=======
+    NUMBER,
+    JX_BOOLEAN,
+    jx_type_to_json_type,
+>>>>>>> .r2071
 )
 from mo_logs import Log
+<<<<<<< .mine
+||||||| .r1729
+from mo_sql.utils import untyped_column, sql_type_key_to_json_type
+=======
+from mo_sql.utils import sql_type_key_to_json_type
+from mo_sqlite import *
+from mo_sqlite import quote_column, quote_value, sql_alias
+>>>>>>> .r2071
 
 EXISTS_COLUMN = quote_column("__exists__")
 
@@ -76,10 +118,7 @@ class EdgesTable(SetOpTable):
         index_to_column = {}  # MAP FROM INDEX TO COLUMN (OR SELECT CLAUSE)
         outer_selects = []  # EVERY SELECT CLAUSE (NOT TO BE USED ON ALL TABLES, OF COURSE)
         base_table, path = schema.snowflake.fact_name, schema.nested_path
-        nest_to_alias = {
-            nested_path: table_alias(i)
-            for i, (nested_path, sub_table) in enumerate(self.snowflake.tables)
-        }
+        nest_to_alias = {sub_table: table_alias(i) for i, sub_table in enumerate(self.snowflake.tables)}
 
         tables = []
         for n, a in nest_to_alias.items():
@@ -87,13 +126,11 @@ class EdgesTable(SetOpTable):
                 tables.append({"nest": n, "alias": a})
         tables = jx.sort(tables, {"value": {"length": "nest"}})
 
-        from_sql = [sql_alias(
-            quote_column(concat_field(base_table, tables[0].nest)), tables[0].alias
-        )]
+        from_sql = [sql_alias(quote_column(tables[0].nest), tables[0].alias)]
         for previous, t in zip(tables, tables[1::]):
             from_sql.append(ConcatSQL(
                 SQL_LEFT_JOIN,
-                sql_alias(quote_column(concat_field(base_table, t.nest)), t.alias),
+                sql_alias(quote_column(t.nest), t.alias),
                 SQL_ON,
                 quote_column(t.alias, PARENT),
                 SQL_EQ,
@@ -112,8 +149,9 @@ class EdgesTable(SetOpTable):
         inner_domains = []
         outer_domains = []
 
-        select_clause = [ConcatSQL(SQL_ONE, SQL_AS, EXISTS_COLUMN)] + [
-            quote_column(c.es_column) for c in self.snowflake.columns
+        select_clause = [
+            ConcatSQL(SQL_ONE, SQL_AS, EXISTS_COLUMN),
+            *(quote_column(c.es_column) for c in self.snowflake.columns),
         ]
 
         for edge_index, query_edge in enumerate(query.edges):
@@ -138,43 +176,27 @@ class EdgesTable(SetOpTable):
                     domains_sql = SQL_UNION_ALL.join(
                         ConcatSQL(
                             SQL_SELECT,
-                            sql_alias(
-                                quote_value(coalesce(p.dataIndex, i)), domain_alias
-                            ),
+                            sql_alias(quote_value(coalesce(p.dataIndex, i)), domain_alias),
                             SQL_COMMA,
                             sql_alias(quote_value(p.value), domain_alias + "v"),
                         )
                         for i, p in enumerate(query_edge_domain.partitions)
                     )
-                    join_type = (
-                        SQL_LEFT_JOIN if query_edge.allowNulls else SQL_INNER_JOIN
-                    )
-                    on_clause = ConcatSQL(
-                        quote_column(edge_alias, domain_alias + "v"), SQL_EQ, edge_sql,
-                    )
+                    join_type = SQL_LEFT_JOIN if query_edge.allowNulls else SQL_INNER_JOIN
+                    on_clause = ConcatSQL(quote_column(edge_alias, domain_alias + "v"), SQL_EQ, edge_sql,)
                 elif any(p.where for p in query_edge_domain.partitions):
                     if not all(p.where for p in query_edge_domain.partitions):
                         Log.error("expecting all partitions to have `where` clause")
 
                     domains_sql = SQL_UNION_ALL.join(
-                        ConcatSQL(
-                            SQL_SELECT,
-                            sql_alias(
-                                quote_value(coalesce(p.dataIndex, i)), domain_alias
-                            ),
-                        )
+                        ConcatSQL(SQL_SELECT, sql_alias(quote_value(coalesce(p.dataIndex, i)), domain_alias),)
                         for i, p in enumerate(query_edge_domain.partitions)
                     )
-                    join_type = (
-                        SQL_LEFT_JOIN if query_edge.allowNulls else SQL_INNER_JOIN
-                    )
+                    join_type = SQL_LEFT_JOIN if query_edge.allowNulls else SQL_INNER_JOIN
                     on_clause = ConcatSQL(
                         quote_column(edge_alias, domain_alias),
                         SQL_EQ,
-                        CaseOp([
-                            WhenOp(p.where, then=Literal(p.dataIndex))
-                            for p in query_edge_domain.partitions
-                        ])
+                        CaseOp(*(WhenOp(p.where, then=Literal(p.dataIndex)) for p in query_edge_domain.partitions))
                         .partial_eval(SQLang)
                         .to_sql(schema),
                     )
@@ -199,26 +221,16 @@ class EdgesTable(SetOpTable):
                 edge_sql = query_edge.value.partial_eval(SQLang).to_sql(schema)
 
                 if is_op(edge_sql.frum, TupleOp):
-                    domain_aliases = [
-                        get_domain_alias(column_index + i)
-                        for i, term in enumerate(edge_sql.frum.terms)
-                    ]
+                    domain_aliases = [get_domain_alias(column_index + i) for i, term in enumerate(edge_sql.frum.terms)]
                     select_columns = sql_list([
                         sql_alias(term.to_sql(schema), domain_alias)
-                        for domain_alias, term in zip(
-                            domain_aliases, edge_sql.frum.terms
-                        )
+                        for domain_alias, term in zip(domain_aliases, edge_sql.frum.terms)
                     ])
                     where_columns = SQL_OR.join([
-                        ConcatSQL(quote_column(domain_alias), SQL_IS_NOT_NULL)
-                        for domain_alias in domain_aliases
+                        ConcatSQL(quote_column(domain_alias), SQL_IS_NOT_NULL) for domain_alias in domain_aliases
                     ])
-                    groupby_columns = sql_list([
-                        quote_column(domain_alias) for domain_alias in domain_aliases
-                    ])
-                    orderby_columns = sql_list([
-                        quote_column(domain_alias) for domain_alias in domain_aliases
-                    ])
+                    groupby_columns = sql_list([quote_column(domain_alias) for domain_alias in domain_aliases])
+                    orderby_columns = sql_list([quote_column(domain_alias) for domain_alias in domain_aliases])
                     on_clause = SQL_AND.join([
                         sql_iso(
                             quote_column(edge_alias, domain_alias),
@@ -231,9 +243,7 @@ class EdgesTable(SetOpTable):
                             term.to_sql(schema),
                             SQL_IS_NULL,
                         )
-                        for domain_alias, term in zip(
-                            domain_aliases, edge_sql.frum.terms
-                        )
+                        for domain_alias, term in zip(domain_aliases, edge_sql.frum.terms)
                     ])
 
                     for i, term in enumerate(edge_sql.frum.terms):
@@ -245,47 +255,41 @@ class EdgesTable(SetOpTable):
                             num_push_columns=len(query_edge.value.terms),
                             push_column_child=i,
                             pull=get_pull_func(column_index + i),
+<<<<<<< .mine
                             type=json_type_to_simple_type(term.type),
+||||||| .r1729
+                            type=jx_type_to_json_type(term.type),
+=======
+                            type=jx_type_to_json_type(term.jx_type),
+>>>>>>> .r2071
                             sql=FALSE.to_sql(schema),
                             column_alias=get_domain_alias(column_index + i),
                         )
                     column_index += len(edge_sql.frum.terms)
                 elif is_op(edge_sql.frum, SelectOp):
-                    domain_aliases = [
-                        get_domain_alias(column_index + i)
-                        for i, term in enumerate(edge_sql.frum.terms)
-                    ]
+                    domain_aliases = [get_domain_alias(column_index + i) for i, term in enumerate(edge_sql.frum.terms)]
                     select_columns = sql_list([
-                        sql_alias(term["value"].to_sql(schema), domain_alias)
-                        for domain_alias, term in zip(
-                            domain_aliases, edge_sql.frum.terms
-                        )
+                        sql_alias(term.value.to_sql(schema), domain_alias)
+                        for domain_alias, term in zip(domain_aliases, edge_sql.frum.terms)
                     ])
                     where_columns = SQL_OR.join([
-                        ConcatSQL(quote_column(domain_alias), SQL_IS_NOT_NULL)
-                        for domain_alias in domain_aliases
+                        ConcatSQL(quote_column(domain_alias), SQL_IS_NOT_NULL) for domain_alias in domain_aliases
                     ])
-                    groupby_columns = sql_list([
-                        quote_column(domain_alias) for domain_alias in domain_aliases
-                    ])
-                    orderby_columns = sql_list([
-                        quote_column(domain_alias) for domain_alias in domain_aliases
-                    ])
+                    groupby_columns = sql_list([quote_column(domain_alias) for domain_alias in domain_aliases])
+                    orderby_columns = sql_list([quote_column(domain_alias) for domain_alias in domain_aliases])
                     on_clause = SQL_AND.join([
                         sql_iso(
                             quote_column(edge_alias, domain_alias),
                             SQL_EQ,
-                            term["value"].to_sql(schema),
+                            term.value.to_sql(schema),
                             SQL_OR,
                             quote_column(edge_alias, domain_alias),
                             SQL_IS_NULL,
                             SQL_AND,
-                            term["value"].to_sql(schema),
+                            term.value.to_sql(schema),
                             SQL_IS_NULL,
                         )
-                        for domain_alias, term in zip(
-                            domain_aliases, edge_sql.frum.terms
-                        )
+                        for domain_alias, term in zip(domain_aliases, edge_sql.frum.terms)
                     ])
                     for i, term in enumerate(edge_sql.frum.terms):
                         index_to_column[column_index + i] = ColumnMapping(
@@ -293,9 +297,15 @@ class EdgesTable(SetOpTable):
                             push_list_name=query_edge.name,
                             push_column_name=query_edge.name,
                             push_column_index=edge_index,
-                            push_column_child=term["name"],
+                            push_column_child=term.name,
                             pull=get_pull_func(column_index + i),
+<<<<<<< .mine
                             type=json_type_to_simple_type(term.type),
+||||||| .r1729
+                            type=jx_type_to_json_type(term.type),
+=======
+                            type=jx_type_to_json_type(term.jx_type),
+>>>>>>> .r2071
                             sql=FALSE.to_sql(schema),
                             column_alias=get_domain_alias(column_index + i),
                         )
@@ -305,14 +315,10 @@ class EdgesTable(SetOpTable):
                     domain_aliases.append(domain_alias)
                     select_columns = sql_alias(edge_sql, domain_alias)
                     column_index += 1
-                    where_columns = ConcatSQL(
-                        quote_column(domain_alias), SQL_IS_NOT_NULL
-                    )
+                    where_columns = ConcatSQL(quote_column(domain_alias), SQL_IS_NOT_NULL)
                     groupby_columns = quote_column(domain_alias)
                     orderby_columns = quote_column(domain_alias)
-                    on_clause = ConcatSQL(
-                        quote_column(edge_alias, domain_alias), SQL_EQ, edge_sql
-                    )
+                    on_clause = ConcatSQL(quote_column(edge_alias, domain_alias), SQL_EQ, edge_sql)
                     num_sql_columns = len(index_to_column)
 
                     index_to_column[num_sql_columns] = ColumnMapping(
@@ -327,11 +333,7 @@ class EdgesTable(SetOpTable):
                         column_alias=domain_alias,
                     )
 
-                limit = (
-                    MinOp([query.limit, query_edge_domain.limit])
-                    .partial_eval(SQLang)
-                    .to_sql(schema)
-                )
+                limit = MinOp(query.limit, query_edge_domain.limit).partial_eval(SQLang).to_sql(schema)
 
                 domains_sql = ConcatSQL(
                     SQL_SELECT,
@@ -367,16 +369,10 @@ class EdgesTable(SetOpTable):
                         max_value_name=domain_alias + "max",
                         index_name=domain_alias,
                     )
-                    limit = (
-                        MinOp([query.limit, query_edge_domain.limit])
-                        .partial_eval(SQLang)
-                        .to_sql(schema)
-                    )
+                    limit = MinOp(query.limit, query_edge_domain.limit).partial_eval(SQLang).to_sql(schema)
                     if limit is not NULL:
                         domains_sql = ConcatSQL(domains_sql, SQL_LIMIT, limit)
-                    join_type = (
-                        SQL_LEFT_JOIN if query_edge.allowNulls else SQL_INNER_JOIN
-                    )
+                    join_type = SQL_LEFT_JOIN if query_edge.allowNulls else SQL_INNER_JOIN
                     on_clause = ConcatSQL(
                         quote_column(edge_alias, domain_alias + "v"),
                         SQL_LE,
@@ -395,11 +391,7 @@ class EdgesTable(SetOpTable):
                         max_value_name=domain_alias + "max",
                         index_name=domain_alias,
                     )
-                    limit = (
-                        MinOp([query.limit, query_edge_domain.limit])
-                        .partial_eval(SQLang)
-                        .to_sql(schema)
-                    )
+                    limit = MinOp(query.limit, query_edge_domain.limit).partial_eval(SQLang).to_sql(schema)
                     domains_sql = ConcatSQL(domains_sql, SQL_LIMIT, limit,)
                     join_type = SQL_INNER_JOIN
                     on_clause = ConcatSQL(
@@ -439,9 +431,7 @@ class EdgesTable(SetOpTable):
             if query_edge.allowNulls:
                 outer_domains.append(ConcatSQL(
                     SQL_SELECT,
-                    sql_list([
-                        quote_column(domain_alias) for domain_alias in domain_aliases
-                    ]),
+                    sql_list([quote_column(domain_alias) for domain_alias in domain_aliases]),
                     SQL_FROM,
                     sql_iso(domains_sql),
                     SQL_UNION_ALL,
@@ -454,20 +444,12 @@ class EdgesTable(SetOpTable):
             ons.append(on_clause)
             join_types.append(join_type)
 
-            groupby.append(sql_list([
-                quote_column(edge_alias, domain_alias)
-                for domain_alias in domain_aliases
-            ]))
+            groupby.append(sql_list([quote_column(edge_alias, domain_alias) for domain_alias in domain_aliases]))
 
-            full_domain_aliases = [
-                quote_column(edge_alias, domain_alias)
-                for domain_alias in domain_aliases
-            ]
+            full_domain_aliases = [quote_column(edge_alias, domain_alias) for domain_alias in domain_aliases]
             outer_selects.extend([
                 sql_alias(full_domain_alias, domain_alias)
-                for full_domain_alias, domain_alias in zip(
-                    full_domain_aliases, domain_aliases
-                )
+                for full_domain_alias, domain_alias in zip(full_domain_aliases, domain_aliases)
             ])
 
             for full_domain_alias in full_domain_aliases:
@@ -487,15 +469,8 @@ class EdgesTable(SetOpTable):
             outer_selects.append(self._window_op(self, query, w))
 
         facts = sql_alias(
-            sql_iso(
-                SQL_SELECT,
-                sql_list(select_clause),
-                SQL_FROM,
-                ConcatSQL(*from_sql),
-                SQL_WHERE,
-                main_filter,
-            ),
-            nest_to_alias["."],
+            sql_iso(SQL_SELECT, sql_list(select_clause), SQL_FROM, ConcatSQL(*from_sql), SQL_WHERE, main_filter,),
+            nest_to_alias[self.snowflake.fact_name],
         )
 
         edge_sql = []
@@ -517,10 +492,7 @@ class EdgesTable(SetOpTable):
             clauses = [ConcatSQL(
                 SQL_SELECT,
                 sql_list([
-                    quote_column(
-                        "e" + text(i.push_column_index) if i.is_edge else "p",
-                        i.column_alias,
-                    )
+                    quote_column("e" + text(i.push_column_index) if i.is_edge else "p", i.column_alias,)
                     for i in index_to_column.values()
                 ]),
                 SQL_FROM,
@@ -530,12 +502,7 @@ class EdgesTable(SetOpTable):
             )]
             for edge_name, outer_domain in zip(edge_names[1:], outer_domains[1:]):
                 clauses.append(ConcatSQL(
-                    SQL_LEFT_JOIN,
-                    sql_iso(outer_domain),
-                    SQL_AS,
-                    quote_column(edge_name),
-                    SQL_ON,
-                    SQL_TRUE,
+                    SQL_LEFT_JOIN, sql_iso(outer_domain), SQL_AS, quote_column(edge_name), SQL_ON, SQL_TRUE,
                 ))
             clauses.append(ConcatSQL(
                 SQL_LEFT_JOIN,
@@ -567,13 +534,8 @@ class EdgesTable(SetOpTable):
         return command, index_to_column
 
     def aggregates(self, index_to_column, offset, outer_selects, query, schema):
-        for ssi, s in enumerate(to_data(query.select.terms)):
-            si = ssi + offset
-            if (
-                is_op(s.value, Variable)
-                and s.value.var == "."
-                and is_op(s.aggregate, CountOp)
-            ):
+        for si, s in enumerate(query.select.terms, start=offset):
+            if is_op(s.value, Variable) and s.value.var in ["row", "."] and is_op(s.aggregate, CountOp):
                 # COUNT RECORDS, NOT ANY ONE VALUE
                 sql = sql_alias(sql_count(EXISTS_COLUMN), s.name)
 
@@ -584,7 +546,7 @@ class EdgesTable(SetOpTable):
                     push_column_name=s.name,
                     push_column_index=si,
                     push_column_child=".",
-                    pull=get_column(column_number, None, s.aggregate.default.value),
+                    pull=get_column(column_number, None, ZERO),
                     sql=sql,
                     column_alias=s.name,
                     type=NUMBER,
@@ -593,12 +555,8 @@ class EdgesTable(SetOpTable):
                 not query.edges and not query.groupby
             ):
                 value = s.value.var
-                columns = [
-                    c.es_column
-                    for c in self.snowflake.columns
-                    if untyped_column(c.es_column)[0] == value
-                ]
-                sql = SQL("+").join(sql_count(quote_column(col)) for col in columns)
+                columns = [c.es_column for c in self.snowflake.columns if untyped_column(c.es_column)[0] == value]
+                sql = SQL_PLUS.join(sql_count(quote_column(col)) for col in columns)
                 column_number = len(outer_selects)
                 outer_selects.append(sql_alias(sql, _make_column_name(column_number)))
                 index_to_column[column_number] = ColumnMapping(
@@ -606,7 +564,7 @@ class EdgesTable(SetOpTable):
                     push_column_name=s.name,
                     push_column_index=si,
                     push_column_child=".",
-                    pull=get_column(column_number, None, s.aggregate.default.value),
+                    pull=get_column(column_number, None, s.default),
                     sql=sql,
                     column_alias=_make_column_name(column_number),
                     type=NUMBER,
@@ -616,17 +574,14 @@ class EdgesTable(SetOpTable):
             elif is_op(s.aggregate, CardinalityOp):
                 sql = s.value.partial_eval(SQLang).to_sql(schema)
                 column_number = len(outer_selects)
-                count_sql = sql_alias(
-                    sql_count("DISTINCT" + sql_iso(sql)),
-                    _make_column_name(column_number),
-                )
+                count_sql = sql_alias(sql_count("DISTINCT" + sql_iso(sql)), _make_column_name(column_number),)
                 outer_selects.append(count_sql)
                 index_to_column[column_number] = ColumnMapping(
                     push_list_name=s.name,
                     push_column_name=s.name,
                     push_column_index=si,
                     push_column_child=".",
-                    pull=get_column(column_number, None, s.aggregate.default.value),
+                    pull=get_column(column_number, None, 0),
                     sql=count_sql,
                     column_alias=_make_column_name(column_number),
                     type=NUMBER,
@@ -635,17 +590,22 @@ class EdgesTable(SetOpTable):
                 sql = s.value.partial_eval(SQLang).to_sql(schema)
                 column_number = len(outer_selects)
                 outer_selects.append(sql_alias(
-                    ConcatSQL(SQL_NOT, SQL_NOT, sql_call("SUM", sql_iso(sql))),
-                    _make_column_name(column_number),
+                    ConcatSQL(SQL_NOT, SQL_NOT, sql_call("SUM", sql_iso(sql))), _make_column_name(column_number),
                 ))
                 index_to_column[column_number] = ColumnMapping(
                     push_list_name=s.name,
                     push_column_name=s.name,
                     push_column_index=si,
                     push_column_child=".",
+<<<<<<< .mine
                     pull=get_column(
                         column_number, T_BOOLEAN, s.aggregate.default.value
                     ),
+||||||| .r1729
+                    pull=get_column(column_number, JX_BOOLEAN, s.aggregate.default.value),
+=======
+                    pull=get_column(column_number, JX_BOOLEAN, s.default),
+>>>>>>> .r2071
                     sql=sql,
                     column_alias=_make_column_name(column_number),
                     type=BOOLEAN,
@@ -665,9 +625,15 @@ class EdgesTable(SetOpTable):
                     push_column_name=s.name,
                     push_column_index=si,
                     push_column_child=".",
+<<<<<<< .mine
                     pull=get_column(
                         column_number, T_BOOLEAN, s.aggregate.default.value
                     ),
+||||||| .r1729
+                    pull=get_column(column_number, JX_BOOLEAN, s.aggregate.default.value),
+=======
+                    pull=get_column(column_number, JX_BOOLEAN, s.default),
+>>>>>>> .r2071
                     sql=sql,
                     column_alias=_make_column_name(column_number),
                     type=BOOLEAN,
@@ -677,8 +643,7 @@ class EdgesTable(SetOpTable):
                     for sql_type, sql in details.sql.items():
                         column_number = len(outer_selects)
                         outer_selects.append(sql_alias(
-                            "JSON_GROUP_ARRAY(DISTINCT" + sql_iso(sql) + ")",
-                            _make_column_name(column_number),
+                            "JSON_GROUP_ARRAY(DISTINCT" + sql_iso(sql) + ")", _make_column_name(column_number),
                         ))
                         index_to_column[column_number] = ColumnMapping(
                             push_list_name=s.name,
@@ -695,15 +660,13 @@ class EdgesTable(SetOpTable):
                 for name, code in STATS.items():
                     full_sql = code.replace("{{value}}", sql)
                     column_number = len(outer_selects)
-                    outer_selects.append(sql_alias(
-                        full_sql, _make_column_name(column_number)
-                    ))
+                    outer_selects.append(sql_alias(full_sql, _make_column_name(column_number)))
                     index_to_column[column_number] = ColumnMapping(
                         push_list_name=s.name,
                         push_column_name=s.name,
                         push_column_index=si,
                         push_column_child=name,
-                        pull=get_column(column_number, None, s.aggregate.default.value),
+                        pull=get_column(column_number, None, s.default),
                         sql=full_sql,
                         column_alias=_make_column_name(column_number),
                         type="number",
@@ -711,10 +674,15 @@ class EdgesTable(SetOpTable):
             else:  # STANDARD AGGREGATES
                 sql = s.value.partial_eval(SQLang).to_sql(schema)
                 sql = sql_call(sql_aggs[s.aggregate.op], sql)
+<<<<<<< .mine
                 data_type = json_type_to_simple_type(s.aggregate.type)
+||||||| .r1729
+                data_type = jx_type_to_json_type(s.aggregate.type)
+=======
+                json_type = jx_type_to_json_type(s.aggregate.jx_type)
+>>>>>>> .r2071
 
-                if s.aggregate.default is not NULL:
-                    sql = sql_coalesce([sql, s.aggregate.default.to_sql(schema)])
+                default_value = s.default
                 column_number = len(outer_selects)
                 outer_selects.append(sql_alias(sql, _make_column_name(column_number)))
                 index_to_column[column_number] = ColumnMapping(
@@ -722,12 +690,24 @@ class EdgesTable(SetOpTable):
                     push_column_name=s.name,
                     push_column_index=si,
                     push_column_child=".",
+<<<<<<< .mine
                     pull=get_column(
                         column_number, data_type, s.aggregate.default.value
                     ),
+||||||| .r1729
+                    pull=get_column(column_number, data_type, s.aggregate.default.value),
+=======
+                    pull=get_column(column_number, json_type, default_value),
+>>>>>>> .r2071
                     sql=sql,
                     column_alias=_make_column_name(column_number),
+<<<<<<< .mine
                     type=data_type,
+||||||| .r1729
+                    type=data_type
+=======
+                    type=json_type,
+>>>>>>> .r2071
                 )
 
 
@@ -752,11 +732,7 @@ def range_sql(domain, min_value_name, max_value_name, index_name):
         rownum_sql = quote_column("a", "value")
     else:
         rownum_sql = SQL_PLUS.join(
-            ConcatSQL(
-                quote_value(pow(10, j)),
-                SQL_STAR,
-                quote_column(text(chr(ord(b"a") + j)), "value"),
-            )
+            ConcatSQL(quote_value(pow(10, j)), SQL_STAR, quote_column(text(chr(ord(b"a") + j)), "value"),)
             for j in range(digits + 1)
         )
 
@@ -777,14 +753,8 @@ def range_sql(domain, min_value_name, max_value_name, index_name):
                 SQL_SELECT,
                 sql_list([
                     sql_alias(rownum_sql, index_name),
-                    sql_alias(
-                        ConcatSQL(rownum_sql, SQL_PLUS, quote_value(domain.min)),
-                        min_value_name,
-                    ),
-                    sql_alias(
-                        ConcatSQL(rownum_sql, SQL_PLUS, quote_value(domain.min + 1)),
-                        max_value_name,
-                    ),
+                    sql_alias(ConcatSQL(rownum_sql, SQL_PLUS, quote_value(domain.min)), min_value_name,),
+                    sql_alias(ConcatSQL(rownum_sql, SQL_PLUS, quote_value(domain.min + 1)), max_value_name,),
                 ]),
                 SQL_FROM,
                 sql_alias(quote_column(DIGITS_TABLE), "a"),
@@ -795,17 +765,10 @@ def range_sql(domain, min_value_name, max_value_name, index_name):
                 SQL_SELECT,
                 sql_list([
                     sql_alias(rownum_sql, index_name),
-                    sql_alias(
-                        ConcatSQL(rownum_sql, SQL_STAR, quote_value(domain.interval)),
-                        min_value_name,
-                    ),
+                    sql_alias(ConcatSQL(rownum_sql, SQL_STAR, quote_value(domain.interval)), min_value_name,),
                     sql_alias(
                         ConcatSQL(
-                            rownum_sql,
-                            SQL_STAR,
-                            quote_value(domain.interval),
-                            SQL_PLUS,
-                            quote_value(domain.interval),
+                            rownum_sql, SQL_STAR, quote_value(domain.interval), SQL_PLUS, quote_value(domain.interval),
                         ),
                         max_value_name,
                     ),
@@ -848,13 +811,7 @@ def range_sql(domain, min_value_name, max_value_name, index_name):
             SQL_TRUE,
         )
     domain = ConcatSQL(
-        domain,
-        SQL_WHERE,
-        rownum_sql,
-        SQL_LT,
-        quote_value(width),
-        SQL_ORDERBY,
-        quote_column(index_name),
+        domain, SQL_WHERE, rownum_sql, SQL_LT, quote_value(width), SQL_ORDERBY, quote_column(index_name),
     )
     return domain
 

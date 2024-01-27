@@ -7,8 +7,14 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
+<<<<<<< .mine
 from __future__ import absolute_import, division, unicode_literals
 
+||||||| .r1729
+
+
+=======
+>>>>>>> .r2071
 from jx_base.expressions import ToTextOp as ToTextOp_, SelectOp, CoalesceOp
 from jx_base.language import is_op
 from jx_sqlite.expressions._utils import check, SQLang
@@ -30,12 +36,22 @@ class ToTextOp(ToTextOp_):
     @check
     def to_sql(self, schema):
         expr = self.term.to_sql(schema)
-        type = base_type(expr.type)
+        type = base_type(expr.jx_type)
         if type == T_TEXT:
             return expr
+<<<<<<< .mine
         elif type == T_BOOLEAN:
             return SQLScript(
                 data_type=T_TEXT,
+||||||| .r1729
+        elif type == JX_BOOLEAN:
+            return SqlScript(
+                data_type=JX_TEXT,
+=======
+        elif type == JX_BOOLEAN:
+            return SqlScript(
+                jx_type=JX_TEXT,
+>>>>>>> .r2071
                 expr=ConcatSQL(
                     SQL_CASE,
                     SQL_WHEN,
@@ -49,9 +65,19 @@ class ToTextOp(ToTextOp_):
                 frum=self,
                 schema=schema,
             )
+<<<<<<< .mine
         elif type in T_NUMBER_TYPES:
             return SQLScript(
                 data_type=T_TEXT,
+||||||| .r1729
+        elif type in JX_NUMBER_TYPES:
+            return SqlScript(
+                data_type=JX_TEXT,
+=======
+        elif type in JX_NUMBER_TYPES:
+            return SqlScript(
+                jx_type=JX_TEXT,
+>>>>>>> .r2071
                 expr=sql_call(
                     "RTRIM",
                     sql_call(
@@ -65,15 +91,25 @@ class ToTextOp(ToTextOp_):
                 schema=schema,
             )
         elif is_op(expr.frum, SelectOp) and len(expr.frum.terms) > 1:
-            return CoalesceOp([
-                ToTextOp(t['value'])
+            return CoalesceOp(*(
+                ToTextOp(t.value)
                 for t in expr.frum.terms
-                if len(split_field(t['name'])) == 1
-            ]).partial_eval(SQLang).to_sql(schema)
+                if len(split_field(t.name)) == 1
+            )).partial_eval(SQLang).to_sql(schema)
         else:
+<<<<<<< .mine
             return SQLScript(
                 data_type=T_TEXT,
                 expr=sql_cast(expr.expr, "TEXT"),
+||||||| .r1729
+            return SqlScript(
+                data_type=JX_TEXT,
+                expr=sql_cast(expr.frum, "TEXT"),
+=======
+            return SqlScript(
+                jx_type=JX_TEXT,
+                expr=sql_cast(expr.expr, "TEXT"),
+>>>>>>> .r2071
                 frum=self,
                 schema=schema,
             )

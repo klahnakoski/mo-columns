@@ -9,11 +9,11 @@
 #
 from __future__ import absolute_import, division, unicode_literals
 
-from jx_base.expressions import CaseOp as CaseOp_
+from jx_base.expressions import CaseOp as _CaseOp
 from jx_python.expressions._utils import Python
 
 
-class CaseOp(CaseOp_):
+class CaseOp(_CaseOp):
     def to_python(self, not_null=False, boolean=False, many=False):
         acc = (self.whens[-1]).to_python()
         for w in reversed(self.whens[0:-1]):

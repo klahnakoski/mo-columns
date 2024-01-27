@@ -9,11 +9,11 @@
 #
 from __future__ import absolute_import, division, unicode_literals
 
-from jx_base.expressions import SuffixOp as SuffixOp_
+from jx_base.expressions import SuffixOp as _SuffixOp
 from jx_python.expressions._utils import Python
 
 
-class SuffixOp(SuffixOp_):
+class SuffixOp(_SuffixOp):
     def to_python(self, not_null=False, boolean=False, many=False):
         return (
             "("

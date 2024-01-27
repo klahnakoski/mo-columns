@@ -10,8 +10,11 @@
 
 from __future__ import absolute_import, division, unicode_literals
 
-from jx_base.expressions.base_multi_op import BaseMultiOp
+from jx_base.expressions.expression import Expression
 
 
-class AvgOp(BaseMultiOp):
-    op = "avg"
+class AvgOp(Expression):
+
+    def __init__(self, frum):
+        Expression.__init__(self, frum)
+        self.frum = frum

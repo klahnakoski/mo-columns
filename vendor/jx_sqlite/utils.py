@@ -7,16 +7,31 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
+<<<<<<< .mine
 
 
 from __future__ import absolute_import, division, unicode_literals
 
+||||||| .r1729
+
+
+
+
+=======
+>>>>>>> .r2071
 from copy import copy
 from math import isnan
 
 from jx_base import DataClass
+<<<<<<< .mine
 from jx_base import Snowflake
 from jx_sqlite.sqlite import quote_column, SQL, SQL_DESC, SQL_ASC
+||||||| .r1729
+from mo_sqlite import quote_column, SQL_DESC, SQL_ASC
+=======
+from jx_base import Snowflake
+from jx_base.expressions import NULL
+>>>>>>> .r2071
 from mo_dots import (
     Data,
     concat_field,
@@ -25,13 +40,47 @@ from mo_dots import (
     join_field,
     split_field,
     is_sequence,
+<<<<<<< .mine
     missing, is_missing, coalesce,
 )
 from mo_future import is_text, text
 from mo_json import BOOLEAN, ARRAY, NUMBER, OBJECT, STRING, json2value, T_BOOLEAN, INTEGER
+||||||| .r1729
+    is_missing, )
+from mo_future import is_text, text, POS_INF
+from mo_json import BOOLEAN, ARRAY, NUMBER, OBJECT, STRING, json2value, JX_BOOLEAN
+=======
+    is_missing,
+)
+from mo_future import is_text, text
+from mo_json import BOOLEAN, ARRAY, NUMBER, OBJECT, STRING, json2value, JX_BOOLEAN, INTEGER
+>>>>>>> .r2071
 from mo_json.typed_encoder import untype_path
+<<<<<<< .mine
 from mo_logs import Log
+||||||| .r1729
+=======
+from mo_json.types import (
+    JX_ARRAY,
+    JX_TEXT,
+    JX_NUMBER,
+    JX_INTEGER,
+    ARRAY_KEY,
+    NUMBER_KEY,
+    STRING_KEY,
+    BOOLEAN_KEY,
+    INTEGER_KEY,
+)
+from mo_logs import Log
+>>>>>>> .r2071
 from mo_math import randoms
+<<<<<<< .mine
+||||||| .r1729
+from mo_sql.utils import GUID, UID, ORDER, PARENT
+=======
+from mo_sql.utils import SQL_KEYS, SQL_ARRAY_KEY, SQL_KEY_PREFIX, SQL_NUMBER_KEY
+from mo_sqlite import quote_column, SQL_DESC, SQL_ASC
+>>>>>>> .r2071
 from mo_times import Date
 from mo_json.types import _B, _I, _N, _T, _S, _A, T_ARRAY, T_TEXT, T_NUMBER, T_INTEGER, IS_PRIMITIVE_KEY
 
@@ -109,7 +158,7 @@ def get_document_value(document, column):
     :return: VALUE, IF IT IS THE SAME NAME AND TYPE
     """
     v = document.get(split_field(column.name)[0], None)
-    return get_if_type(v, column.type)
+    return get_if_type(v, column.jx_type)
 
 
 def get_if_type(value, type):
@@ -136,6 +185,7 @@ def is_type(value, type):
     return False
 
 
+<<<<<<< .mine
 def typed_column(name, sql_key):
     if len(sql_key) > 1:
         Log.error("not expected")
@@ -162,6 +212,35 @@ def untyped_column(column_name):
 untype_field = untyped_column
 
 
+||||||| .r1729
+=======
+def typed_column(name, sql_key):
+    if sql_key not in SQL_KEYS:
+        Log.error("not expected")
+    return concat_field(name, sql_key)
+
+
+def untyped_column(column_name):
+    """
+    :param column_name:  DATABASE COLUMN NAME
+    :return: (NAME, TYPE) PAIR
+    """
+    if SQL_KEY_PREFIX in column_name:
+        path = split_field(column_name)
+        if path[-1] in SQL_KEYS:
+            return join_field(p for p in path[:-1] if p != SQL_ARRAY_KEY), path[-1]
+        else:
+            return join_field(p for p in path if p not in SQL_KEYS), None
+    elif column_name in [GUID]:
+        return column_name, SQL_NUMBER_KEY
+    else:
+        return column_name, None
+
+
+untype_field = untyped_column
+
+
+>>>>>>> .r2071
 def _make_column_name(number):
     return COLUMN + text(number)
 
@@ -179,6 +258,8 @@ sql_aggs = {
     "minimum": "MIN",
     "sum": "SUM",
     "add": "SUM",
+    "any": "MAX",
+    "all": "MIN",
 }
 
 STATS = {
@@ -211,7 +292,7 @@ def sql_text_array_to_set(column):
     return _convert
 
 
-def get_column(column, json_type=None, default=None):
+def get_column(column, json_type=None, default=NULL):
     """
     :param column: The column you want extracted
     :return: a function that can pull the given column out of sql resultset
@@ -220,10 +301,11 @@ def get_column(column, json_type=None, default=None):
     to_type = json_type_to_python_type.get(json_type)
 
     if to_type is None:
+
         def _get(row):
             value = row[column]
             if is_missing(value):
-                return default
+                return default.value
             return value
 
         return _get
@@ -231,13 +313,19 @@ def get_column(column, json_type=None, default=None):
     def _get_type(row):
         value = row[column]
         if is_missing(value):
-            return default
+            return default.value
         return to_type(value)
 
     return _get_type
 
 
+<<<<<<< .mine
 json_type_to_python_type = {T_BOOLEAN: bool}
+||||||| .r1729
+jx_type_to_python_type = {JX_BOOLEAN: bool}
+=======
+json_type_to_python_type = {JX_BOOLEAN: bool}
+>>>>>>> .r2071
 
 
 def set_column(row, col, child, value):
@@ -281,14 +369,8 @@ ColumnMapping = DataClass(
             "name": "is_edge",
             "default": False,
         },
-        {  # TRACK NUMBER OF TABLE COLUMNS THIS column REPRESENTS
-            "name": "num_push_columns",
-            "nulls": True,
-        },
-        {  # NAME OF THE PROPERTY (USED BY LIST FORMAT ONLY)
-            "name": "push_list_name",
-            "nulls": True,
-        },
+        {"name": "num_push_columns", "nulls": True,},  # TRACK NUMBER OF TABLE COLUMNS THIS column REPRESENTS
+        {"name": "push_list_name", "nulls": True,},  # NAME OF THE PROPERTY (USED BY LIST FORMAT ONLY)
         {  # PATH INTO COLUMN WHERE VALUE IS STORED ("." MEANS COLUMN HOLDS PRIMITIVE VALUE)
             "name": "push_column_child",
             "nulls": True,
@@ -299,15 +381,9 @@ ColumnMapping = DataClass(
             "nulls": True,
         },
         {"name": "pull", "nulls": True},  # A FUNCTION THAT WILL RETURN A VALUE
-        {  # A LIST OF MULTI-SQL REQUIRED TO GET THE VALUE FROM THE DATABASE
-            "name": "sql",
-        },
+        {"name": "sql",},  # A LIST OF MULTI-SQL REQUIRED TO GET THE VALUE FROM THE DATABASE
         "type",  # THE NAME OF THE JSON DATA TYPE EXPECTED
-        {  # A LIST OF PATHS EACH INDICATING AN ARRAY
-            "name": "nested_path",
-            "type": list,
-            "default": ["."],
-        },
+        {"name": "nested_path", "type": list, "default": ["."],},  # A LIST OF PATHS EACH INDICATING AN ARRAY
         "column_alias",
     ],
     constraint={"and": [
@@ -316,6 +392,7 @@ ColumnMapping = DataClass(
     ]},
 )
 
+<<<<<<< .mine
 sqlite_type_to_simple_type = {
     "TEXT": STRING,
     "REAL": NUMBER,
@@ -346,7 +423,65 @@ sort_to_sqlite_order = {
     -1: SQL_DESC,
     0: SQL_ASC,
     1: SQL_ASC
+||||||| .r1729
+sort_to_sqlite_order = {
+    -1: SQL_DESC,
+    0: SQL_ASC,
+    1: SQL_ASC
+=======
+sqlite_type_to_simple_type = {
+    "TEXT": STRING,
+    "REAL": NUMBER,
+    "INT": INTEGER,
+    "INTEGER": INTEGER,
+    "TINYINT": BOOLEAN,
+>>>>>>> .r2071
 }
+
+<<<<<<< .mine
+class BasicSnowflake(Snowflake):
+    def __init__(self, query_paths, columns):
+        self._query_paths = query_paths
+        self._columns = columns
+||||||| .r1729
+=======
+sqlite_type_to_type_key = {
+    "ARRAY": ARRAY_KEY,
+    "TEXT": STRING_KEY,
+    "REAL": NUMBER_KEY,
+    "INTEGER": INTEGER_KEY,
+    "TINYINT": BOOLEAN_KEY,
+    "TRUE": BOOLEAN_KEY,
+    "FALSE": BOOLEAN_KEY,
+}
+>>>>>>> .r2071
+
+<<<<<<< .mine
+    @property
+    def query_paths(self):
+        return self._query_paths
+
+    @property
+    def columns(self):
+        return self._columns
+
+    @property
+    def column(self):
+        return ColumnLocator(self._columns)
+
+
+||||||| .r1729
+=======
+type_key_json_type = {
+    ARRAY_KEY: JX_ARRAY,
+    STRING_KEY: JX_TEXT,
+    NUMBER_KEY: JX_NUMBER,
+    INTEGER_KEY: JX_INTEGER,
+    BOOLEAN_KEY: JX_BOOLEAN,
+}
+
+sort_to_sqlite_order = {-1: SQL_DESC, 0: SQL_ASC, 1: SQL_ASC}
+
 
 class BasicSnowflake(Snowflake):
     def __init__(self, query_paths, columns):
@@ -366,6 +501,7 @@ class BasicSnowflake(Snowflake):
         return ColumnLocator(self._columns)
 
 
+>>>>>>> .r2071
 class ColumnLocator(object):
     def __init__(self, columns):
         self.columns = columns

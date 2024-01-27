@@ -9,11 +9,11 @@
 #
 from __future__ import absolute_import, division, unicode_literals
 
-from jx_base.expressions import NeOp as NeOp_
+from jx_base.expressions import NeOp as _NeOp
 from jx_python.expressions._utils import Python, with_var
 
 
-class NeOp(NeOp_):
+class NeOp(_NeOp):
     def to_python(self, not_null=False, boolean=False, many=False):
         lhs = (self.lhs).to_python()
         rhs = (self.rhs).to_python()

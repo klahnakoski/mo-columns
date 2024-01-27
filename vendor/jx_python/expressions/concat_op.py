@@ -9,11 +9,11 @@
 #
 from __future__ import absolute_import, division, unicode_literals
 
-from jx_base.expressions import ConcatOp as ConcatOp_
+from jx_base.expressions import ConcatOp as _ConcatOp
 from jx_python.expressions._utils import Python
 
 
-class ConcatOp(ConcatOp_):
+class ConcatOp(_ConcatOp):
     def to_python(self, not_null=False, boolean=False, many=False):
         v = (self.value).to_python()
         l = (self.length).to_python()

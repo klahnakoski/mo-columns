@@ -43,7 +43,7 @@ class DateOp(Literal):
         return Date(self.date)
 
     @property
-    def type(self):
+    def jx_type(self):
         return self.date_type
 
 

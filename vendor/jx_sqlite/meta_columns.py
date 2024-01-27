@@ -7,23 +7,46 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
+<<<<<<< .mine
 from __future__ import absolute_import, division, unicode_literals
 
+||||||| .r1729
+
+
+=======
+>>>>>>> .r2071
 from copy import copy
 
 from pyLibrary.meta import _FakeLock
 
 import jx_base
+<<<<<<< .mine
 from jx_base import Table, Container, Column
+||||||| .r1729
+from jx_base import Table, Container
+=======
+from jx_base import Schema, Table, Container, Column
+>>>>>>> .r2071
 from jx_base.meta_columns import (
     META_COLUMNS_DESC,
     META_COLUMNS_NAME,
     SIMPLE_METADATA_COLUMNS,
 )
+<<<<<<< .mine
 from jx_base.schema import Schema
+||||||| .r1729
+from jx_base.models.nested_path import NestedPath
+from jx_base.models.schema import Schema
+=======
+>>>>>>> .r2071
 from jx_python import jx
+<<<<<<< .mine
 from jx_sqlite.sqlite import sql_query
 from jx_sqlite.utils import untyped_column, sqlite_type_to_simple_type
+||||||| .r1729
+=======
+from jx_sqlite.utils import untyped_column
+>>>>>>> .r2071
 from mo_dots import (
     Data,
     Null,
@@ -36,9 +59,25 @@ from mo_dots import (
     wrap,
     list_to_data,
 )
+<<<<<<< .mine
 from mo_json import STRUCT, OBJECT
 from mo_json.typed_encoder import unnest_path, untyped
+||||||| .r1729
+from mo_future import sort_using_key
+from mo_json import STRUCT, IS_NULL
+from mo_json.typed_encoder import unnest_path, detype
+=======
+from mo_json import STRUCT, IS_NULL
+from mo_json.typed_encoder import unnest_path, detype
+>>>>>>> .r2071
 from mo_logs import Log
+<<<<<<< .mine
+||||||| .r1729
+from mo_sql.utils import untyped_column, sql_type_key_to_json_type
+=======
+from mo_sql.utils import sql_type_key_to_json_type
+from mo_sqlite import sql_query
+>>>>>>> .r2071
 from mo_threads import Queue
 from mo_times.dates import Date
 
@@ -86,6 +125,7 @@ class ColumnList(Table, Container):
 
     def _load_from_database(self):
         # FIND ALL TABLES
+<<<<<<< .mine
         result = self.db.query(sql_query({
             "from": "sqlite_master",
             "where": {"eq": {"type": "table"}},
@@ -97,6 +137,26 @@ class ColumnList(Table, Container):
         last_nested_path = ["."]
         for table in tables:
             if table.name.startswith("__"):
+||||||| .r1729
+        tables = list(sort_using_key(self.db.get_tables(), lambda d: d.name))
+        self.tables.update(t.name for t in tables)
+        last_nested_path = []
+        for table in list(tables):
+            table_name = table.name
+            if table_name.startswith("__"):
+=======
+        result = self.db.query(sql_query({
+            "from": "sqlite_master",
+            "where": {"eq": {"type": "table"}},
+            "orderby": "name",
+        }))
+        tables = list_to_data([
+            {k: d for k, d in zip(result.header, row)} for row in result.data
+        ])
+        last_nested_path = []
+        for table in tables:
+            if table.name.startswith("__"):
+>>>>>>> .r2071
                 continue
             base_table, nested_path = tail_field(table.name)
 
@@ -111,12 +171,20 @@ class ColumnList(Table, Container):
                 else:
                     last_nested_path = []
 
+<<<<<<< .mine
             full_nested_path = [nested_path] + last_nested_path
             paths = self._snowflakes.get(base_table)
             if not paths:
                 self._snowflakes[base_table] = list(sorted(full_nested_path))
             else:
                 self._snowflakes[base_table] = list(sorted(set(paths) | set(full_nested_path)))
+||||||| .r1729
+            full_nested_path = split_field(table_name) + last_nested_path
+            self._snowflakes.setdefault(full_nested_path[-1], []).append(full_nested_path)
+=======
+            full_nested_path = [nested_path] + last_nested_path
+            self._snowflakes.setdefault(base_table, []).append(full_nested_path)
+>>>>>>> .r2071
 
             # LOAD THE COLUMNS
             details = self.db.about(table.name)
@@ -126,11 +194,25 @@ class ColumnList(Table, Container):
                     continue
                 cname, ctype = untyped_column(name)
                 self.add(Column(
+<<<<<<< .mine
                     name=cname,
                     jx_type=coalesce(
                         sqlite_type_to_simple_type.get(ctype),
                         sqlite_type_to_simple_type.get(dtype),
                         OBJECT,
+||||||| .r1729
+                    name=full_name,
+                    json_type=coalesce(
+                        sql_type_key_to_json_type.get(ctype),
+                        sql_type_key_to_json_type.get(dtype),
+                        IS_NULL,
+=======
+                    name=cname,
+                    json_type=coalesce(
+                        sql_type_key_to_json_type.get(ctype),
+                        sql_type_key_to_json_type.get(dtype),
+                        IS_NULL,
+>>>>>>> .r2071
                     ),
                     nested_path=full_nested_path,
                     es_type=dtype,
@@ -457,3 +539,11 @@ def mark_as_deleted(col):
     col.multi = 0
     col.partitions = None
     col.last_updated = Date.now()
+
+
+class _FakeLock():
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass

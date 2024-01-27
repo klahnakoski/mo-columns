@@ -9,11 +9,11 @@
 #
 from __future__ import absolute_import, division, unicode_literals
 
-from jx_base.expressions import AvgOp as AvgOp_
+from jx_base.expressions import AvgOp as _AvgOp
 from jx_python.expressions._utils import multiop_to_python, with_var
 
 
-class AvgOp(AvgOp_):
+class AvgOp(_AvgOp):
     to_python = multiop_to_python
 
     def to_python(self, not_null=False, boolean=False, many=False):

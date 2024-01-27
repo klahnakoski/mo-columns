@@ -9,11 +9,11 @@
 #
 from __future__ import absolute_import, division, unicode_literals
 
-from jx_base.expressions import FloorOp as FloorOp_
+from jx_base.expressions import FloorOp as _FloorOp
 from jx_python.expressions._utils import Python
 
 
-class FloorOp(FloorOp_):
+class FloorOp(_FloorOp):
     def to_python(self, not_null=False, boolean=False, many=False):
         return (
             "mo_math.floor("

@@ -8,19 +8,17 @@
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
 
-from __future__ import absolute_import, division, unicode_literals
 
 from jx_base.expressions.expression import Expression
 from jx_base.expressions.false_op import FALSE
 from jx_base.expressions.variable import IDENTITY, Variable
-from mo_future import PY2
 from mo_json import OBJECT
 
 default_select = ({"name": ".", "value": IDENTITY},)
 
 
 class ESSelectOp(Expression):
-    data_type = OBJECT
+    _jx_type = OBJECT
     has_simple_form = False
 
     def __init__(self, path="."):
@@ -56,7 +54,3 @@ class ESSelectOp(Expression):
 
     def __bool__(self):
         return True if self.source_path or self.fields or self.scripts else False
-
-
-if PY2:
-    ESSelectOp.__nonzero__ = ESSelectOp.__bool__

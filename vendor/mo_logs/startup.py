@@ -7,15 +7,12 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-
-from __future__ import absolute_import, division, unicode_literals
-
 import argparse as _argparse
 import os
 import sys
 import tempfile
 
-from mo_dots import coalesce, listwrap, unwrap, to_data
+from mo_dots import coalesce, listwrap, from_data, to_data
 
 from mo_logs import logger
 
@@ -36,7 +33,7 @@ from mo_logs import logger
 # dest - The name of the attribute to be added to the object returned by parse_args().
 class _ArgParser(_argparse.ArgumentParser):
     def error(self, message):
-        logger.error("argparse error: {{error}}", error=message)
+        logger.error("argparse error: {error}", error=message)
 
 
 def argparse(defs, complain=True):
@@ -45,7 +42,7 @@ def argparse(defs, complain=True):
         args = d.copy()
         name = args.name
         args.name = None
-        parser.add_argument(*unwrap(listwrap(name)), **args)
+        parser.add_argument(*from_data(listwrap(name)), **args)
     namespace, unknown = parser.parse_known_args()
     if unknown and complain:
         logger.warning("Ignoring arguments: {{unknown|json}}", unknown=unknown)
@@ -53,7 +50,7 @@ def argparse(defs, complain=True):
     return to_data(output)
 
 
-def read_settings(defs=None, filename=None, default_filename=None, complain=True):
+def read_settings(*, defs=None, filename=None, default_filename=None, complain=True):
     """
     :param filename: Force load a file
     :param defs: more arguments you want to accept (see https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument)
@@ -76,18 +73,15 @@ def read_settings(defs=None, filename=None, default_filename=None, complain=True
     args = argparse(defs, complain)
 
     args.filename = coalesce(
-        filename,
-        args.filename if args.filename.endswith(".json") else None,
-        default_filename,
-        "./config.json",
+        filename, args.filename if args.filename.endswith(".json") else None, default_filename, "./config.json",
     )
     settings_file = File(args.filename)
     if settings_file.exists:
-        logger.info("Using {{filename}} for configuration", filename=settings_file.abspath)
+        logger.info("Using {{filename}} for configuration", filename=settings_file.abs_path)
     else:
         logger.error(
             "Can not read configuration file {{filename}}",
-            filename=settings_file.abspath,
+            filename=settings_file.abs_path,
         )
 
     settings = mo_json_config.get_file(settings_file)
@@ -117,10 +111,10 @@ class SingleInstance:
 
     def __init__(self, flavor_id=""):
         self.initialized = False
-        appname = os.path.splitext(os.path.abspath(sys.argv[0]))[0]
-        basename = ((appname + "-%s") % flavor_id).replace("/", "-").replace(
-            ":", ""
-        ).replace("\\", "-").replace("-.-", "-") + ".lock"
+        appname = os.path.splitext(os.path.abs_path(sys.argv[0]))[0]
+        basename = ((appname + "-%s") % flavor_id).replace("/", "-").replace(":", "").replace("\\", "-").replace(
+            "-.-", "-"
+        ) + ".lock"
         self.lockfile = os.path.normpath(tempfile.gettempdir() + "/" + basename)
 
     def __enter__(self):

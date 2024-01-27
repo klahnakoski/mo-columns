@@ -7,10 +7,16 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
+<<<<<<< .mine
 from __future__ import absolute_import, division, unicode_literals
 
+||||||| .r1729
+
+
+=======
+>>>>>>> .r2071
 from jx_base.expressions import (
-    BasicStartsWithOp as BasicStartsWithOp_,
+    BasicStartsWithOp as _BasicStartsWithOp,
     is_literal,
     FALSE,
 )
@@ -22,7 +28,7 @@ from jx_sqlite.sqlite import quote_value
 from mo_json.types import T_BOOLEAN
 
 
-class BasicStartsWithOp(BasicStartsWithOp_):
+class BasicStartsWithOp(_BasicStartsWithOp):
     @check
     def to_sql(self, schema):
         prefix = self.prefix.partial_eval(SQLang)
@@ -37,12 +43,20 @@ class BasicStartsWithOp(BasicStartsWithOp_):
                 )
             else:
                 sql = ConcatSQL(value, SQL_LIKE, quote_value(prefix + "%"))
+<<<<<<< .mine
             return SQLScript(
                 data_type=T_BOOLEAN, expr=sql, frum=self, miss=FALSE, schema=schema
+||||||| .r1729
+            return SqlScript(
+                data_type=JX_BOOLEAN, expr=sql, frum=self, schema=schema
+=======
+            return SqlScript(
+                jx_type=JX_BOOLEAN, expr=sql, frum=self, miss=FALSE, schema=schema
+>>>>>>> .r2071
             )
         else:
             return (
-                SqlEqOp([SqlInstrOp([self.value, prefix]), SQL_ONE])
+                SqlEqOp(SqlInstrOp(self.value, prefix), SQL_ONE)
                 .partial_eval(SQLang)
                 .to_sql()
             )

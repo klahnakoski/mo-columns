@@ -9,9 +9,9 @@
 #
 from __future__ import absolute_import, division, unicode_literals
 
-from jx_base.expressions import ExpOp as ExpOp_
+from jx_base.expressions import ExpOp as _ExpOp
 from jx_python.expressions._utils import _binaryop_to_python
 
 
-class ExpOp(ExpOp_):
+class ExpOp(_ExpOp):
     to_python = _binaryop_to_python

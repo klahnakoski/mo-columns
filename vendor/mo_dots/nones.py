@@ -96,7 +96,7 @@ class NullType(object):
         return Null
 
     def __float__(self):
-        return Null
+        return float('nan')
 
     def __div__(self, other):
         return Null
@@ -246,6 +246,7 @@ class NullType(object):
 
 
 Null = NullType()  # INSTEAD OF None!!!
+_set(Null, SLOT, Null)
 
 
 def _assign_to_null(obj, path, value, force=True):

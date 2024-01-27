@@ -9,11 +9,11 @@
 #
 from __future__ import absolute_import, division, unicode_literals
 
-from jx_base.expressions import PrefixOp as PrefixOp_
+from jx_base.expressions import PrefixOp as _PrefixOp
 from jx_python.expressions._utils import Python
 
 
-class PrefixOp(PrefixOp_):
+class PrefixOp(_PrefixOp):
     def to_python(self, not_null=False, boolean=False, many=False):
         return (
             "("

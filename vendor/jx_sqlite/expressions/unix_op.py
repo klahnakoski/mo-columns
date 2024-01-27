@@ -7,15 +7,23 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
+<<<<<<< .mine
 from __future__ import absolute_import, division, unicode_literals
 
 from jx_base.expressions import UnixOp as UnixOp_
+||||||| .r1729
+
+
+from jx_base.expressions import UnixOp as UnixOp_
+=======
+from jx_base.expressions import UnixOp as _UnixOp
+>>>>>>> .r2071
 from jx_sqlite.expressions._utils import check
 from mo_dots import wrap
 from jx_sqlite.sqlite import sql_iso
 
 
-class UnixOp(UnixOp_):
+class UnixOp(_UnixOp):
     @check
     def to_sql(self, schema):
         v = self.value.to_sql(schema)[0].sql

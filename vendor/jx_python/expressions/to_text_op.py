@@ -9,11 +9,11 @@
 #
 from __future__ import absolute_import, division, unicode_literals
 
-from jx_base.expressions import ToTextOp as ToTextOp_
+from jx_base.expressions import ToTextOp as _ToTextOp
 from jx_python.expressions._utils import Python
 
 
-class ToTextOp(ToTextOp_):
+class ToTextOp(_ToTextOp):
     def to_python(self, not_null=False, boolean=False, many=False):
         missing = (self.term.missing(Python)).to_python(boolean=True)
         value = self.term.to_python(not_null=True)

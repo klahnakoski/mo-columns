@@ -6,14 +6,20 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
+<<<<<<< .mine
 from __future__ import absolute_import, division, unicode_literals
 
+||||||| .r1729
+
+
+=======
+import os
+>>>>>>> .r2071
 from copy import copy
 
 from mo_dots import is_list, to_data
 from mo_dots import listwrap, coalesce
-from mo_future import is_text, text
-from mo_logs import Log, constants, Except
+from mo_logs import logger, constants, Except
 from mo_logs.log_usingNothing import StructuredLogger
 
 from mo_threads import Signal
@@ -34,27 +40,22 @@ please_stop = Signal()
 
 def command_loop(local):
     STDOUT.write(b'{"out":"ok"}\n')
-    DEBUG and Log.note("python process running")
+    DEBUG and logger.info("python process running")
 
     while not please_stop:
         line = STDIN.readline()
         try:
             command = json2value(line.decode("utf8"))
-            DEBUG and Log.note("got {{command}}", command=command)
+            DEBUG and logger.info("got {command}", command=command)
 
             if "import" in command:
                 dummy = {}
-                if is_text(command["import"]):
-                    exec("from " + command["import"] + " import *", dummy, context)
+                if isinstance(command["import"], str):
+                    line = "from " + command["import"] + " import *"
                 else:
-                    exec(
-                        "from "
-                        + command["import"]["from"]
-                        + " import "
-                        + ",".join(listwrap(command["import"]["vars"])),
-                        dummy,
-                        context,
-                    )
+                    line = f"from {command['import']['from']} import " + ",".join(listwrap(command["import"]["vars"]))
+                DEBUG and logger.info("exec {line}", line=line)
+                exec(line, dummy, context)
                 STDOUT.write(DONE)
             elif "set" in command:
                 for k, v in command.set.items():
@@ -75,8 +76,8 @@ def command_loop(local):
                 STDOUT.write(DONE)
                 please_stop.go()
             elif "exec" in command:
-                if not is_text(command["exec"]):
-                    Log.error("exec expects only text")
+                if not isinstance(command["exec"], str):
+                    logger.error("exec expects only text")
                 exec(command["exec"], context, local)
                 STDOUT.write(DONE)
             else:
@@ -115,7 +116,7 @@ num_temps = 0
 def temp_var():
     global num_temps
     try:
-        return "temp_var" + text(num_temps)
+        return f"temp_var{num_temps}"
     finally:
         num_temps += 1
 
@@ -130,13 +131,17 @@ def start():
         line = STDIN.readline().decode("utf8")
         config = to_data(json2value(line))
         constants.set(config.constants)
-        Log.start(config.debug)
-        Log.set_logger(RawLogger())
+        logger.start(config.debug)
+        logger.set_logger(RawLogger())
+
+        # ENSURE WE HAVE A PYTHONPATH SET
+        python_path = os.environ.get("PYTHONPATH")
+        if not python_path:
+            os.environ["PYTHONPATH"] = "."
+
         command_loop({"config": config})
     except Exception as e:
-        Log.error("problem staring worker", cause=e)
-    finally:
-        Log.stop()
+        logger.error("problem staring worker", cause=e)
 
 
 if __name__ == "__main__":

@@ -9,11 +9,11 @@
 #
 from __future__ import absolute_import, division, unicode_literals
 
-from jx_base.expressions import LengthOp as LengthOp_
+from jx_base.expressions import LengthOp as _LengthOp
 from jx_python.expressions._utils import Python
 
 
-class LengthOp(LengthOp_):
+class LengthOp(_LengthOp):
     def to_python(self, not_null=False, boolean=False, many=False):
         value = self.term.to_python()
         return "len(" + value + ") if (" + value + ") != None else None"

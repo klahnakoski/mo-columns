@@ -9,11 +9,11 @@
 #
 from __future__ import absolute_import, division, unicode_literals
 
-from jx_base.expressions import NotLeftOp as NotLeftOp_
+from jx_base.expressions import NotLeftOp as _NotLeftOp
 from jx_python.expressions._utils import Python
 
 
-class NotLeftOp(NotLeftOp_):
+class NotLeftOp(_NotLeftOp):
     def to_python(self, not_null=False, boolean=False, many=False):
         v = (self.value).to_python()
         l = (self.length).to_python()

@@ -9,9 +9,9 @@
 #
 from __future__ import absolute_import, division, unicode_literals
 
-from jx_base.expressions import GtOp as GtOp_
+from jx_base.expressions import GtOp as _GtOp
 from jx_python.expressions._utils import _inequality_to_python
 
 
-class GtOp(GtOp_):
+class GtOp(_GtOp):
     to_python = _inequality_to_python

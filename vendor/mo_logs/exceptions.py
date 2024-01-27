@@ -7,18 +7,13 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-
-
-from __future__ import absolute_import, division, unicode_literals
-
 import sys
-from datetime import datetime
 
 from mo_dots import Null, is_data, listwrap, unwraplist, to_data, dict_to_data
-from mo_dots.lists import is_many
-from mo_future import is_text, PY2
-from mo_future import text
-from mo_logs.strings import CR, expand_template, indent
+from mo_future import is_text, utcnow
+import traceback
+
+from mo_logs.strings import CR, expand_template, indent, between
 
 FATAL = "FATAL"
 ERROR = "ERROR"
@@ -27,12 +22,14 @@ ALARM = "ALARM"
 UNEXPECTED = "UNEXPECTED"
 INFO = "INFO"
 NOTE = "NOTE"
+TOO_DEEP = 50  # MAXIMUM DEPTH OF CAUSAL CHAIN
+
+SHORT_STACKS = sys.version_info >= (3, 12)
 
 
 class LogItem(object):
-
-    def __init__(self, context, template, params, timestamp):
-        self.context = context
+    def __init__(self, severity, template, params, timestamp):
+        self.severity = severity
         self.template = template
         self.params = params
         self.timestamp = timestamp
@@ -42,21 +39,15 @@ class LogItem(object):
 
 
 class Except(Exception):
+    def __init__(self, severity=ERROR, template=Null, params=Null, cause=Null, trace=Null, **_):
+        self.timestamp = utcnow()
+        if severity == None:
+            raise ValueError("expecting severity to not be None")
 
-    def __init__(
-        self, context=ERROR, template=Null, params=Null, cause=Null, trace=Null, **_
-    ):
-        self.timestamp = datetime.utcnow()
-        if context == None:
-            raise ValueError("expecting context to not be None")
-
-        if is_many(cause):
-            self.cause = unwraplist([Except.wrap(c) for c in cause])
-        else:
-            self.cause = Except.wrap(cause)
+        self.cause = unwraplist([Except.wrap(c, stack_depth=2) for c in listwrap(cause)])
 
         Exception.__init__(self)
-        self.context = context
+        self.severity = severity
         self.template = template
         self.params = params
         self.trace = trace or get_stacktrace(2)
@@ -81,29 +72,22 @@ class Except(Exception):
             tb = getattr(e, "__traceback__", None)
             if tb is not None:
                 trace = _parse_traceback(tb)
+                if SHORT_STACKS:
+                    # 3.12 only traces back to first try block
+                    trace = trace + get_stacktrace(stack_depth + 1)
             else:
-                trace = get_traceback(0)
+                trace = get_stacktrace(stack_depth + 1)
 
             cause = Except.wrap(getattr(e, "__cause__", None))
             message = getattr(e, "message", None)
             if message:
                 output = Except(
-                    context=ERROR,
-                    template=e.__class__.__name__ + ": " + text(message),
-                    trace=trace,
-                    cause=cause,
+                    severity=ERROR, template=f"{e.__class__.__name__}: {message}", trace=trace, cause=cause,
                 )
             else:
-                output = Except(
-                    context=ERROR,
-                    template=e.__class__.__name__ + ": " + text(e),
-                    trace=trace,
-                    cause=cause,
-                )
+                output = Except(severity=ERROR, template=f"{e.__class__.__name__}: {e}", trace=trace, cause=cause)
 
-            trace = get_stacktrace(
-                stack_depth + 2
-            )  # +2 = to remove the caller, and it's call to this' Except.wrap()
+            trace = get_stacktrace(stack_depth + 2)  # +2 = to remove the caller, and it's call to this' Except.wrap()
             output.trace.extend(trace)
             return output
 
@@ -116,7 +100,7 @@ class Except(Exception):
             if value in self.template or value in self.message:
                 return True
 
-        if self.context == value:
+        if self.severity == value:
             return True
         for c in listwrap(self.cause):
             if value in c:
@@ -124,7 +108,10 @@ class Except(Exception):
         return False
 
     def __str__(self):
-        output = self.context + ": " + self.template + CR
+        return self._desc_text(0)
+
+    def _desc_text(self, depth):
+        output = self.severity + ": " + self.template + CR
         if self.params:
             try:
                 output = expand_template(output, self.params)
@@ -134,8 +121,10 @@ class Except(Exception):
         if self.trace:
             output += indent(format_trace(self.trace))
 
-        output += self.cause_text
+        output += self._cause_text(depth)
         return output
+
+    __repr__ = __str__
 
     @property
     def trace_text(self):
@@ -143,14 +132,23 @@ class Except(Exception):
 
     @property
     def cause_text(self):
+        return self._cause_text(0)
+
+    def _cause_text(self, depth):
         if not self.cause:
             return ""
+        if depth >= TOO_DEEP:
+            return "and caused by\n\t...\n"
+
         cause_strings = []
         for c in listwrap(self.cause):
             try:
-                cause_strings.append(text(c))
-            except Exception as e:
-                sys.stderr("Problem serializing cause" + text(c))
+                if isinstance(c, Except):
+                    cause_strings.append(c._desc_text(depth + 1))
+                else:
+                    cause_strings.append(str(c))
+            except Exception as cause:
+                sys.stderr.write(f"Problem serializing cause {cause}")
 
         return "caused by\n\t" + "and caused by\n\t".join(cause_strings)
 
@@ -161,46 +159,10 @@ class Except(Exception):
 
 
 def get_stacktrace(start=0):
-    """
-    SNAGGED FROM traceback.py
-    Altered to return Data
-
-    Extract the raw traceback from the current stack frame.
-
-    Each item in the returned list is a quadruple (filename,
-    line number, function name, text), and the entries are in order
-    from newest to oldest
-    """
-    try:
-        raise ZeroDivisionError
-    except ZeroDivisionError:
-        trace = sys.exc_info()[2]
-        f = trace.tb_frame.f_back
-
-    for i in range(start):
-        f = f.f_back
-
-    stack = []
-    while f is not None:
-        stack.append({
-            "file": f.f_code.co_filename,
-            "line": f.f_lineno,
-            "method": f.f_code.co_name,
-        })
-        f = f.f_back
+    stack = traceback.extract_stack()[: -start - 1]
+    stack.reverse()
+    stack = [{"file": f.filename, "line": f.lineno, "method": f.name} for f in stack]
     return stack
-
-
-def get_traceback(start):
-    """
-    SNAGGED FROM traceback.py
-
-    RETURN list OF dicts DESCRIBING THE STACK TRACE
-    """
-    tb = sys.exc_info()[2]
-    for i in range(start):
-        tb = tb.tb_next
-    return _parse_traceback(tb)
 
 
 def _parse_traceback(tb):
@@ -218,10 +180,7 @@ def _parse_traceback(tb):
 
 
 def format_trace(tbs, start=0):
-    return "".join(
-        expand_template('File "{{file}}", line {{line}}, in {{method}}\n', d)
-        for d in tbs[start::]
-    )
+    return "".join(expand_template('File ""{file}"", line {line}, in {method}\n', d) for d in tbs[start::])
 
 
 class Suppress(object):
@@ -230,13 +189,13 @@ class Suppress(object):
     """
 
     def __init__(self, exception_type):
-        self.context = exception_type
+        self.severity = exception_type
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if not exc_val or isinstance(exc_val, self.context):
+        if not exc_val or isinstance(exc_val, self.severity):
             return True
 
 
@@ -266,10 +225,7 @@ class Explanation(object):
             from mo_logs import logger
 
             logger.error(
-                template="Failure in " + self.template,
-                default_params=self.more_params,
-                cause=exc_val,
-                stack_depth=1,
+                template="Failure in " + self.template, default_params=self.more_params, cause=exc_val, stack_depth=1,
             )
 
             return True

@@ -7,8 +7,14 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
+<<<<<<< .mine
 from __future__ import absolute_import, division, unicode_literals
 
+||||||| .r1729
+
+
+=======
+>>>>>>> .r2071
 from jx_base.expressions import SuffixOp as SuffixOp_, FALSE, TRUE
 from jx_sqlite.expressions._utils import check, SQLang
 from jx_sqlite.expressions.eq_op import EqOp
@@ -26,7 +32,7 @@ class SuffixOp(SuffixOp_):
             return TRUE.to_sql(schema)
         else:
             return (
-                EqOp([RightOp([self.expr, LengthOp(self.suffix)]), self.suffix])
+                EqOp(RightOp(self.expr, LengthOp(self.suffix)), self.suffix)
                 .partial_eval(SQLang)
                 .to_sql(schema)
             )

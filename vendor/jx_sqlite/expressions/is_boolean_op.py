@@ -7,8 +7,14 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
+<<<<<<< .mine
 from __future__ import absolute_import, division, unicode_literals
 
+||||||| .r1729
+
+
+=======
+>>>>>>> .r2071
 from jx_base.expressions import IsBooleanOp as ToBooleanOp_, FALSE, TRUE, is_literal
 from jx_sqlite.expressions._utils import SQLang, check
 from mo_json.types import T_BOOLEAN
@@ -18,7 +24,13 @@ class IsBooleanOp(ToBooleanOp_):
     @check
     def to_sql(self, schema):
         term = self.term.partial_eval(SQLang)
+<<<<<<< .mine
         if term.type is T_BOOLEAN:
+||||||| .r1729
+        if term.type is JX_BOOLEAN:
+=======
+        if term.jx_type is JX_BOOLEAN:
+>>>>>>> .r2071
             return term.to_sql(schema)
         elif is_literal(term) and term.value in ("T", "F"):
             if term.value == "T":

@@ -9,10 +9,10 @@
 #
 from __future__ import absolute_import, division, unicode_literals
 
-from jx_base.expressions import CardinalityOp as CardinalityOp_
+from jx_base.expressions import CardinalityOp as _CardinalityOp
 
 
-class CardinalityOp(CardinalityOp_):
+class CardinalityOp(_CardinalityOp):
     def to_python(self, not_null=False, boolean=False, many=False):
         if not self.terms:
             return "0"

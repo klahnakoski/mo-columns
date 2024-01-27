@@ -7,10 +7,20 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
+<<<<<<< .mine
 from __future__ import absolute_import, division, unicode_literals
 
 from jx_base.expressions import BasicIndexOfOp as BasicIndexOfOp_, FALSE
 from jx_sqlite.expressions._utils import check, SQLScript
+||||||| .r1729
+
+
+from jx_base.expressions import BasicIndexOfOp as BasicIndexOfOp_
+from jx_sqlite.expressions._utils import check, SqlScript
+=======
+from jx_base.expressions import BasicIndexOfOp as BasicIndexOfOp_, FALSE
+from jx_sqlite.expressions._utils import check, SqlScript
+>>>>>>> .r2071
 from jx_sqlite.expressions.literal import Literal
 from jx_sqlite.sqlite import sql_call
 from mo_json.types import T_NUMBER
@@ -27,7 +37,13 @@ from mo_sql import (
 
 
 class BasicIndexOfOp(BasicIndexOfOp_):
+<<<<<<< .mine
     data_type = T_NUMBER
+||||||| .r1729
+    _data_type = JX_NUMBER
+=======
+    data_type = JX_NUMBER
+>>>>>>> .r2071
 
     @check
     def to_sql(self, schema):
@@ -38,7 +54,13 @@ class BasicIndexOfOp(BasicIndexOfOp_):
         if isinstance(start, Literal) and start.value == 0:
             expr = ConcatSQL(sql_call("INSTR", value, find), SQL_NEG, SQL_ONE)
 
+<<<<<<< .mine
             return SQLScript(expr=expr, miss=FALSE, frum=self)
+||||||| .r1729
+            return SqlScript(expr=expr, frum=self)
+=======
+            return SqlScript(expr=expr, miss=FALSE, frum=self)
+>>>>>>> .r2071
         else:
             start_index = start.to_sql(schema)
             found = sql_call(

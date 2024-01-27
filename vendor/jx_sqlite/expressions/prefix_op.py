@@ -7,8 +7,14 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
+<<<<<<< .mine
 from __future__ import absolute_import, division, unicode_literals
 
+||||||| .r1729
+
+
+=======
+>>>>>>> .r2071
 from jx_base.expressions import PrefixOp as PrefixOp_
 from jx_sqlite.expressions._utils import check, SQLang
 from jx_sqlite.sqlite import sql_call

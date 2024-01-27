@@ -34,7 +34,7 @@ class UnionOp(Expression):
         return {"union": [t.__data__() for t in self.terms]}
 
     @property
-    def type(self):
+    def jx_type(self):
         return merge_types(t.type for t in self.terms)
 
     def vars(self):
@@ -67,8 +67,8 @@ class UnionOp(Expression):
                 return Literal(minimum)
         else:
             if minimum == None:
-                output = UnionOp(terms)
+                output = UnionOp(*terms)
             else:
-                output = UnionOp([Literal(minimum)] + terms)
+                output = UnionOp(*[Literal(minimum)] + terms)
 
         return output

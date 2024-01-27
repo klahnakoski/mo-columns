@@ -9,11 +9,11 @@
 #
 from __future__ import absolute_import, division, unicode_literals
 
-from jx_base.expressions import NotRightOp as NotRightOp_
+from jx_base.expressions import NotRightOp as _NotRightOp
 from jx_python.expressions._utils import Python
 
 
-class NotRightOp(NotRightOp_):
+class NotRightOp(_NotRightOp):
     def to_python(self, not_null=False, boolean=False, many=False):
         v = (self.value).to_python()
         l = (self.length).to_python()

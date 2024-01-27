@@ -14,4 +14,4 @@ from jx_base.expressions.base_binary_op import BaseBinaryOp
 
 
 class ModOp(BaseBinaryOp):
-    op = "mod"
+    pass

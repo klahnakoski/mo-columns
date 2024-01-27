@@ -17,15 +17,14 @@ from mo_dots import Null, is_data
 from mo_imports import expect, export
 from mo_json.types import value_to_json_type
 
-DateOp, FALSE, TRUE, NULL = expect("DateOp", "FALSE", "TRUE", "NULL")
+(DateOp,
+ FALSE, TRUE, NULL) = expect("DateOp", "FALSE", "TRUE", "NULL")
 
 
 class Literal(Expression):
     """
     A literal JSON document
     """
-    op = "literal"
-
     def __new__(cls, term):
         if term == None:
             return NULL
@@ -104,7 +103,7 @@ class Literal(Expression):
         return self.json
 
     @property
-    def type(self):
+    def jx_type(self):
         return value_to_json_type(self._value)
 
     def partial_eval(self, lang):
@@ -116,6 +115,9 @@ class Literal(Expression):
 
 ZERO = Literal(0)
 ONE = Literal(1)
+EMPTY_ARRAY = object.__new__(Literal)
+Literal.__init__(EMPTY_ARRAY, [])
+
 
 literal_op_ids = tuple()
 

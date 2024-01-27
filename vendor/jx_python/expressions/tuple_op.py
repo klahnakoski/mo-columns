@@ -9,11 +9,11 @@
 #
 from __future__ import absolute_import, division, unicode_literals
 
-from jx_base.expressions import TupleOp as TupleOp_
+from jx_base.expressions import TupleOp as _TupleOp
 from jx_python.expressions._utils import Python
 
 
-class TupleOp(TupleOp_):
+class TupleOp(_TupleOp):
     def to_python(self, not_null=False, boolean=False, many=False):
         if len(self.terms) == 0:
             return "tuple()"

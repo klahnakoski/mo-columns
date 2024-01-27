@@ -7,10 +7,20 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
+<<<<<<< .mine
 from __future__ import absolute_import, division, unicode_literals
-
+||||||| .r1729
+=======
 from jx_base.expressions.null_op import NULL
+>>>>>>> .r2071
 
+<<<<<<< .mine
+||||||| .r1729
+
+=======
+from jx_base.expressions.literal import Literal
+
+>>>>>>> .r2071
 from jx_base.expressions.literal import Literal
 
 from jx_base.expressions import (
@@ -44,9 +54,8 @@ from mo_json import T_TEXT
 class ConcatOp(ConcatOp_):
     @check
     def to_sql(self, schema):
-        default = self.default.to_sql(schema)
         if len(self.terms) == 0:
-            return default
+            return NULL.to_sql(schema)
         len_sep = LengthOp(self.separator).partial_eval(SQLang)
         no_sep = len_sep is NULL
         if no_sep:
@@ -88,16 +97,29 @@ class ConcatOp(ConcatOp_):
             sql = sql_call(
                 "SUBSTR",
                 sql_concat_text(acc),
-                AddOp([ONE, LengthOp(self.separator)])
+                AddOp(ONE, LengthOp(self.separator), nulls=False)
                 .partial_eval(SQLang)
                 .to_sql(schema)
                 .expr,
             )
 
+<<<<<<< .mine
         return SQLScript(
             data_type=T_TEXT,
+||||||| .r1729
+        return SqlScript(
+            data_type=JX_TEXT,
+=======
+        return SqlScript(
+            jx_type=JX_TEXT,
+>>>>>>> .r2071
             expr=sql,
             frum=self,
+<<<<<<< .mine
             miss=AndOp([MissingOp(t) for t in self.terms]),
+||||||| .r1729
+=======
+            miss=AndOp(*(MissingOp(t) for t in self.terms), nulls=False),
+>>>>>>> .r2071
             schema=schema,
         )

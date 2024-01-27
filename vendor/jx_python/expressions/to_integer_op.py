@@ -9,9 +9,9 @@
 #
 from __future__ import absolute_import, division, unicode_literals
 
-from jx_base.expressions import ToIntegerOp as IntegerOp_
+from jx_base.expressions import ToIntegerOp as _IntegerOp
 
 
-class ToIntegerOp(IntegerOp_):
+class ToIntegerOp(_IntegerOp):
     def to_python(self, not_null=False, boolean=False, many=False):
         return "int(" + self.term.to_python() + ")"

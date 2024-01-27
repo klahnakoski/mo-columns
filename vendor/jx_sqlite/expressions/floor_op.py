@@ -7,9 +7,17 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
+<<<<<<< .mine
 from __future__ import absolute_import, division, unicode_literals
 
 from jx_base.expressions import FloorOp as FloorOp_, OrOp
+||||||| .r1729
+
+
+from jx_base.expressions import FloorOp as FloorOp_
+=======
+from jx_base.expressions import FloorOp as _FloorOp, OrOp
+>>>>>>> .r2071
 from jx_sqlite.expressions._utils import SQLang, check
 from jx_sqlite.expressions.sql_script import SQLScript
 from jx_sqlite.sqlite import (
@@ -27,7 +35,7 @@ from mo_future import text
 from mo_json import T_NUMBER
 
 
-class FloorOp(FloorOp_):
+class FloorOp(_FloorOp):
     @check
     def to_sql(self, schema):
         lhs = self.lhs.partial_eval(SQLang).to_sql(schema)
@@ -44,10 +52,23 @@ class FloorOp(FloorOp_):
             floor = sql_cast(lhs.expr, "INTEGER")
             sql = ConcatSQL(floor, SQL_SUB, modifier)
 
+<<<<<<< .mine
         return SQLScript(
             data_type=T_NUMBER,
+||||||| .r1729
+        return SqlScript(
+            data_type=JX_NUMBER,
+=======
+        return SqlScript(
+            jx_type=JX_NUMBER,
+>>>>>>> .r2071
             expr=sql,
             frum=self,
+<<<<<<< .mine
             miss=OrOp([self.lhs.missing(SQLang), self.rhs.missing(SQLang)]),
+||||||| .r1729
+=======
+            miss=OrOp(self.lhs.missing(SQLang), self.rhs.missing(SQLang)),
+>>>>>>> .r2071
             schema=schema,
         )

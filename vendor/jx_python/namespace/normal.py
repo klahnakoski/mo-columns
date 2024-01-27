@@ -20,6 +20,8 @@ from jx_base.expressions import QueryOp, get_all_vars
 from jx_python.containers import Container
 from jx_python.expressions import TRUE
 from jx_python.namespace import Namespace, convert_list
+
+from jx_base.expressions.variable import is_variable
 from mo_dots import (
     Data,
     FlatList,
@@ -111,7 +113,7 @@ class Normal(Namespace):
     def _convert_from(self, frum):
         if is_text(frum):
             return Data(name=frum)
-        elif is_op(frum, (Container, Variable)):
+        elif is_op(frum, Container) or is_variable(frum, Variable):
             return frum
         else:
             Log.error("Expecting from clause to be a name, or a container")

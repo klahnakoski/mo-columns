@@ -9,9 +9,9 @@
 #
 from __future__ import absolute_import, division, unicode_literals
 
-from jx_base.expressions import DivOp as DivOp_
+from jx_base.expressions import DivOp as _DivOp
 from jx_python.expressions._utils import _binaryop_to_python
 
 
-class DivOp(DivOp_):
+class DivOp(_DivOp):
     to_python = _binaryop_to_python

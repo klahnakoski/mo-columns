@@ -9,9 +9,9 @@
 #
 from __future__ import absolute_import, division, unicode_literals
 
-from jx_base.expressions import LeavesOp as LeavesOp_
+from jx_base.expressions import LeavesOp as _LeavesOp
 
 
-class LeavesOp(LeavesOp_):
+class LeavesOp(_LeavesOp):
     def to_python(self, not_null=False, boolean=False, many=False):
         return "Data(" + self.term.to_python() + ").leaves()"

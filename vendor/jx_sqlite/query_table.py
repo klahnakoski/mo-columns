@@ -7,6 +7,7 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
+<<<<<<< .mine
 
 
 from __future__ import absolute_import, division, unicode_literals
@@ -18,9 +19,59 @@ from jx_base.domains import SimpleSetDomain
 from jx_base.expressions import TupleOp, Variable, jx_expression, QueryOp, SelectOp, NULL
 from jx_base.language import is_op
 from jx_python import jx
+||||||| .r1729
+
+
+
+
+from jx_base.language import is_op
+from jx_base.meta_columns import Column
+from mo_imports import export
+
+import mo_json
+from jx_base import Facts
+from jx_base.expressions import jx_expression, QueryOp, SelectOp, Variable, FromOp
+from jx_base.expressions.expression import Expression
+from jx_base.expressions.select_op import normalize_one
+from jx_base.models.container import type2container
+=======
+import mo_json
+from jx_base import Column, Facts
+from jx_base.domains import SimpleSetDomain
+from jx_base.expressions import TupleOp, jx_expression, QueryOp, SelectOp, NULL
+from jx_base.expressions.select_op import normalize_one
+from jx_base.language import is_op
+from jx_base.models.container import type2container
+>>>>>>> .r2071
+from jx_python import jx
 from jx_sqlite.expressions._utils import SQLang
 from jx_sqlite.groupby_table import GroupbyTable
+<<<<<<< .mine
 from jx_sqlite.sqlite import (
+||||||| .r1729
+from mo_sqlite import (
+=======
+from jx_sqlite.utils import GUID, sql_aggs, unique_name, untyped_column
+from mo_collections.matrix import Matrix, index_to_coordinate
+from mo_dots import (
+    Data,
+    Null,
+    to_data,
+    coalesce,
+    concat_field,
+    is_list,
+    listwrap,
+    relative_field,
+    startswith_field,
+    unwraplist,
+    wrap,
+    list_to_data, from_data,
+)
+from mo_future import text, transpose, is_text
+from mo_json import STRING, STRUCT
+from mo_logs import Log
+from mo_sqlite import (
+>>>>>>> .r2071
     SQL_FROM,
     SQL_ORDERBY,
     SQL_SELECT,
@@ -35,6 +86,7 @@ from jx_sqlite.sqlite import (
     JoinSQL,
     SQL_COMMA,
 )
+<<<<<<< .mine
 from jx_sqlite.sqlite import quote_column, sql_alias
 from jx_sqlite.utils import GUID, sql_aggs, unique_name, untyped_column
 from mo_collections.matrix import Matrix, index_to_coordinate
@@ -56,6 +108,23 @@ from mo_dots import (
 from mo_future import text, transpose, is_text
 from mo_json import STRING, STRUCT
 from mo_logs import Log
+||||||| .r1729
+from mo_sqlite import quote_column, sql_alias
+from jx_sqlite.utils import GUID, sql_aggs
+from mo_dots import (
+    Data,
+    coalesce,
+    concat_field,
+    relative_field,
+    unwraplist,
+    list_to_data, )
+from mo_future import text
+from mo_json import STRING, STRUCT, to_jx_type
+from mo_logs import Log
+from mo_sql.utils import untyped_column
+=======
+from mo_sqlite import quote_column, sql_alias
+>>>>>>> .r2071
 from mo_threads import register_thread
 
 
@@ -131,6 +200,7 @@ class QueryTable(GroupbyTable):
         if not query:
             query = {}
 
+<<<<<<< .mine
         if not query.get("from"):
             query["from"] = self.name
 
@@ -392,6 +462,263 @@ class QueryTable(GroupbyTable):
 
         return output
 
+||||||| .r1729
+=======
+        if not query.get("from"):
+            query["from"] = self.name
+
+        if is_text(query["from"]) and not startswith_field(query["from"], self.name):
+            Log.error("Expecting table, or some nested table")
+        normalized_query = QueryOp.wrap(query, self, SQLang)
+
+        if normalized_query.format == "container":
+            new_table = "temp_" + unique_name()
+            create_table = SQL_CREATE + quote_column(new_table) + SQL_AS
+        else:
+            create_table = ""
+
+        if normalized_query.groupby and normalized_query.format != "cube":
+            op, index_to_columns = self._groupby_op(normalized_query, self.schema)
+            command = create_table + op
+        elif normalized_query.groupby:
+            normalized_query.edges, normalized_query.groupby = (
+                normalized_query.groupby,
+                normalized_query.edges,
+            )
+            op, index_to_columns = self._edges_op(normalized_query, self.schema)
+            command = create_table + op
+            normalized_query.edges, normalized_query.groupby = (
+                normalized_query.groupby,
+                normalized_query.edges,
+            )
+        elif normalized_query.edges or any(
+            t.aggregate is not NULL for t in listwrap(normalized_query.select.terms)
+        ):
+            op, index_to_columns = self._edges_op(
+                normalized_query, normalized_query.frum.schema
+            )
+            command = create_table + op
+        else:
+            op = self._set_op(normalized_query)
+            return op
+
+        result = self.container.db.query(command)
+
+        if normalized_query.format == "container":
+            output = QueryTable(new_table, container=self.container)
+        elif normalized_query.format == "cube" or (
+            not normalized_query.format and normalized_query.edges
+        ):
+            column_names = [None] * (
+                max(c.push_column_index for c in index_to_columns.values()) + 1
+            )
+            for c in index_to_columns.values():
+                column_names[c.push_column_index] = c.push_column_name
+
+            if len(normalized_query.edges) == 0 and len(normalized_query.groupby) == 0:
+                data = {n: Data() for n in column_names}
+                for s in index_to_columns.values():
+                    data[s.push_list_name][s.push_column_child] = from_data(s.pull(result.data[0]))
+                select = [{"name": s.name} for s in normalized_query.select.terms]
+
+                return Data(data=from_data(data), select=select, meta={"format": "cube"})
+
+            if not result.data:
+                edges = []
+                dims = []
+                for i, e in enumerate(
+                    normalized_query.edges + normalized_query.groupby
+                ):
+                    allowNulls = coalesce(e.allowNulls, True)
+
+                    if e.domain.type == "set" and e.domain.partitions:
+                        domain = SimpleSetDomain(partitions=e.domain.partitions.name)
+                    elif e.domain.type == "range":
+                        domain = e.domain
+                    elif is_op(e.value, TupleOp):
+                        pulls = (
+                            jx
+                            .sort(
+                                [
+                                    c
+                                    for c in index_to_columns.values()
+                                    if c.push_list_name == e.name
+                                ],
+                                "push_column_child",
+                            )
+                            .pull
+                        )
+                        parts = [tuple(p(d) for p in pulls) for d in result.data]
+                        domain = SimpleSetDomain(partitions=jx.sort(set(parts)))
+                    else:
+                        domain = SimpleSetDomain(partitions=[])
+
+                    dims.append(1 if allowNulls else 0)
+                    edges.append(Data(
+                        name=e.name, allowNulls=allowNulls, domain=domain
+                    ))
+
+                data = {}
+                for si, s in enumerate(normalized_query.select.terms):
+                    if s.aggregate == "count":
+                        data[s.name] = Matrix(dims=dims, zeros=0)
+                    else:
+                        data[s.name] = Matrix(dims=dims)
+
+                select = [{"name": s.name} for s in normalized_query.select.terms]
+
+                return Data(
+                    meta={"format": "cube"},
+                    edges=edges,
+                    select=select,
+                    data={k: v.cube for k, v in data.items()},
+                )
+
+            columns = None
+
+            edges = []
+            dims = []
+            for g in normalized_query.groupby:
+                g.is_groupby = True
+
+            for i, e in enumerate(normalized_query.edges + normalized_query.groupby):
+                allowNulls = coalesce(e.allowNulls, True)
+
+                if e.domain.type == "set" and e.domain.partitions:
+                    domain = e.domain
+                elif e.domain.type == "range":
+                    domain = e.domain
+                elif e.domain.type == "time":
+                    domain = wrap(mo_json.scrub(e.domain))
+                elif e.domain.type == "duration":
+                    domain = to_data(mo_json.scrub(e.domain))
+                elif is_op(e.value, TupleOp):
+                    pulls = (
+                        jx
+                        .sort(
+                            [
+                                c
+                                for c in index_to_columns.values()
+                                if c.push_list_name == e.name
+                            ],
+                            "push_column_child",
+                        )
+                        .pull
+                    )
+                    parts = [tuple(p(d) for p in pulls) for d in result.data]
+                    domain = SimpleSetDomain(partitions=jx.sort(set(parts)))
+                else:
+                    if not columns:
+                        columns = transpose(*result.data)
+                    parts = set(columns[i])
+                    if e.is_groupby and None in parts:
+                        allowNulls = True
+                    parts -= {None}
+
+                    if normalized_query.sort[i].sort == -1:
+                        domain = SimpleSetDomain(partitions=wrap(sorted(
+                            parts, reverse=True
+                        )))
+                    else:
+                        domain = SimpleSetDomain(partitions=jx.sort(parts))
+
+                dims.append(len(domain.partitions) + (1 if allowNulls else 0))
+                edges.append(Data(name=e.name, allowNulls=allowNulls, domain=domain))
+
+            data_cubes = {
+                s.name: Matrix(dims=dims)
+                for s in normalized_query.select.terms
+            }
+
+            r2c = index_to_coordinate(dims)  # WORKS BECAUSE THE DATABASE SORTED THE EDGES TO CONFORM
+            for record, row in enumerate(result.data):
+                coord = r2c(record)
+
+                for i, s in enumerate(index_to_columns.values()):
+                    if s.is_edge:
+                        continue
+                    if s.push_column_child == ".":
+                        data_cubes[s.push_list_name][coord] = s.pull(row)
+                    else:
+                        data_cubes[s.push_list_name][coord][s.push_column_child] = s.pull(row)
+
+            select = [{"name": s.name} for s in normalized_query.select.terms]
+
+            return Data(
+                meta={"format": "cube"},
+                edges=edges,
+                select=select,
+                data={k: v.cube for k, v in data_cubes.items()},
+            )
+        elif normalized_query.format == "table" or (
+            not normalized_query.format and normalized_query.groupby
+        ):
+            column_names = [None] * (
+                max(c.push_column_index for c in index_to_columns.values()) + 1
+            )
+            for c in index_to_columns.values():
+                column_names[c.push_column_index] = c.push_column_name
+            data = []
+            for d in result.data:
+                row = [None for _ in column_names]
+                for s in index_to_columns.values():
+                    if s.push_column_child == ".":
+                        row[s.push_column_index] = s.pull(d)
+                    elif s.num_push_columns:
+                        tuple_value = row[s.push_column_index]
+                        if tuple_value == None:
+                            tuple_value = row[s.push_column_index] = (
+                                [None] * s.num_push_columns
+                            )
+                        tuple_value[s.push_column_child] = s.pull(d)
+                    elif row[s.push_column_index] == None:
+                        row[s.push_column_index] = Data()
+                        row[s.push_column_index][s.push_column_child] = s.pull(d)
+                    else:
+                        row[s.push_column_index][s.push_column_child] = s.pull(d)
+                data.append(tuple(from_data(r) for r in row))
+
+            output = Data(meta={"format": "table"}, header=column_names, data=data)
+        elif normalized_query.format == "list" or (
+            not normalized_query.edges and not normalized_query.groupby
+        ):
+            if (
+                not normalized_query.edges
+                and not normalized_query.groupby
+                    and any(s.aggregate is not NULL for s in normalized_query.select.terms)
+            ):
+                data = Data()
+                for s in index_to_columns.values():
+                    if not data[s.push_column_name][s.push_column_child]:
+                        data[s.push_column_name][s.push_column_child] = s.pull(result.data[0])
+                    else:
+                        data[s.push_column_name][s.push_column_child] += [s.pull(result.data[0])]
+                output = Data(meta={"format": "value"}, data=unwraplist(from_data(data)))
+            else:
+                data = []
+                for record in result.data:
+                    row = Data()
+                    for c in index_to_columns.values():
+                        if c.num_push_columns:
+                            # APPEARS TO BE USED FOR PULLING TUPLES (GROUPBY?)
+                            tuple_value = row[c.push_list_name]
+                            if not tuple_value:
+                                tuple_value = row[c.push_list_name] = (
+                                    [None] * c.num_push_columns
+                                )
+                            tuple_value[c.push_column_child] = c.pull(record)
+                        else:
+                            row[c.push_list_name][c.push_column_child] = c.pull(record)
+
+                    data.append(row)
+
+                output = Data(meta={"format": "list"}, data=data)
+        else:
+            Log.error("unknown format {{format}}", format=normalized_query.format)
+
+        return output
+
+>>>>>>> .r2071
     def query_metadata(self, query):
         frum, query["from"] = query["from"], self
         schema = self.snowflake.tables["."].schema
@@ -437,7 +764,7 @@ class QueryTable(GroupbyTable):
                 metadata.append((
                     table,
                     relative_field(col.name, tname),
-                    col.type,
+                    col.jx_type,
                     unwraplist(col.nested_path),
                 ))
 
@@ -501,7 +828,13 @@ class QueryTable(GroupbyTable):
         )
 
     def _normalize_select(self, select) -> SelectOp:
+<<<<<<< .mine
         return SelectOp.normalize_one(select)
+||||||| .r1729
+        return normalize_one(select)
+=======
+        return normalize_one(Null, select, "list")
+>>>>>>> .r2071
 
     def transaction(self):
         """
@@ -528,5 +861,5 @@ class Transaction:
     def __getattr__(self, item):
         return getattr(self.table, item)
 
-
+# TODO: use dependency injection
 type2container["sqlite"] = QueryTable
