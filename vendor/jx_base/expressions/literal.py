@@ -8,14 +8,12 @@
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
 
-from __future__ import absolute_import, division, unicode_literals
 
-from mo_future import is_text
-from jx_base.expressions._utils import value2json
 from jx_base.expressions.expression import Expression
 from mo_dots import Null, is_data
+from mo_future import is_text
 from mo_imports import expect, export
-from mo_json.types import value_to_json_type
+from mo_json import value2json, value_to_jx_type
 
 (DateOp,
  FALSE, TRUE, NULL) = expect("DateOp", "FALSE", "TRUE", "NULL")
@@ -25,6 +23,7 @@ class Literal(Expression):
     """
     A literal JSON document
     """
+
     def __new__(cls, term):
         if term == None:
             return NULL
@@ -32,6 +31,10 @@ class Literal(Expression):
             return TRUE
         if term is False:
             return FALSE
+        if term == 0:
+            return ZERO
+        if term == 1:
+            return ONE
         if is_text(term) and not term:
             return NULL
         if is_data(term) and term.get("date"):
@@ -40,8 +43,7 @@ class Literal(Expression):
         return object.__new__(cls)
 
     def __init__(self, value):
-
-        Expression.__init__(self, None)
+        Expression.__init__(self)
         self.simplified = True
         self._value = value
 
@@ -104,17 +106,19 @@ class Literal(Expression):
 
     @property
     def jx_type(self):
-        return value_to_json_type(self._value)
+        return value_to_jx_type(self._value)
 
     def partial_eval(self, lang):
-        return self
+        return lang.Literal(self.value)
 
     def str(self):
         return str(self.value)
 
 
-ZERO = Literal(0)
-ONE = Literal(1)
+ZERO = object.__new__(Literal)
+Literal.__init__(ZERO, 0)
+ONE = object.__new__(Literal)
+Literal.__init__(ONE, 1)
 EMPTY_ARRAY = object.__new__(Literal)
 Literal.__init__(EMPTY_ARRAY, [])
 

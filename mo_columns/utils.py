@@ -7,16 +7,24 @@
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
 from mo_math import randoms
+from mo_sql.utils import json_type_to_sql_type_key
 
-from mo_json.types import _B, _I, _N, _T, _S
+from mo_json.types import BOOLEAN_KEY, INTEGER_KEY, NUMBER_KEY, TIME_KEY, STRING_KEY, python_type_to_jx_type, \
+    jx_type_to_json_type
 
 json_type_key_to_sqlite_type = {
-    _B: "TINYINT",
-    _I: "INTEGER",
-    _N: "REAL",
-    _S: "TEXT",
-    _T: "REAL",
+    BOOLEAN_KEY: "TINYINT",
+    INTEGER_KEY: "INTEGER",
+    NUMBER_KEY: "REAL",
+    STRING_KEY: "TEXT",
+    TIME_KEY: "REAL",
 }
+
+
+def python_type_to_sql_type_key(python_type):
+    jx_type = python_type_to_jx_type(python_type)
+    json_type = jx_type_to_json_type(jx_type)
+    return json_type_to_sql_type_key[json_type]
 
 
 def uuid():

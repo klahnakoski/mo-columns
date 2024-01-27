@@ -7,12 +7,8 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-<<<<<<< .mine
-from __future__ import absolute_import, division, unicode_literals
-||||||| .r1729
-=======
 from jx_base.expressions import LastOp as _LastOp
->>>>>>> .r2071
+
 
 class LastOp(_LastOp):
     pass

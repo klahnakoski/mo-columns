@@ -6,8 +6,7 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-from __future__ import division
-from __future__ import unicode_literals
+
 
 from mo_dots import is_null
 from mo_future import is_text
@@ -36,26 +35,25 @@ class Repeat(object):
 
         self.thread = None
         if start:
-            self.thread = Thread.run(
-                "repeat",
-                _repeat,
-                self.message,
-                self.every,
-                Date(start),
-                parent_thread=MAIN_THREAD,
-                please_stop=self.please_stop,
-            ).release()
+            self.thread = (
+                Thread
+                .run(
+                    "repeat",
+                    _repeat,
+                    self.message,
+                    self.every,
+                    Date(start),
+                    parent_thread=MAIN_THREAD,
+                    please_stop=self.please_stop,
+                )
+                .release()
+            )
 
     def __enter__(self):
         if self.thread:
             logger.error("Use as context manager or use start parameter, not both")
         self.thread = Thread.run(
-            "repeat",
-            _repeat,
-            self.message,
-            self.every,
-            Date.now(),
-            please_stop=self.please_stop
+            "repeat", _repeat, self.message, self.every, Date.now(), please_stop=self.please_stop,
         )
 
     def __exit__(self, exc_type, exc_val, exc_tb):

@@ -7,39 +7,22 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-<<<<<<< .mine
-from __future__ import absolute_import, division, unicode_literals
-
-||||||| .r1729
-
-
-=======
->>>>>>> .r2071
 from jx_base.expressions import OrOp as OrOp_
 from jx_base.expressions.false_op import FALSE
 from jx_sqlite.expressions._utils import SQLang, check
-from jx_sqlite.sqlite import SQL_OR, sql_iso, JoinSQL
+from mo_sqlite import SQL_OR, sql_iso, JoinSQL
 from mo_imports import export, expect
-from mo_json import T_BOOLEAN
+from mo_json import JX_BOOLEAN
 
-SQLScript = expect("SQLScript")
+SqlScript = expect("SqlScript")
 
 
 class OrOp(OrOp_):
     @check
     def to_sql(self, schema):
-<<<<<<< .mine
-        return SQLScript(
-            data_type=T_BOOLEAN,
-            miss=FALSE,
-||||||| .r1729
-        return SqlScript(
-            data_type=JX_BOOLEAN,
-=======
         return SqlScript(
             jx_type=JX_BOOLEAN,
             miss=FALSE,
->>>>>>> .r2071
             expr=JoinSQL(
                 SQL_OR,
                 [sql_iso(t.partial_eval(SQLang).to_sql(schema)) for t in self.terms],

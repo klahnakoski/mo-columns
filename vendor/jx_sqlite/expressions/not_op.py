@@ -7,17 +7,7 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-<<<<<<< .mine
-from __future__ import absolute_import, division, unicode_literals
-
-from jx_base.expressions import NotOp as NotOp_, BasicNotOp
-||||||| .r1729
-
-
-from jx_base.expressions import NotOp as NotOp_, BasicNotOp
-=======
 from jx_base.expressions import NotOp as _NotOp, BasicNotOp
->>>>>>> .r2071
 from jx_base.language import is_op
 from jx_sqlite.expressions._utils import check, SQLang, OrOp
 

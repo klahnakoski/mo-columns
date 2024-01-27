@@ -6,15 +6,7 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-<<<<<<< .mine
-from __future__ import absolute_import, division, unicode_literals
-
-||||||| .r1729
-
-
-=======
 import os
->>>>>>> .r2071
 from copy import copy
 
 from mo_dots import is_list, to_data
@@ -23,12 +15,13 @@ from mo_logs import logger, constants, Except
 from mo_logs.log_usingNothing import StructuredLogger
 
 from mo_threads import Signal
-from mo_threads.threads import STDOUT, STDIN
+from mo_threads.threads import STDOUT, STDIN, STDERR
 
 try:
     from mo_json import value2json, json2value
 except ImportError:
-    raise Log.error("Please `pip import mo-json` to use python sub processes")
+    from json import dumps as value2json
+    from json import loads as json2value
 
 context = copy(globals())
 del context["copy"]
@@ -40,12 +33,15 @@ please_stop = Signal()
 
 def command_loop(local):
     STDOUT.write(b'{"out":"ok"}\n')
+    STDOUT.flush()
     DEBUG and logger.info("python process running")
 
     while not please_stop:
-        line = STDIN.readline()
+        line = STDIN.readline().decode("utf8").strip()
+        if not line:
+            continue
         try:
-            command = json2value(line.decode("utf8"))
+            command = json2value(line)
             DEBUG and logger.info("got {command}", command=command)
 
             if "import" in command:
@@ -57,19 +53,17 @@ def command_loop(local):
                 DEBUG and logger.info("exec {line}", line=line)
                 exec(line, dummy, context)
                 STDOUT.write(DONE)
+            elif "ping" in command:
+                STDOUT.write(DONE)
             elif "set" in command:
                 for k, v in command.set.items():
                     context[k] = v
                 STDOUT.write(DONE)
             elif "get" in command:
                 STDOUT.write(
-                    value2json(
-                        {
-                            "out": coalesce(
-                                local.get(command["get"]), context.get(command["get"])
-                            )
-                        }
-                    ).encode("utf8")
+                    value2json({"out": coalesce(
+                        local.get(command["get"]), context.get(command["get"])
+                    )}).encode("utf8")
                 )
                 STDOUT.write(b"\n")
             elif "stop" in command:
@@ -84,19 +78,11 @@ def command_loop(local):
                 for k, v in command.items():
                     if is_list(v):
                         exec(
-                            "_return = " + k + "(" + ",".join(map(value2json, v)) + ")",
-                            context,
-                            local,
+                            f"_return = {k}(" + ",".join(map(value2json, v)) + ")", context, local,
                         )
                     else:
                         exec(
-                            "_return = "
-                            + k
-                            + "("
-                            + ",".join(
-                                kk + "=" + value2json(vv) for kk, vv in v.items()
-                            )
-                            + ")",
+                            f"_return = {k}(" + ",".join(kk + "=" + value2json(vv) for kk, vv in v.items()) + ")",
                             context,
                             local,
                         )
@@ -108,6 +94,7 @@ def command_loop(local):
             STDOUT.write(b"\n")
         finally:
             STDOUT.flush()
+            STDERR.flush()
 
 
 num_temps = 0
@@ -123,11 +110,12 @@ def temp_var():
 
 class RawLogger(StructuredLogger):
     def write(self, template, params):
-        STDOUT.write(value2json({"log": {"template": template, "params": params}}))
+        STDOUT.write(value2json({"log": {"template": template, "params": params}}).encode("utf8") + b"\n")
 
 
 def start():
     try:
+        # EXPECTING CONFIGURATION FROM PARENT
         line = STDIN.readline().decode("utf8")
         config = to_data(json2value(line))
         constants.set(config.constants)

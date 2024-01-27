@@ -7,20 +7,7 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-<<<<<<< .mine
-
-
-from __future__ import absolute_import, division, unicode_literals
-
 import mo_math
-
-||||||| .r1729
-
-
-
-
-=======
->>>>>>> .r2071
 from jx_base.expressions import (
     ToBooleanOp,
     NULL,
@@ -29,18 +16,6 @@ from jx_base.expressions import (
     FALSE,
     SelectOp,
     WhenOp,
-<<<<<<< .mine
-    CaseOp,
-    CountOp,
-    PercentileOp,
-    CardinalityOp,
-    OrOp,
-    AndOp,
-    UnionOp,
-)
-||||||| .r1729
-    CaseOp, CountOp, PercentileOp, CardinalityOp, OrOp, AndOp, UnionOp, )
-=======
     CaseOp,
     CountOp,
     PercentileOp,
@@ -50,20 +25,12 @@ from jx_base.expressions import (
     UnionOp,
     ZERO,
 )
->>>>>>> .r2071
 from jx_base.language import is_op
 from jx_python import jx
 from jx_sqlite.expressions._utils import SQLang
 from jx_sqlite.expressions.tuple_op import TupleOp
 from jx_sqlite.expressions.variable import Variable
 from jx_sqlite.setop_table import SetOpTable
-<<<<<<< .mine
-from jx_sqlite.sqlite import *
-from jx_sqlite.sqlite import quote_column, quote_value, sql_alias
-||||||| .r1729
-from mo_sqlite import quote_column, quote_value, sql_alias
-=======
->>>>>>> .r2071
 from jx_sqlite.utils import (
     ColumnMapping,
     STATS,
@@ -76,7 +43,6 @@ from jx_sqlite.utils import (
     UID,
     DIGITS_TABLE,
     table_alias,
-    sqlite_type_to_simple_type,
 )
 from mo_dots import (
     coalesce,
@@ -86,28 +52,14 @@ from mo_dots import (
 )
 from mo_future import text
 from mo_json import (
-<<<<<<< .mine
-    NUMBER,
-    T_BOOLEAN,
-    json_type_to_simple_type,
-||||||| .r1729
-    NUMBER, JX_BOOLEAN,
-    jx_type_to_json_type,
-=======
     NUMBER,
     JX_BOOLEAN,
     jx_type_to_json_type,
->>>>>>> .r2071
 )
 from mo_logs import Log
-<<<<<<< .mine
-||||||| .r1729
-from mo_sql.utils import untyped_column, sql_type_key_to_json_type
-=======
 from mo_sql.utils import sql_type_key_to_json_type
 from mo_sqlite import *
 from mo_sqlite import quote_column, quote_value, sql_alias
->>>>>>> .r2071
 
 EXISTS_COLUMN = quote_column("__exists__")
 
@@ -255,13 +207,7 @@ class EdgesTable(SetOpTable):
                             num_push_columns=len(query_edge.value.terms),
                             push_column_child=i,
                             pull=get_pull_func(column_index + i),
-<<<<<<< .mine
-                            type=json_type_to_simple_type(term.type),
-||||||| .r1729
-                            type=jx_type_to_json_type(term.type),
-=======
                             type=jx_type_to_json_type(term.jx_type),
->>>>>>> .r2071
                             sql=FALSE.to_sql(schema),
                             column_alias=get_domain_alias(column_index + i),
                         )
@@ -299,13 +245,7 @@ class EdgesTable(SetOpTable):
                             push_column_index=edge_index,
                             push_column_child=term.name,
                             pull=get_pull_func(column_index + i),
-<<<<<<< .mine
-                            type=json_type_to_simple_type(term.type),
-||||||| .r1729
-                            type=jx_type_to_json_type(term.type),
-=======
                             type=jx_type_to_json_type(term.jx_type),
->>>>>>> .r2071
                             sql=FALSE.to_sql(schema),
                             column_alias=get_domain_alias(column_index + i),
                         )
@@ -551,9 +491,7 @@ class EdgesTable(SetOpTable):
                     column_alias=s.name,
                     type=NUMBER,
                 )
-            elif is_op(s.aggregate, CountOp) and (
-                not query.edges and not query.groupby
-            ):
+            elif is_op(s.aggregate, CountOp) and (not query.edges and not query.groupby):
                 value = s.value.var
                 columns = [c.es_column for c in self.snowflake.columns if untyped_column(c.es_column)[0] == value]
                 sql = SQL_PLUS.join(sql_count(quote_column(col)) for col in columns)
@@ -597,15 +535,7 @@ class EdgesTable(SetOpTable):
                     push_column_name=s.name,
                     push_column_index=si,
                     push_column_child=".",
-<<<<<<< .mine
-                    pull=get_column(
-                        column_number, T_BOOLEAN, s.aggregate.default.value
-                    ),
-||||||| .r1729
-                    pull=get_column(column_number, JX_BOOLEAN, s.aggregate.default.value),
-=======
                     pull=get_column(column_number, JX_BOOLEAN, s.default),
->>>>>>> .r2071
                     sql=sql,
                     column_alias=_make_column_name(column_number),
                     type=BOOLEAN,
@@ -614,10 +544,7 @@ class EdgesTable(SetOpTable):
                 sql = s.value.partial_eval(SQLang).to_sql(schema)
                 column_number = len(outer_selects)
                 outer_selects.append(sql_alias(
-                    ConcatSQL(
-                        SQL_NOT,
-                        sql_call("SUM", sql_iso(ConcatSQL(SQL_NOT, sql_iso(sql)))),
-                    ),
+                    ConcatSQL(SQL_NOT, sql_call("SUM", sql_iso(ConcatSQL(SQL_NOT, sql_iso(sql))))),
                     _make_column_name(column_number),
                 ))
                 index_to_column[column_number] = ColumnMapping(
@@ -625,15 +552,7 @@ class EdgesTable(SetOpTable):
                     push_column_name=s.name,
                     push_column_index=si,
                     push_column_child=".",
-<<<<<<< .mine
-                    pull=get_column(
-                        column_number, T_BOOLEAN, s.aggregate.default.value
-                    ),
-||||||| .r1729
-                    pull=get_column(column_number, JX_BOOLEAN, s.aggregate.default.value),
-=======
                     pull=get_column(column_number, JX_BOOLEAN, s.default),
->>>>>>> .r2071
                     sql=sql,
                     column_alias=_make_column_name(column_number),
                     type=BOOLEAN,
@@ -653,7 +572,7 @@ class EdgesTable(SetOpTable):
                             pull=sql_text_array_to_set(column_number),
                             sql=sql,
                             column_alias=_make_column_name(column_number),
-                            type=sqlite_type_to_simple_type[sql_type],
+                            type=sql_type_key_to_json_type[sql_type],
                         )
             elif s.aggregate == "stats":  # THE STATS OBJECT
                 sql = s.value.to_sql(schema)
@@ -674,13 +593,7 @@ class EdgesTable(SetOpTable):
             else:  # STANDARD AGGREGATES
                 sql = s.value.partial_eval(SQLang).to_sql(schema)
                 sql = sql_call(sql_aggs[s.aggregate.op], sql)
-<<<<<<< .mine
-                data_type = json_type_to_simple_type(s.aggregate.type)
-||||||| .r1729
-                data_type = jx_type_to_json_type(s.aggregate.type)
-=======
                 json_type = jx_type_to_json_type(s.aggregate.jx_type)
->>>>>>> .r2071
 
                 default_value = s.default
                 column_number = len(outer_selects)
@@ -690,24 +603,10 @@ class EdgesTable(SetOpTable):
                     push_column_name=s.name,
                     push_column_index=si,
                     push_column_child=".",
-<<<<<<< .mine
-                    pull=get_column(
-                        column_number, data_type, s.aggregate.default.value
-                    ),
-||||||| .r1729
-                    pull=get_column(column_number, data_type, s.aggregate.default.value),
-=======
                     pull=get_column(column_number, json_type, default_value),
->>>>>>> .r2071
                     sql=sql,
                     column_alias=_make_column_name(column_number),
-<<<<<<< .mine
-                    type=data_type,
-||||||| .r1729
-                    type=data_type
-=======
                     type=json_type,
->>>>>>> .r2071
                 )
 
 

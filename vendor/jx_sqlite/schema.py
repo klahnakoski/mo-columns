@@ -5,18 +5,16 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http:# mozilla.org/MPL/2.0/.
 #
-
-from __future__ import absolute_import, division, unicode_literals
-
 from typing import Set, Tuple
 
-from jx_base import Column
+from jx_base import Column, enlist
 
 from jx_base.queries import get_property_name
 from jx_sqlite.utils import GUID, untyped_column, untype_field
-from mo_dots import concat_field, relative_field, set_default, startswith_field
+from mo_dots import concat_field, relative_field, set_default, startswith_field, split_field, tail_field, listwrap
+from mo_future import first
 from mo_json import EXISTS, OBJECT, STRUCT
-from mo_logs import Log
+from mo_logs import logger
 
 
 class Schema(object):
@@ -25,12 +23,14 @@ class Schema(object):
     """
 
     def __init__(self, nested_path, snowflake):
-        if nested_path[-1] != ".":
-            Log.error(
-                "Expecting full nested path so we can track the tables, and deal with"
+        if not isinstance(nested_path, (list, tuple)):
+            logger.error("expecting list")
+        if nested_path[-1] == ".":
+            logger.error(
+                "Expecting absolute nested path so we can track the tables, and deal with"
                 " abiguity in the event the names are not typed"
             )
-        self.path = concat_field(snowflake.fact_name, nested_path[0])
+        self.path = nested_path[0]
         self.nested_path = nested_path
         self.snowflake = snowflake
 
@@ -76,20 +76,48 @@ class Schema(object):
             for c in self.snowflake.namespace.columns.find(self.snowflake.fact_name)
             for k, t in [untyped_column(c.name)]
             if k == full_name and k != GUID
-            if c.jx_type not in [OBJECT, EXISTS]
+            if c.json_type not in [OBJECT, EXISTS]
         )
 
     def leaves(self, prefix) -> Set[Tuple[str, Column]]:
-        for np in self.nested_path:
+        """
+        :param prefix:
+        :return: set of (relative_name, column) pairs
+        """
+        if prefix == GUID and len(self.nested_path) == 1:
+            return {(".", first(c for c in self.columns if c.name == GUID))}
+
+        candidates = [
+            c
+            for c in self.columns
+            if c.json_type not in [OBJECT, EXISTS] and c.name != GUID
+        ]
+
+        search_path = [
+            *self.nested_path,
+            *(p for p in self.snowflake.query_paths if p.startswith(self.nested_path[0] + "."))
+        ]
+
+        for np in search_path:
+            rel_path, _ = untype_field(relative_field(np, self.snowflake.fact_name))
+            if startswith_field(prefix, rel_path):
+                prefix = relative_field(prefix, rel_path)
+
             full_name = concat_field(np, prefix)
-            candidates = self.columns
             output = set(
-                (untype_field(relative_field(k, full_name))[0], c)
+                pair
                 for c in candidates
-                if c.jx_type not in [OBJECT, EXISTS]
-                # if startswith_field(np, c.nested_path[0])
-                for k in [c.name, c.es_column]
-                if startswith_field(k, full_name) and k != GUID or k == full_name
+                if startswith_field(c.nested_path[0], np)
+                for pair in [first(
+                    (untype_field(relative_field(k, full_name))[0], c)
+                    for k in [
+                        concat_field(c.nested_path[0], relative_field(c.name, rel_path)),
+                        concat_field(c.es_index, c.es_column),
+                        # concat_field(c.nested_path[0], c.name),  # if the column name includes nested path
+                    ]
+                    if startswith_field(k, full_name)
+                )]
+                if pair is not None
             )
             if output:
                 return output
@@ -106,7 +134,7 @@ class Schema(object):
         origin_dict = {}
         for k, cs in self.namespace.items():
             for c in cs:
-                if c.jx_type in STRUCT:
+                if c.json_type in STRUCT:
                     continue
 
                 if startswith_field(get_property_name(k), var):
@@ -115,9 +143,7 @@ class Schema(object):
                     if origin != c.nested_path[0]:
                         fact_dict.setdefault(c.name, []).append(c)
                 elif origin == var:
-                    origin_dict.setdefault(
-                        concat_field(var, c.names[origin]), []
-                    ).append(c)
+                    origin_dict.setdefault(concat_field(var, c.names[origin]), []).append(c)
 
                     if origin != c.nested_path[0]:
                         fact_dict.setdefault(concat_field(var, c.name), []).append(c)

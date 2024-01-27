@@ -7,31 +7,12 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-<<<<<<< .mine
-
-
-from __future__ import absolute_import, division, unicode_literals
-
-from jx_base.expressions import TRUE, Variable, SelectOp, LeavesOp, CountOp
-||||||| .r1729
-
-
-
-
-from jx_base.expressions import TRUE, Variable, SelectOp, LeavesOp, CountOp
-=======
 from jx_base.expressions import Variable, SelectOp, LeavesOp, CountOp, DefaultOp
 from jx_base.expressions.variable import is_variable
->>>>>>> .r2071
 from jx_base.language import is_op
 from jx_python import jx
 from jx_sqlite.edges_table import EdgesTable
 from jx_sqlite.expressions._utils import SQLang
-<<<<<<< .mine
-from jx_sqlite.sqlite import (
-||||||| .r1729
-from mo_sqlite import (
-=======
 from jx_sqlite.utils import (
     ColumnMapping,
     _make_column_name,
@@ -44,7 +25,6 @@ from jx_sqlite.utils import (
 from mo_dots import split_field, startswith_field, relative_field, unliteral_field, tail_field, concat_field
 from mo_json import jx_type_to_json_type, JX_INTEGER
 from mo_sqlite import (
->>>>>>> .r2071
     SQL_FROM,
     SQL_GROUPBY,
     SQL_IS_NULL,
@@ -64,33 +44,7 @@ from mo_sqlite import (
     SQL_DESC,
     SQL_COMMA,
 )
-from jx_sqlite.sqlite import quote_column, sql_alias, sql_call
-<<<<<<< .mine
-from jx_sqlite.utils import (
-    ColumnMapping,
-    _make_column_name,
-    get_column,
-    sql_aggs,
-    PARENT,
-    UID,
-    table_alias,
-)
-from mo_dots import split_field, startswith_field, relative_field, concat_field
-from mo_json import json_type_to_simple_type, T_INTEGER
-||||||| .r1729
-from jx_sqlite.utils import (
-    ColumnMapping,
-    _make_column_name,
-    get_column,
-    sql_aggs,
-    PARENT,
-    UID,
-    table_alias,
-)
-from mo_dots import split_field, startswith_field, relative_field, unliteral_field
-from mo_json import jx_type_to_json_type, JX_INTEGER
-=======
->>>>>>> .r2071
+from mo_sqlite import quote_column, sql_alias, sql_call
 
 
 class GroupbyTable(EdgesTable):
@@ -137,12 +91,6 @@ class GroupbyTable(EdgesTable):
                     else:
                         top_name, end_name = tail_field(name)
                     column_number = len(selects)
-<<<<<<< .mine
-                    data_type = json_type_to_simple_type(edge_sql.data_type)
-||||||| .r1729
-                    data_type = jx_type_to_json_type(edge_sql._data_type)
-=======
->>>>>>> .r2071
 
                     part_edge_sql = value.to_sql(schema)
                     json_type = jx_type_to_json_type(part_edge_sql.jx_type)
@@ -152,16 +100,8 @@ class GroupbyTable(EdgesTable):
                     selects.append(sql_alias(part_edge_sql, column_alias))
                     index_to_column[column_number] = ColumnMapping(
                         is_edge=True,
-<<<<<<< .mine
-                        push_list_name=name,
-                        push_column_name=name.replace("\\.", "."),
-||||||| .r1729
-                        push_list_name=name,
-                        push_column_name=unliteral_field(name),
-=======
                         push_list_name=top_name,
                         push_column_name=unliteral_field(top_name),
->>>>>>> .r2071
                         push_column_index=column_index,
                         push_column_child=end_name,
                         pull=get_column(column_number, json_type),
@@ -173,67 +113,9 @@ class GroupbyTable(EdgesTable):
                         column_index += 1
                 if top:
                     column_index += 1
-<<<<<<< .mine
-            elif is_op(edge_sql.frum, SelectOp):
-                fields = [
-                    (t["name"], t["value"].to_sql(schema))
-                    for t in edge_sql.frum.terms
-                ]
-                for name, edge_sql in fields:
-                    column_number = len(selects)
-                    data_type = json_type_to_simple_type(edge_sql.data_type)
-
-                    column_alias = _make_column_name(column_number)
-                    groupby.append(edge_sql)
-                    selects.append(sql_alias(edge_sql, column_alias))
-                    index_to_column[column_number] = ColumnMapping(
-                        is_edge=True,
-                        push_list_name=edge["name"],
-                        push_column_name=edge["name"].replace("\\.", "."),
-                        push_column_index=column_index,
-                        push_column_child=relative_field(name, edge["name"]),
-                        pull=get_column(column_number, data_type),
-                        sql=edge_sql,
-                        column_alias=column_alias,
-                        type=data_type,
-                    )
-                column_index += 1
-||||||| .r1729
-            elif is_op(edge_sql.frum, SelectOp):
-                fields = [
-                    (t["name"], t["value"].to_sql(schema))
-                    for t in edge_sql.frum.terms
-                ]
-                for name, edge_sql in fields:
-                    column_number = len(selects)
-                    data_type = jx_type_to_json_type(edge_sql._data_type)
-
-                    column_alias = _make_column_name(column_number)
-                    groupby.append(edge_sql)
-                    selects.append(sql_alias(edge_sql, column_alias))
-                    index_to_column[column_number] = ColumnMapping(
-                        is_edge=True,
-                        push_list_name=edge["name"],
-                        push_column_name=unliteral_field(edge["name"]),
-                        push_column_index=column_index,
-                        push_column_child=relative_field(name, edge["name"]),
-                        pull=get_column(column_number, data_type),
-                        sql=edge_sql,
-                        column_alias=column_alias,
-                        type=data_type,
-                    )
-                column_index += 1
-=======
->>>>>>> .r2071
             else:
                 column_number = len(selects)
-<<<<<<< .mine
-                data_type = json_type_to_simple_type(edge_sql.data_type)
-||||||| .r1729
-                data_type = jx_type_to_json_type(edge_sql._data_type)
-=======
                 json_type = jx_type_to_json_type(edge_sql.jx_type)
->>>>>>> .r2071
 
                 column_alias = _make_column_name(column_number)
                 groupby.append(edge_sql)
@@ -241,7 +123,7 @@ class GroupbyTable(EdgesTable):
                 index_to_column[column_number] = ColumnMapping(
                     is_edge=True,
                     push_list_name=edge["name"],
-                    push_column_name=edge["name"].replace("\\.", "."),
+                    push_column_name=unliteral_field(edge["name"]),
                     push_column_index=column_index,
                     push_column_child=".",
                     pull=get_column(column_number, json_type),
@@ -262,13 +144,7 @@ class GroupbyTable(EdgesTable):
                 and is_op(base_agg, CountOp)
             ):
                 sql = sql_count(SQL_ONE)
-<<<<<<< .mine
-                data_type = T_INTEGER
-||||||| .r1729
-                data_type = JX_INTEGER
-=======
                 json_type = JX_INTEGER
->>>>>>> .r2071
             else:
                 sql = select.value.partial_eval(SQLang).to_sql(schema)
                 json_type = sql.frum.jx_type
@@ -289,16 +165,8 @@ class GroupbyTable(EdgesTable):
                 push_column_child=".",
                 pull=get_column(column_number, default=select.default),
                 sql=sql,
-<<<<<<< .mine
-                column_alias=select["name"],
-                type=json_type_to_simple_type(data_type),
-||||||| .r1729
-                column_alias=select["name"],
-                type=jx_type_to_json_type(data_type),
-=======
                 column_alias=select.name,
                 type=jx_type_to_json_type(json_type),
->>>>>>> .r2071
             )
             column_index += 1
 

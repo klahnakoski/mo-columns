@@ -7,20 +7,10 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-<<<<<<< .mine
-from __future__ import absolute_import, division, unicode_literals
-
-from jx_base.expressions import CaseOp as CaseOp_
-||||||| .r1729
-
-
-from jx_base.expressions import CaseOp as CaseOp_
-=======
 from jx_base.expressions import CaseOp as _CaseOp
->>>>>>> .r2071
 from jx_sqlite.expressions._utils import SQLang, check
-from jx_sqlite.expressions.sql_script import SQLScript
-from jx_sqlite.sqlite import (
+from jx_sqlite.expressions.sql_script import SqlScript
+from mo_sqlite import (
     SQL_CASE,
     SQL_ELSE,
     SQL_END,
@@ -42,35 +32,15 @@ class CaseOp(_CaseOp):
         for w in self.whens[:-1]:
             when = w.when.partial_eval(SQLang).to_sql(schema)
             value = w.then.partial_eval(SQLang).to_sql(schema)
-<<<<<<< .mine
-            data_type.append(value.type)
-||||||| .r1729
-            _data_type.append(value.type)
-=======
             data_type.append(value.jx_type)
->>>>>>> .r2071
             acc.append(ConcatSQL(SQL_WHEN, when, SQL_THEN, value))
 
         value = self.whens[-1].partial_eval(SQLang).to_sql(schema)
-<<<<<<< .mine
-        data_type.append(value.type)
-||||||| .r1729
-        _data_type.append(value.type)
-=======
         data_type.append(value.jx_type)
->>>>>>> .r2071
         acc.append(ConcatSQL(SQL_ELSE, value, SQL_END,))
 
-<<<<<<< .mine
-        return SQLScript(
-            data_type=union_type(*data_type),
-||||||| .r1729
-        return SqlScript(
-            data_type=union_type(*_data_type),
-=======
         return SqlScript(
             jx_type=union_type(*data_type),
->>>>>>> .r2071
             expr=ConcatSQL(*acc),
             frum=self,
             miss=self.missing(SQLang),

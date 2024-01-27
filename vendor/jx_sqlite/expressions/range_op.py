@@ -7,12 +7,8 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-<<<<<<< .mine
-from __future__ import absolute_import, division, unicode_literals
-||||||| .r1729
-=======
 from jx_base.expressions import RangeOp as _RangeOp
->>>>>>> .r2071
+
 
 class RangeOp(_RangeOp):
     pass

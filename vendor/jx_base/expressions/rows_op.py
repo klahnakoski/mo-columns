@@ -8,7 +8,6 @@
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
 
-from __future__ import absolute_import, division, unicode_literals
 
 from jx_base.expressions.expression import Expression
 from jx_base.expressions.literal import Literal
@@ -20,8 +19,8 @@ from mo_logs import Log
 class RowsOp(Expression):
     has_simple_form = True
 
-    def __init__(self, term):
-        Expression.__init__(self, term)
+    def __init__(self, *term):
+        Expression.__init__(self, *term)
         self.var, self.offset = term
         if is_variable(self.var):
             if is_variable(self.var) and not any(
@@ -43,4 +42,4 @@ class RowsOp(Expression):
         return self.var.vars() | self.offset.vars() | {"rows", "rownum"}
 
     def map(self, map_):
-        return RowsOp([self.var.map(map_), self.offset.map(map_)])
+        return RowsOp(self.var.map(map_), self.offset.map(map_))

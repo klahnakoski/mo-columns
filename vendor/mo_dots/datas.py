@@ -7,15 +7,11 @@
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
 
-from __future__ import absolute_import, division, unicode_literals
+
 
 from copy import copy, deepcopy
 from decimal import Decimal
 
-from mo_dots.lists import is_list, FlatList, is_sequence, is_many
-from mo_dots.nones import Null, NullType
-from mo_dots.utils import CLASS, SLOT
-from mo_dots.utils import get_logger
 from mo_future import (
     generator_types,
     iteritems,
@@ -25,6 +21,11 @@ from mo_future import (
     OrderedDict,
 )
 from mo_imports import expect
+
+from mo_dots.lists import is_list, FlatList, is_sequence, is_many
+from mo_dots.nones import Null, NullType
+from mo_dots.utils import CLASS, SLOT
+from mo_dots.utils import get_logger
 
 (
     _getdefault,
@@ -37,6 +38,7 @@ from mo_imports import expect
     null_types,
     list_to_data,
     dict_to_data,
+    concat_field,
 ) = expect(
     "_getdefault",
     "coalesce",
@@ -48,6 +50,7 @@ from mo_imports import expect
     "null_types",
     "list_to_data",
     "dict_to_data",
+    "concat_field",
 )
 
 
@@ -70,24 +73,17 @@ class Data(object):
         CONSTRUCT DATA WITH GIVEN PROPERTY VALUES
         """
         if args:
-            raise Exception(
-                "only keywords are allowed, not " + args[0].__class__.__name__
-            )
+            raise Exception("only keywords are allowed, not " + args[0].__class__.__name__)
         _set(self, SLOT, kwargs)
 
     def __bool__(self):
         d = _get(self, SLOT)
         if _get(d, CLASS) is dict:
-            return bool(d)
+            return True
         else:
             return d != None
 
-    def __nonzero__(self):
-        d = _get(self, SLOT)
-        if _get(d, CLASS) is dict:
-            return True if d else False
-        else:
-            return d != None
+    __nonzero__ = __bool__
 
     def __contains__(self, item):
         value = Data.__getitem__(self, item)
@@ -97,7 +93,10 @@ class Data(object):
 
     def __iter__(self):
         d = _get(self, SLOT)
-        return d.__iter__()
+        if _get(d, CLASS) is dict:
+            yield from d.items()
+        else:
+            yield from d.__iter__()
 
     def __getitem__(self, key):
         if key == None:
@@ -270,7 +269,7 @@ class Data(object):
 
         if _get(other, CLASS) not in data_types:
             return False
-        e = from_data(other)
+        e = other
         for k, v in d.items():
             if e.get(k) != v:
                 return False
@@ -292,11 +291,7 @@ class Data(object):
 
     def items(self):
         d = _get(self, SLOT)
-        return [
-            (k, to_data(v))
-            for k, v in d.items()
-            if v != None or _get(v, CLASS) in data_types
-        ]
+        return [(k, to_data(v)) for k, v in d.items() if v != None or _get(v, CLASS) in data_types]
 
     def leaves(self, prefix=None):
         """
@@ -396,10 +391,7 @@ class Data(object):
         return v
 
     def __str__(self):
-        try:
-            return dict.__str__(_get(self, SLOT))
-        except Exception:
-            return "{}"
+        return str(_get(self, SLOT))
 
     def __dir__(self):
         d = _get(self, SLOT)
@@ -407,9 +399,9 @@ class Data(object):
 
     def __repr__(self):
         try:
-            return "Data(" + dict.__repr__(_get(self, SLOT)) + ")"
+            return f"to_data({repr(_get(self, SLOT))})"
         except Exception as e:
-            return "Data()"
+            return "Data(?)"
 
 
 MutableMapping.register(Data)
@@ -424,13 +416,31 @@ def leaves(value, prefix=None):
     :param prefix:  OPTIONAL PREFIX GIVEN TO EACH KEY
     :return: Data, WHICH EACH KEY BEING A PATH INTO value TREE
     """
-    prefix = coalesce(prefix, "")
-    for k, v in value.items():
+    if not prefix:
+        yield from _leaves(value, ".")
+    else:
+        for k, v in _leaves(value, "."):
+            yield prefix + k, v
+
+
+def _leaves(value, parent):
+    if isinstance(value, Data):
+        d = _get(value, SLOT)
+        if isinstance(d, dict):
+            items = d.items()
+        else:
+            yield parent, d
+            return
+    else:
+        items = value.items()
+
+    for k, v in items:
         try:
+            kk = concat_field(parent, literal_field(k))
             if _get(v, CLASS) in data_types:
-                yield from leaves(v, prefix=prefix + literal_field(k) + ".")
+                yield from _leaves(v, kk)
             else:
-                yield prefix + literal_field(k), to_data(v)
+                yield kk, to_data(v)
         except Exception as e:
             get_logger().error("Do not know how to handle", cause=e)
 
@@ -442,23 +452,6 @@ def _split_field(field):
     return [k.replace("\b", ".") for k in field.replace("..", "\b").split(".")]
 
 
-def _str(value, depth):
-    """
-    FOR DEBUGGING POSSIBLY RECURSIVE STRUCTURES
-    """
-    output = []
-    if depth > 0 and _get(value, CLASS) in data_types:
-        for k, v in value.items():
-            output.append(str(k) + "=" + _str(v, depth - 1))
-        return "{" + ",\n".join(output) + "}"
-    elif depth > 0 and is_list(value):
-        for v in value:
-            output.append(_str(v, depth - 1))
-        return "[" + ",\n".join(output) + "]"
-    else:
-        return str(type(value))
-
-
 def _iadd(self, other):
     """
     RECURSIVE ADDITION OF DATA PROPERTIES
@@ -468,12 +461,23 @@ def _iadd(self, other):
     """
 
     if not _get(other, CLASS) in data_types:
-        get_logger().error("Expecting Data")
+        # HAPPENS WHEN _iadd WITH ['.'] SELF REFERENCE
+        d = _get(self, SLOT)
+        if isinstance(d, dict) and not len(d):
+            # LOOKS LIKE A FRESH Data OBJECT (AN IDENTITY ELEMENT)
+            # ∀ x, x += {} => x
+            d = Data()
+        else:
+            d = dict_to_data({"$": self})
+        d += dict_to_data({"$": other})
+        d["."] = d["$"]
+        return d
+
     d = from_data(self)
     for ok, ov in other.items():
         sv = d.get(ok)
         if sv == None:
-            d[ok] = deepcopy(ov)
+            d[ok] = from_data(deepcopy(ov))
         elif isinstance(ov, (Decimal, float, long, int)):
             if _get(sv, CLASS) in data_types:
                 get_logger().error(
@@ -486,7 +490,7 @@ def _iadd(self, other):
             else:
                 d[ok] = sv + ov
         elif is_list(ov):
-            d[ok] = listwrap(sv) + ov
+            d[ok] = from_data(listwrap(sv) + ov)
         elif _get(ov, CLASS) in data_types:
             if _get(sv, CLASS) in data_types:
                 _iadd(sv, ov)

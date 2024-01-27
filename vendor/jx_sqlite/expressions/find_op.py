@@ -7,14 +7,6 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-<<<<<<< .mine
-from __future__ import absolute_import, division, unicode_literals
-
-||||||| .r1729
-
-
-=======
->>>>>>> .r2071
 from jx_base.expressions import (
     FindOp as _FindOp,
     BasicEqOp,
@@ -26,17 +18,9 @@ from jx_sqlite.expressions.and_op import AndOp
 from jx_sqlite.expressions.not_left_op import NotLeftOp
 from jx_sqlite.expressions.or_op import OrOp
 from jx_sqlite.expressions.sql_instr_op import SqlInstrOp
-<<<<<<< .mine
-from jx_sqlite.expressions.sql_script import SQLScript
-from jx_sqlite.sqlite import (
-||||||| .r1729
-from jx_sqlite.expressions.sql_script import SqlScript
-from mo_sqlite import (
-=======
 from jx_sqlite.expressions.sql_script import SqlScript
 from mo_sql import SQL_NULL
 from mo_sqlite import (
->>>>>>> .r2071
     SQL_CASE,
     SQL_ELSE,
     SQL_END,
@@ -48,8 +32,8 @@ from mo_sqlite import (
     SQL_PLUS,
     SQL_SUB,
 )
-from jx_sqlite.sqlite import sql_call, quote_column
-from mo_json import T_INTEGER
+from mo_sqlite import sql_call, quote_column
+from mo_json import JX_INTEGER
 
 
 class FindOp(_FindOp):
@@ -90,13 +74,7 @@ class FindOp(_FindOp):
                 SQL_END,
             ),
         )
-<<<<<<< .mine
-        return SQLScript(data_type=T_INTEGER, expr=sql, frum=self, schema=schema)
-||||||| .r1729
-        return SqlScript(data_type=JX_INTEGER, expr=sql, frum=self, schema=schema)
-=======
         return SqlScript(jx_type=JX_INTEGER, expr=sql, frum=self, schema=schema)
->>>>>>> .r2071
 
     def missing(self, lang):
         not_found = BasicEqOp(

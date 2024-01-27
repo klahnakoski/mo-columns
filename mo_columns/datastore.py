@@ -38,7 +38,7 @@ class Datastore(object):
         self.dir = File(dir)
         self.schema = T_JSON
         self.active_shard = None
-        self.shard_locker = Lock(self.dir.abspath + " shards")
+        self.shard_locker = Lock(self.dir.abs_path + " shards")
         self.shards = [
             Shard(d)
             for d in self.dir.children
@@ -50,7 +50,7 @@ class Datastore(object):
         else:
             self.max_shard = max(int(c.dir.name) for c in self.shards)
         self.merge_thread = Thread.run(
-            "merge daemon for " + self.dir.abspath, self._merge_worker
+            "merge daemon for " + self.dir.abs_path, self._merge_worker
         )
         min_size = MAX_INT
         for c in self.shards:
@@ -133,7 +133,7 @@ class Datastore(object):
                     # DROP OLD CLUSTERS
                     new_dir = merged.dir.parent / merged.dir.name[len(IGNORE_PREFIX) :]
                     self.shards = [Shard(new_dir)] + self.shards[MERGE_RATIO:]
-                    os.rename(merged.dir.abspath, new_dir.abspath)
+                    os.rename(merged.dir.abs_path, new_dir.abs_path)
                     # START DANGER - RESTART WILL SCAN THIS dir WITH EXTRA CLUSTERS
 
                 with Timer("delete old shards"):
@@ -142,7 +142,7 @@ class Datastore(object):
                         c.db.close()
                         temp = c.dir.parent / (IGNORE_PREFIX + c.dir.name)
                         to_delete.append(temp)
-                        os.rename(c.dir.abspath, temp)
+                        os.rename(c.dir.abs_path, temp)
                     for d in to_delete:
                         d.delete()
                     # END DANGER

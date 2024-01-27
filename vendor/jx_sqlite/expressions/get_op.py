@@ -7,17 +7,13 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-<<<<<<< .mine
-from __future__ import absolute_import, division, unicode_literals
-||||||| .r1729
-=======
 from jx_base.expressions import GetOp as _GetOp, Variable, SelectOp, CoalesceOp
 from jx_base.expressions.select_op import SelectOne
 from jx_base.expressions.variable import is_variable
 from jx_sqlite.expressions._utils import check, SQLang
 from mo_dots import Null, concat_field
 from mo_logs import Log
->>>>>>> .r2071
+
 
 class GetOp(_GetOp):
     @check

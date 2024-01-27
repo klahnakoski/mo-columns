@@ -7,13 +7,9 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-
-
-from __future__ import absolute_import, division, unicode_literals
-
 from mo_threads import Queue, THREAD_STOP, Thread, Till
 
-from mo_logs import Except, logger
+from mo_logs import Except, Log
 from mo_logs.log_usingNothing import StructuredLogger
 
 DEBUG = False
@@ -26,15 +22,8 @@ class StructuredLogger_usingThread(StructuredLogger):
             logger.error("Expecting a StructuredLogger")
 
         self.logger = logger
-        self.queue = Queue(
-            "Queue for " + self.__class__.__name__,
-            max=10000,
-            silent=True,
-            allow_add_after_close=True,
-        )
-        self.thread = Thread(
-            "Thread for " + self.__class__.__name__, worker, logger, self.queue, period
-        )
+        self.queue = Queue("Queue for " + self.__class__.__name__, max=10000, silent=True, allow_add_after_close=True,)
+        self.thread = Thread("Thread for " + self.__class__.__name__, worker, logger, self.queue, period)
         # worker WILL BE RESPONSIBLE FOR THREAD stop()
         self.thread.parent.remove_child(self.thread)
         self.thread.start()
@@ -52,10 +41,10 @@ class StructuredLogger_usingThread(StructuredLogger):
             self.queue.add(THREAD_STOP)  # BE PATIENT, LET REST OF MESSAGE BE SENT
             self.thread.join()
         except Exception as e:
-            logger.info("problem in threaded logger" + str(e))
+            Log.info("problem in threaded logger" + str(e))
 
 
-def worker(logger, queue, period, please_stop):
+def worker(logger: StructuredLogger, queue, period, please_stop):
     please_stop.then(lambda: queue.close)
 
     try:
@@ -74,9 +63,11 @@ def worker(logger, queue, period, please_stop):
         for log in queue.pop_all():
             if log is not THREAD_STOP:
                 logger.write(**log)
+
+        logger.stop()
     except Exception as e:
         import sys
 
-        sys.stderr.write(
-            "problem in " + StructuredLogger_usingThread.__name__ + ": " + str(e)
-        )
+        e = Except.wrap(e)
+
+        sys.stderr.write("problem in " + StructuredLogger_usingThread.__name__ + ": " + str(e))

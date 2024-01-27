@@ -7,7 +7,7 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-from __future__ import absolute_import, division, unicode_literals
+
 
 import sys
 from functools import update_wrapper
@@ -26,16 +26,17 @@ KWARGS = str("kwargs")
 
 def override(kwargs=None):
     """
-    THIS DECORATOR WILL PUT ALL PARAMETERS INTO THE `kwargs` PARAMETER AND
+    :param kwargs: Alternative argument name that will receive all parameters
+
+    THIS DECORATOR WILL PUT ALL PARAMETERS INTO THE `kwargs` ARGUMENT AND
     THEN PUT ALL `kwargs` PARAMETERS INTO THE FUNCTION PARAMETERS. THIS HAS
     THE BENEFIT OF HAVING ALL PARAMETERS IN ONE PLACE (kwargs), PLUS ALL
     PARAMETERS ARE EXPLICIT FOR CLARITY.
 
-    OF COURSE, THIS MEANS PARAMETER ASSIGNMENT MAY NOT BE UNIQUE: VALUES CAN
-    COME FROM EXPLICIT CALL PARAMETERS, OR FROM THE kwargs PARAMETER. IN
-    THESE CASES, PARAMETER VALUES ARE CHOSEN IN THE FOLLOWING ORDER:
+    OF COURSE, THIS MEANS PARAMETER ASSIGNMENT MAY NOT BE UNIQUE: PARAMETER
+    VALUES ARE CHOSEN IN THE FOLLOWING ORDER:
     1) EXPLICT CALL PARAMETERS
-    2) PARAMETERS FOUND IN kwargs
+    2) PARAMETERS FOUND IN `kwargs`
     3) DEFAULT VALUES ASSIGNED IN FUNCTION DEFINITION
     """
 
@@ -54,7 +55,7 @@ def override(kwargs=None):
             packed = k.copy()
             packed.update(dict(zip(params, a)))
             err = text(e)
-            if err.startswith(func_name) and (
+            if func_name in err and (
                 "takes at least" in err
                 or "takes exactly " in err
                 or "required positional argument" in err

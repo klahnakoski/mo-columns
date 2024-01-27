@@ -7,12 +7,8 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-<<<<<<< .mine
-from __future__ import absolute_import, division, unicode_literals
-||||||| .r1729
-=======
 from jx_base.expressions import RowsOp as _RowsOp
->>>>>>> .r2071
+
 
 class RowsOp(_RowsOp):
     pass

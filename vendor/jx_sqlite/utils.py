@@ -7,31 +7,12 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-<<<<<<< .mine
-
-
-from __future__ import absolute_import, division, unicode_literals
-
-||||||| .r1729
-
-
-
-
-=======
->>>>>>> .r2071
 from copy import copy
 from math import isnan
 
 from jx_base import DataClass
-<<<<<<< .mine
-from jx_base import Snowflake
-from jx_sqlite.sqlite import quote_column, SQL, SQL_DESC, SQL_ASC
-||||||| .r1729
-from mo_sqlite import quote_column, SQL_DESC, SQL_ASC
-=======
 from jx_base import Snowflake
 from jx_base.expressions import NULL
->>>>>>> .r2071
 from mo_dots import (
     Data,
     concat_field,
@@ -40,26 +21,11 @@ from mo_dots import (
     join_field,
     split_field,
     is_sequence,
-<<<<<<< .mine
-    missing, is_missing, coalesce,
-)
-from mo_future import is_text, text
-from mo_json import BOOLEAN, ARRAY, NUMBER, OBJECT, STRING, json2value, T_BOOLEAN, INTEGER
-||||||| .r1729
-    is_missing, )
-from mo_future import is_text, text, POS_INF
-from mo_json import BOOLEAN, ARRAY, NUMBER, OBJECT, STRING, json2value, JX_BOOLEAN
-=======
     is_missing,
 )
 from mo_future import is_text, text
 from mo_json import BOOLEAN, ARRAY, NUMBER, OBJECT, STRING, json2value, JX_BOOLEAN, INTEGER
->>>>>>> .r2071
 from mo_json.typed_encoder import untype_path
-<<<<<<< .mine
-from mo_logs import Log
-||||||| .r1729
-=======
 from mo_json.types import (
     JX_ARRAY,
     JX_TEXT,
@@ -72,17 +38,10 @@ from mo_json.types import (
     INTEGER_KEY,
 )
 from mo_logs import Log
->>>>>>> .r2071
 from mo_math import randoms
-<<<<<<< .mine
-||||||| .r1729
-from mo_sql.utils import GUID, UID, ORDER, PARENT
-=======
 from mo_sql.utils import SQL_KEYS, SQL_ARRAY_KEY, SQL_KEY_PREFIX, SQL_NUMBER_KEY
 from mo_sqlite import quote_column, SQL_DESC, SQL_ASC
->>>>>>> .r2071
 from mo_times import Date
-from mo_json.types import _B, _I, _N, _T, _S, _A, T_ARRAY, T_TEXT, T_NUMBER, T_INTEGER, IS_PRIMITIVE_KEY
 
 DIGITS_TABLE = "__digits__"
 ABOUT_TABLE = "meta.about"
@@ -185,35 +144,6 @@ def is_type(value, type):
     return False
 
 
-<<<<<<< .mine
-def typed_column(name, sql_key):
-    if len(sql_key) > 1:
-        Log.error("not expected")
-    return concat_field(name, "$" + sql_key)
-
-
-def untyped_column(column_name):
-    """
-    :param column_name:  DATABASE COLUMN NAME
-    :return: (NAME, JSON_TYPE) PAIR
-    """
-    if column_name in [GUID]:
-        return column_name, T_TEXT
-
-    path = split_field(column_name)
-    if not path:
-        return '.', None
-    elif not IS_PRIMITIVE_KEY.match(path[-1]):
-        return join_field([p for p in path if p != _A]), None
-    else:
-        return join_field([p for p in path[:-1] if p != _A]), type_key_json_type[path[-1]]
-
-
-untype_field = untyped_column
-
-
-||||||| .r1729
-=======
 def typed_column(name, sql_key):
     if sql_key not in SQL_KEYS:
         Log.error("not expected")
@@ -240,7 +170,6 @@ def untyped_column(column_name):
 untype_field = untyped_column
 
 
->>>>>>> .r2071
 def _make_column_name(number):
     return COLUMN + text(number)
 
@@ -319,13 +248,7 @@ def get_column(column, json_type=None, default=NULL):
     return _get_type
 
 
-<<<<<<< .mine
-json_type_to_python_type = {T_BOOLEAN: bool}
-||||||| .r1729
-jx_type_to_python_type = {JX_BOOLEAN: bool}
-=======
 json_type_to_python_type = {JX_BOOLEAN: bool}
->>>>>>> .r2071
 
 
 def set_column(row, col, child, value):
@@ -392,7 +315,6 @@ ColumnMapping = DataClass(
     ]},
 )
 
-<<<<<<< .mine
 sqlite_type_to_simple_type = {
     "TEXT": STRING,
     "REAL": NUMBER,
@@ -401,50 +323,6 @@ sqlite_type_to_simple_type = {
     "TINYINT": BOOLEAN,
 }
 
-sqlite_type_to_type_key = {
-    "ARRAY": _A,
-    "TEXT": _S,
-    "REAL": _N,
-    "INTEGER": _I,
-    "TINYINT": _B,
-    "TRUE": _B,
-    "FALSE": _B,
-}
-
-type_key_json_type = {
-    _A: T_ARRAY,
-    _S: T_TEXT,
-    _N: T_NUMBER,
-    _I: T_INTEGER,
-    _B: T_BOOLEAN,
-}
-
-sort_to_sqlite_order = {
-    -1: SQL_DESC,
-    0: SQL_ASC,
-    1: SQL_ASC
-||||||| .r1729
-sort_to_sqlite_order = {
-    -1: SQL_DESC,
-    0: SQL_ASC,
-    1: SQL_ASC
-=======
-sqlite_type_to_simple_type = {
-    "TEXT": STRING,
-    "REAL": NUMBER,
-    "INT": INTEGER,
-    "INTEGER": INTEGER,
-    "TINYINT": BOOLEAN,
->>>>>>> .r2071
-}
-
-<<<<<<< .mine
-class BasicSnowflake(Snowflake):
-    def __init__(self, query_paths, columns):
-        self._query_paths = query_paths
-        self._columns = columns
-||||||| .r1729
-=======
 sqlite_type_to_type_key = {
     "ARRAY": ARRAY_KEY,
     "TEXT": STRING_KEY,
@@ -454,24 +332,7 @@ sqlite_type_to_type_key = {
     "TRUE": BOOLEAN_KEY,
     "FALSE": BOOLEAN_KEY,
 }
->>>>>>> .r2071
 
-<<<<<<< .mine
-    @property
-    def query_paths(self):
-        return self._query_paths
-
-    @property
-    def columns(self):
-        return self._columns
-
-    @property
-    def column(self):
-        return ColumnLocator(self._columns)
-
-
-||||||| .r1729
-=======
 type_key_json_type = {
     ARRAY_KEY: JX_ARRAY,
     STRING_KEY: JX_TEXT,
@@ -501,7 +362,6 @@ class BasicSnowflake(Snowflake):
         return ColumnLocator(self._columns)
 
 
->>>>>>> .r2071
 class ColumnLocator(object):
     def __init__(self, columns):
         self.columns = columns

@@ -6,10 +6,8 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-from __future__ import division
-from __future__ import unicode_literals
 
-import mo_math
+
 from mo_dots import Data, coalesce
 from mo_kwargs import override
 from mo_logs import logger
@@ -57,8 +55,8 @@ class Schedule(object):
         :return: return signal for next
         """
 
-        interval = mo_math.floor((Date.now() - self.starting) / self.duration)
-        next_time = self.starting + (interval * self.duration)
+        interval = (Date.now() - self.starting).floor(self.duration)
+        next_time = self.starting + interval
         return next_time
 
     def run(self):
@@ -71,11 +69,7 @@ class Schedule(object):
 
     def killer(self, please_stop):
         self.current.stop()
-        (
-            please_stop
-            | self.current.service_stopped()
-            | Till(seconds=self.wait_for_shutdown.seconds)
-        ).wait()
+        (please_stop | self.current.service_stopped() | Till(seconds=self.wait_for_shutdown.seconds)).wait()
         if not self.current.service_stopped:
             self.fail_count += 1
             self.current.kill()
@@ -83,7 +77,7 @@ class Schedule(object):
 
     def done(self):
         self.last_finished = Date.now()
-        self.terminator.remove_go(self.killer)
+        self.terminator.remove_then(self.killer)
         self.terminator = None
         self.current = None
         self.next_run = self._next_run_time()
@@ -114,20 +108,11 @@ def monitor(please_stop=True):
         if not schedules:
             (Till(seconds=NO_JOB_WAITING_TIME) | please_stop).wait()
             continue
-<<<<<<< .mine
-        Log.note(
-            "Currently scheduled jobs:\n {{jobs|json|indent}}",
-            jobs=[s.status() for s in schedules],
-||||||| .r1729
-        Log.note(
-            "Currently scheduled jobs:\n {{jobs|json|indent}}", jobs=[s.status() for s in schedules],
-=======
         logger.info(
             "Currently scheduled jobs:\n {jobs|json|indent}", jobs=[s.status() for s in schedules],
->>>>>>> .r2071
         )
         (Till(seconds=JOBS_WAITING_TIME) | please_stop).wait()
 
 
 logger.alert("Job scheduler started...")
-Thread.run("Monitor scheduled tasks", monitor_thread)
+Thread.run("Monitor scheduled tasks", monitor)

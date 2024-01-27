@@ -12,33 +12,6 @@ from mo_math import randoms
 from jx_base.expressions import QueryOp
 from jx_python.jx import chunk
 from jx_sqlite import Container
-from jx_sqlite.sqlite import (
-    Sqlite,
-    quote_column,
-    quote_value,
-    ConcatSQL,
-    SQL_INSERT,
-    SQL_VALUES,
-    SQL,
-    SQL_CREATE,
-    sql_iso,
-    sql_list,
-    SQL_SELECT,
-    sql_count,
-    SQL_ONE,
-    SQL_FROM,
-    sql_alias,
-    SQL_ON,
-    JoinSQL,
-    SQL_AND,
-    SQL_EQ,
-    SQL_AS,
-    SQL_LEFT_JOIN,
-    sql_create,
-    sql_insert,
-    SQL_WHERE,
-    sql_eq, sql_call, SQL_GROUPBY, SQL_COMMA,
-)
 from jx_sqlite.utils import (
     UID,
     GUID,
@@ -46,18 +19,18 @@ from jx_sqlite.utils import (
     PARENT,
     ORDER,
 )
-from mo_columns.utils import json_type_key_to_sqlite_type, uuid
+from mo_columns.utils import json_type_key_to_sqlite_type, uuid, python_type_to_sql_type_key
 from mo_dots import concat_field, split_field, from_data, Null, is_data, tail_field, join_field, literal_field
 from mo_dots.datas import leaves, Data
 from mo_files import File
-from mo_json import value2json
-from mo_json.types import T_JSON, to_json_type, python_type_to_json_type_key, _A
-from mo_logs import Log
+from mo_json import value2json, JX_IS_NULL
+from mo_sql.utils import SQL_ARRAY_KEY
+from mo_sqlite import *
 from mo_threads import Thread, Lock
 from mo_times import Timer
 
 DEBUG = True
-ID_COLUMN = concat_field(_A, GUID, python_type_to_json_type_key[str])
+ID_COLUMN = concat_field(SQL_ARRAY_KEY, GUID, python_type_to_sql_type_key(str))
 WORKSPACE_DIR = File("temp")
 
 
@@ -68,8 +41,8 @@ class Shard(object):
 
     def __init__(self, dir: File):
         self.dir = dir
-        self.name = dir.name
-        self.schema = T_JSON
+        self.name = dir.stem
+        self.schema = JX_IS_NULL
         self.next_id = 0
         self.columns_locker = Lock()
         self.columns = {}
@@ -172,11 +145,11 @@ class Shard(object):
             source.stop()
 
         def extract_column(path, type, please_stop):
-            full_path = concat_field("." if path=="$" else _A+path[1:], sqlite_type_to_type_key[type.upper()])
+            full_path = concat_field("." if path=="$" else SQL_ARRAY_KEY+path[1:], sqlite_type_to_type_key[type.upper()])
             key_columns = list(get_key_columns(full_path))
             column_names = list(map(quote_column, key_columns))
 
-            dims = full_path.count(_A)
+            dims = full_path.count(SQL_ARRAY_KEY)
             selects = [quote_column("rowid")]
             for d in range(dims - 1):
                 selects.append(SQL(f"json_extract(keys, '$[{d}]')"))
@@ -185,7 +158,7 @@ class Shard(object):
             rowid = quote_column("db0", name, "rowid")
 
             # MAKE ID COLUMN IF NOT EXISTS
-            parent_full_path = full_path[:full_path.rfind(_A)]+_A
+            parent_full_path = full_path[:full_path.rfind(SQL_ARRAY_KEY)]+SQL_ARRAY_KEY
             parent_path = "$"+parent_full_path[3:]
 
             with self.columns_locker:
@@ -201,7 +174,7 @@ class Shard(object):
                 with db.transaction() as t:
                     t.execute(ConcatSQL(
                         SQL("ATTACH "),
-                        quote_value(file.abspath),
+                        quote_value(file.abs_path),
                         SQL_AS,
                         quote_column("db0"),
                     ))
@@ -259,7 +232,7 @@ class Shard(object):
 
                 t.execute(ConcatSQL(
                     SQL("ATTACH "),
-                    quote_value(file.abspath),
+                    quote_value(file.abs_path),
                     SQL_AS,
                     quote_column("db0"),
                 ))
@@ -305,30 +278,30 @@ class Shard(object):
         # for t in threads:
         #     t.join()
 
-        Thread.run("delete " + file.abspath, delete_file, file)
+        Thread.run("delete " + file.abs_path, delete_file, file)
 
     def insert(self, documents):
         """
         SLOWER THEN OTHER INSERT BECAUSE PYTHON DOES TOO MUCH OF THE WORK
         """
-        column_values = {_A: []}
+        column_values = {SQL_ARRAY_KEY: []}
 
         def _add(parent_path, key, doc):
             column_values[parent_path].append(key)
             if is_data(doc):
                 for path, value in leaves(doc):
-                    type_key = python_type_to_json_type_key[type(value)]
+                    type_key = python_type_to_sql_type_key[type(value)]
                     full_path = concat_field(parent_path, path, type_key)
-                    if type_key is _A:
+                    if type_key is SQL_ARRAY_KEY:
                         column_values.setdefault(full_path, [])
                         for i, d in enumerate(value):
                             _add(full_path, key + (i,), d)
                     else:
                         column_values.setdefault(full_path, []).append((key, value))
             else:
-                type_key = python_type_to_json_type_key[type(doc)]
+                type_key = python_type_to_sql_type_key[type(doc)]
                 full_path = concat_field(parent_path, type_key)
-                if type_key is _A:
+                if type_key is SQL_ARRAY_KEY:
                     column_values.setdefault(full_path, [])
                     for i, d in enumerate(doc):
                         _add(full_path, key + (i,), d)
@@ -342,11 +315,11 @@ class Shard(object):
 
                 _id = d.get(GUID)
                 if not _id:
-                    _add(_A, doc_id, d)
+                    _add(SQL_ARRAY_KEY, doc_id, d)
                     _id = uuid()
                 else:
                     del d[GUID]
-                    _add(_A, doc_id, d)
+                    _add(SQL_ARRAY_KEY, doc_id, d)
                     d[GUID] = _id
                     _id = str(_id)
 
@@ -354,7 +327,7 @@ class Shard(object):
 
             for full_path, data in column_values.items():
                 db = self.columns.get(full_path)
-                if full_path.endswith(_A):
+                if full_path.endswith(SQL_ARRAY_KEY):
                     if db is None:
                         # CREATE DATABASE
                         db = self.columns[full_path] = Sqlite(
@@ -393,7 +366,7 @@ class Shard(object):
                 rows=len(docs),
                 cols=len(column_values),
             )
-            column_values = {_A: []}
+            column_values = {SQL_ARRAY_KEY: []}
         return self
 
     def _add_column(self, path, db):
@@ -406,11 +379,12 @@ class Shard(object):
             ))
 
             # CREATE INDEX
-            key_columns = list(map(quote_column, get_key_columns(path)))
-            key_list = sql_list(key_columns)
-            t.execute(
-                f"""CREATE INDEX {quote_column(f"index_{path}")} ON {quote_column(path)} (value, {key_list})"""
-            )
+            Log.info("index is not created")
+            # key_columns = list(map(quote_column, get_key_columns(path)))
+            # key_list = sql_list(key_columns)
+            # t.execute(
+            #     f"""CREATE INDEX {quote_column(f"index_{path}")} ON {quote_column(path)} (value, {key_list})"""
+            # )
 
     def _add_exists(self, path, db):
         """
@@ -435,25 +409,25 @@ class Shard(object):
 
         # MAP KEY COLUMNS TO NEW rowid
         for i, (path, db) in enumerate(self.columns.items()):
-            if not path.endswith(_A):
+            if not path.endswith(SQL_ARRAY_KEY):
                 continue
 
             file = self.dir / concat_field(path, "sqlite")
             db_alias = f"db{i}"
             attachments.append(ConcatSQL(
-                SQL("ATTACH "), sql_alias(quote_value(file.abspath), db_alias)
+                SQL("ATTACH "), sql_alias(quote_value(file.abs_path), db_alias)
             ))
 
             table_alias = f"c{i}"
             parent_path = "."
             table_path = "."
             acc = ""
-            for prefix in path.split(_A)[:-1]:
+            for prefix in path.split(SQL_ARRAY_KEY)[:-1]:
                 parent_path = table_path
-                acc = acc + prefix + _A
+                acc = acc + prefix + SQL_ARRAY_KEY
                 table_path = acc
 
-            if table_path == _A:
+            if table_path == SQL_ARRAY_KEY:
                 pre_tables[table_path] = Data(
                     dest=concat_field(temp_name, table_path),
                     selects=[sql_alias(quote_column(table_alias, UID), UID)],
@@ -512,7 +486,7 @@ class Shard(object):
         tables = {}
         for path, table in pre_tables.items():
             dest = join_field([name] + split_field(path)[1:])
-            if path == _A:
+            if path == SQL_ARRAY_KEY:
                 columns = {UID: "INTEGER"}
                 selects = [
                     sql_alias(quote_column(table.alias, "rowid"), UID)
@@ -542,17 +516,17 @@ class Shard(object):
         # JOIN VALUES TO TABLES
         attachments = []
         for i, (path, db) in enumerate(self.columns.items()):
-            if path.endswith(_A):
+            if path.endswith(SQL_ARRAY_KEY):
                 continue
 
             file = self.dir / concat_field(path, "sqlite")
             db_alias = f"db{i}"
             attachments.append(ConcatSQL(
-                SQL("ATTACH "), sql_alias(quote_value(file.abspath), db_alias)
+                SQL("ATTACH "), sql_alias(quote_value(file.abs_path), db_alias)
             ))
 
             table_alias = f"c{i}"
-            parent_path = path[:path.rfind(_A)] + _A
+            parent_path = path[:path.rfind(SQL_ARRAY_KEY)] + SQL_ARRAY_KEY
             parent = tables[parent_path]
             column_name = tail_field(path)[1]
             parent.selects.append(sql_alias(
@@ -621,7 +595,7 @@ def get_key_columns(path):
     RETURN A TUPLE OF KEYS REQUIRED TO STORE GIVEN PATH
     """
     yield UID
-    for i in range(1, path.count(_A)):
+    for i in range(1, path.count(SQL_ARRAY_KEY)):
         yield f"_id{i}"
 
 

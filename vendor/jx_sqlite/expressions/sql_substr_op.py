@@ -7,20 +7,12 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-<<<<<<< .mine
-from __future__ import absolute_import, division, unicode_literals
-
-||||||| .r1729
-
-
-=======
->>>>>>> .r2071
 from jx_base.expressions import NULL, SqlSubstrOp as SqlSubstrOp_
 from jx_sqlite.expressions._utils import check, SQLang, OrOp
 from jx_sqlite.expressions.literal import Literal
-from jx_sqlite.expressions.sql_script import SQLScript
-from jx_sqlite.sqlite import sql_call
-from mo_json import T_TEXT
+from jx_sqlite.expressions.sql_script import SqlScript
+from mo_sqlite import sql_call
+from mo_json import JX_TEXT
 
 
 class SqlSubstrOp(SqlSubstrOp_):
@@ -33,24 +25,11 @@ class SqlSubstrOp(SqlSubstrOp_):
         else:
             length = self.length.partial_eval(SQLang).to_sql(schema)
             sql = sql_call("SUBSTR", value, start, length)
-<<<<<<< .mine
-        return SQLScript(
-            data_type=T_TEXT,
-||||||| .r1729
-        return SqlScript(
-            data_type=JX_TEXT,
-=======
         return SqlScript(
             jx_type=JX_TEXT,
->>>>>>> .r2071
             expr=sql,
             frum=self,
-<<<<<<< .mine
-            miss=OrOp([value.miss, start.miss]),
-||||||| .r1729
-=======
             miss=OrOp(value.miss, start.miss),
->>>>>>> .r2071
             schema=schema,
         )
 

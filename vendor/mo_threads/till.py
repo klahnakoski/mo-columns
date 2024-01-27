@@ -11,7 +11,6 @@
 # THIS SIGNAL IS IMPORTANT FOR PROPER SIGNALLING WHICH ALLOWS
 # FOR FAST AND PREDICTABLE SHUTDOWN AND CLEANUP OF THREADS
 
-from __future__ import absolute_import, division, unicode_literals
 
 from collections import namedtuple
 from time import sleep, time
@@ -19,14 +18,13 @@ from weakref import ref
 
 from mo_future import allocate_lock as _allocate_lock
 from mo_logs import logger
-from mo_dots import is_null
 
 from mo_threads.signals import DONE, Signal
 
 TIMERS_NAME = "timers daemon"
 DEBUG = False
 INTERVAL = 0.1
-enabled = Signal()
+enabled: Signal
 warning_not_sent = []
 
 
@@ -34,6 +32,7 @@ class Till(Signal):
     """
     TIMEOUT AS A SIGNAL
     """
+
     __slots__ = []
 
     locker = _allocate_lock()
@@ -48,7 +47,7 @@ class Till(Signal):
             return DONE
         elif till != None:
             return object.__new__(cls)
-        elif is_null(seconds):
+        elif seconds == None:
             return object.__new__(cls)
         elif seconds <= 0:
             return DONE
@@ -66,12 +65,14 @@ class Till(Signal):
         if till != None:
             if not isinstance(till, (float, int)):
                 from mo_logs import logger
+
                 logger.error("Date objects for Till are no longer allowed")
             timeout = till
         elif seconds != None:
             timeout = now + seconds
         else:
             from mo_logs import logger
+
             raise logger.error("Should not happen")
 
         Signal.__init__(self, name=str(timeout))
@@ -98,22 +99,8 @@ def daemon(please_stop):
                 try:
                     sleep(min(later, INTERVAL))
                 except Exception as cause:
-<<<<<<< .mine
-                    Log.warning(
-                        "Call to sleep failed with ({{later}}, {{interval}})",
-                        later=later,
-                        interval=INTERVAL,
-                        cause=cause
-||||||| .r1729
-                    Log.warning(
-                        "Call to sleep failed with ({{later}}, {{interval}})",
-                        later=later,
-                        interval=INTERVAL,
-                        cause=cause,
-=======
                     logger.warning(
                         "Call to sleep failed with ({later}, {interval})", later=later, interval=INTERVAL, cause=cause,
->>>>>>> .r2071
                     )
                 continue
 
@@ -144,7 +131,7 @@ def daemon(please_stop):
                     DEBUG and logger.info(
                         "done: {timers}.  Remaining {pending}",
                         timers=[t for t, s in work] if len(work) <= 5 else len(work),
-                        pending=[t for t, s in sorted_timers] if len(sorted_timers) <= 5 else len(sorted_timers)
+                        pending=[t for t, s in sorted_timers] if len(sorted_timers) <= 5 else len(sorted_timers),
                     )
 
                     for t, r in work:

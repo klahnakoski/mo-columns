@@ -7,7 +7,6 @@
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
 
-from __future__ import absolute_import, division, unicode_literals
 
 import cProfile
 import pstats
@@ -88,17 +87,9 @@ def enable_profilers(filename=None):
             DEBUG and logger.info("starting cprofile for thread {name}", name=t.name)
             t.cprofiler.__enter__()
         else:
-<<<<<<< .mine
-            DEBUG and Log.note("cprofiler not started for thread {{name}} (already running)", name=t.name)
-||||||| .r1729
-            DEBUG and Log.note(
-                "cprofiler not started for thread {{name}} (already running)", name=t.name,
-            )
-=======
             DEBUG and logger.info(
                 "cprofiler not started for thread {name} (already running)", name=t.name,
             )
->>>>>>> .r2071
 
 
 def write_profiles(main_thread_profile=None):
@@ -115,10 +106,4 @@ def write_profiles(main_thread_profile=None):
 
     stats_file = File(FILENAME).add_suffix(Date.now().format("_%Y%m%d_%H%M%S"))
     stats_file.write(tab)
-<<<<<<< .mine
-    DEBUG and Log.note("profile written to {{filename}}", filename=stats_file.abspath)
-||||||| .r1729
-    DEBUG and Log.note("profile written to {{filename}}", filename=stats_file.abs_path)
-=======
     DEBUG and logger.info("profile written to {filename}", filename=stats_file.abs_path)
->>>>>>> .r2071

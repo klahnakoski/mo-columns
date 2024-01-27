@@ -10,13 +10,14 @@
 from mo_math import randoms
 from mo_testing.fuzzytestcase import FuzzyTestCase
 
-from jx_sqlite import sqlite
-from jx_sqlite.sqlite import sql_create, Sqlite, sql_insert, ConcatSQL, SQL_CREATE, quote_column, sql_alias, sql_list, \
+from mo_sqlite import database
+from mo_sqlite import sql_create, Sqlite, sql_insert, ConcatSQL, SQL_CREATE, quote_column, sql_alias, sql_list, \
     SQL_SELECT, SQL_AS, SQL, SQL_FROM, SQL_INSERT, quote_value, SQL_COMMA, SQL_LEFT_JOIN, SQL_ON, SQL_GROUPBY, \
-    SQL_CROSS_JOIN, known_databases
+    SQL_CROSS_JOIN
 from mo_columns.shard import Shard
 from mo_files import File
 from mo_logs import Log
+from mo_sqlite.database import known_databases
 from mo_threads import Till, Thread
 from mo_times import Timer, Date
 
@@ -31,7 +32,7 @@ class TestInsert(FuzzyTestCase):
                 break
             except Exception:
                 known_databases
-                Log.info("Could not delete {{file}}", file=CLUSTER_DIR.abspath)
+                Log.info("Could not delete {{file}}", file=CLUSTER_DIR.abs_path)
                 Till(seconds=1).wait()
         self.shard = Shard(CLUSTER_DIR / "0")
 
@@ -61,7 +62,7 @@ class TestInsert(FuzzyTestCase):
             extract.close()
 
     def test_insert_many(self):
-        sqlite.DEBUG = False
+        database.DEBUG = False
         num = 10_000  # insert 100_000 records (took 31.121 seconds)
         result_name = "temp_result"
         File(f"{result_name}.sqlite").delete()
@@ -84,8 +85,9 @@ class TestInsert(FuzzyTestCase):
             extract.close()
 
     def test_insert_million(self):
-        # sqlite.DEBUG = False
-        num = 100_000  # million => load data (took 69.137 seconds), insert records (took 123.053 seconds)
+        # million => load data (took 69.137 seconds), insert records (took 123.053 seconds)
+        # million (no index) => load data (took 78.568 seconds), insert records (took 183.952 seconds)
+        num = 100_000
         result_name = "temp_result"
         File(f"{result_name}.sqlite").delete()
 
@@ -134,11 +136,11 @@ class TestInsert(FuzzyTestCase):
         """
         TEST MULTIPLY GRID WHERE EACH ELEMENT IS ROW (postal_code, attribute, value)
         """
-        sqlite.DEBUG = False
+        database.DEBUG = False
         num_post = 50_000
         attributes = [randoms.base64(10) for _ in range(1_000)]
 
-        sqlite.DEBUG = True
+        database.DEBUG = True
         db = Sqlite(filename=CLUSTER_DIR/"pre_data.sqlite")
         db.query("PRAGMA synchronous = OFF")
         with db.transaction() as t:
@@ -245,11 +247,11 @@ class TestInsert(FuzzyTestCase):
         """
         TEST MULTIPLY GRID WHERE EACH ELEMENT IS ROW (x, y, value)
         """
-        sqlite.DEBUG = False
+        database.DEBUG = False
         num_post = 10_000
         attributes = [i for i in range(1_000)]
 
-        sqlite.DEBUG = True
+        database.DEBUG = True
         db = Sqlite(filename=CLUSTER_DIR/"pre_data.sqlite")
         # db = Sqlite()
         db.query("PRAGMA synchronous = OFF")

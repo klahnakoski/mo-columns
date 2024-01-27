@@ -7,17 +7,7 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-<<<<<<< .mine
-from __future__ import absolute_import, division, unicode_literals
-
-from jx_base.expressions import AddOp as AddOp_
-||||||| .r1729
-
-
-from jx_base.expressions import AddOp as AddOp_
-=======
 from jx_base.expressions import AddOp as _AddOp
->>>>>>> .r2071
 from jx_sqlite.expressions._utils import multiop_to_sql
 
 

@@ -5,9 +5,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-from __future__ import absolute_import, division, unicode_literals
-
 import logging
+import weakref
 
 from mo_future import is_text, text
 from mo_kwargs import override
@@ -38,7 +37,7 @@ class StructuredLogger_usingLogger(StructuredLogger):
     def write(self, template, params):
         try:
             log_line = expand_template(template, params)
-            level = max(self.min_level, MAP[params.context])
+            level = max(self.min_level, MAP[params.severity])
             self.logger.log(level, log_line)
             self.count += 1
         except Exception as cause:
@@ -49,11 +48,12 @@ class StructuredLogger_usingLogger(StructuredLogger):
 
     def stop(self):
         try:
-            self.logger.shutdown()
-        except Exception:
+            handlers = [weakref.ref(h, logging._removeHandlerRef) for h in self.logger.handlers]
+            logging.shutdown(handlers)
+        except Exception as cause:
             import sys
 
-            sys.stderr.write("Failure in the logger shutdown")
+            sys.stderr.write("Failure in the logger shutdown " + str(cause))
 
 
 MAP = {

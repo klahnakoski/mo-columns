@@ -5,22 +5,24 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http:# mozilla.org/MPL/2.0/.
 #
-
-from __future__ import absolute_import, division, unicode_literals
-
-from jx_base import Facts, Column
-from jx_base.container import Container as _Container
+from jx_base import Column, Facts, Container as _Container
 from jx_sqlite.namespace import Namespace
 from jx_sqlite.query_table import QueryTable
 from jx_sqlite.snowflake import Snowflake
-from jx_sqlite.sqlite import (
+from jx_sqlite.utils import UID, GUID, DIGITS_TABLE, ABOUT_TABLE
+from mo_dots import concat_field, set_default
+from mo_future import first, NEXT
+from mo_json import STRING
+from mo_kwargs import override
+from mo_logs import Log
+from mo_sqlite import (
     SQL_SELECT,
     SQL_FROM,
     SQL_UPDATE,
     SQL_SET,
     ConcatSQL,
 )
-from jx_sqlite.sqlite import (
+from mo_sqlite import (
     Sqlite,
     quote_column,
     sql_eq,
@@ -28,12 +30,6 @@ from jx_sqlite.sqlite import (
     sql_insert,
     json_type_to_sqlite_type,
 )
-from jx_sqlite.utils import UID, GUID, DIGITS_TABLE, ABOUT_TABLE
-from mo_dots import concat_field, set_default
-from mo_future import first, NEXT
-from mo_json import STRING
-from mo_kwargs import override
-from mo_logs import Log
 from mo_threads.lock import locked
 from mo_times import Date
 
@@ -59,7 +55,7 @@ class Container(_Container):
 
         if not _config:
             # REGISTER sqlite AS THE DEFAULT CONTAINER TYPE
-            from jx_base.container import config as _config
+            from jx_base.models.container import config as _config
 
             if not _config.default:
                 _config.default = {"type": "sqlite", "settings": {"db": db}}
@@ -68,9 +64,6 @@ class Container(_Container):
         self.namespace = Namespace(container=self)
         self.about = QueryTable("meta.about", self)
         self.next_uid = self._gen_ids()  # A DELIGHTFUL SOURCE OF UNIQUE INTEGERS
-
-    def close(self):
-        self.db.stop()
 
     def _gen_ids(self):
         def output():
@@ -117,7 +110,7 @@ class Container(_Container):
         :return: Facts
         """
         self.remove_facts(fact_name)
-        self.namespace.columns._snowflakes[fact_name] = ["."]
+        self.namespace.columns._snowflakes[fact_name] = [fact_name]
 
         if uid != UID:
             Log.error("do not know how to handle yet")
@@ -153,14 +146,14 @@ class Container(_Container):
             if uid != UID:
                 Log.error("do not know how to handle yet")
 
-            self.namespace.columns._snowflakes[fact_name] = ["."]
+            self.namespace.columns._snowflakes[fact_name] = [fact_name]
             self.namespace.columns.add(Column(
                 name="_id",
                 es_column="_id",
                 es_index=fact_name,
                 es_type=json_type_to_sqlite_type[STRING],
-                jx_type=STRING,
-                nested_path=["."],
+                json_type=STRING,
+                nested_path=[fact_name],
                 multi=1,
                 last_updated=Date.now(),
             ))

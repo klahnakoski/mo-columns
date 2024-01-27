@@ -7,20 +7,8 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-<<<<<<< .mine
-from __future__ import absolute_import, division, unicode_literals
-
-from jx_base.expressions import NeOp as NeOp_
-from jx_sqlite.expressions._utils import check
-||||||| .r1729
-
-
-from jx_base.expressions import NeOp as NeOp_
-from jx_sqlite.expressions._utils import check
-=======
 from jx_base.expressions import NeOp as _NeOp
 from jx_sqlite.expressions._utils import check, SQLang
->>>>>>> .r2071
 from jx_sqlite.expressions.eq_op import EqOp
 from jx_sqlite.expressions.not_op import NotOp
 

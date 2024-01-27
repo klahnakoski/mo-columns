@@ -7,17 +7,7 @@
 #
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
-<<<<<<< .mine
-from __future__ import absolute_import, division, unicode_literals
-
-from jx_base.expressions import RightOp as RightOp_, ZERO
-||||||| .r1729
-
-
-from jx_base.expressions import RightOp as RightOp_, ZERO
-=======
 from jx_base.expressions import RightOp as _RightOp, ZERO
->>>>>>> .r2071
 from jx_base.expressions._utils import simplified
 from jx_sqlite.expressions import SQLang
 from jx_sqlite.expressions.basic_substring_op import BasicSubstringOp
