@@ -7,17 +7,15 @@
 # Contact: Kyle Lahnakoski (kyle@lahnakoski.com)
 #
 from mo_math import randoms
-from mo_sql.utils import json_type_to_sql_type_key
 
-from mo_json.types import BOOLEAN_KEY, INTEGER_KEY, NUMBER_KEY, TIME_KEY, STRING_KEY, python_type_to_jx_type, \
-    jx_type_to_json_type
+from mo_json.types import python_type_to_jx_type, jx_type_to_json_type
+from mo_sql.utils import json_type_to_sql_type_key, SQL_BOOLEAN_KEY, SQL_NUMBER_KEY, SQL_STRING_KEY, SQL_TIME_KEY
 
-json_type_key_to_sqlite_type = {
-    BOOLEAN_KEY: "TINYINT",
-    INTEGER_KEY: "INTEGER",
-    NUMBER_KEY: "REAL",
-    STRING_KEY: "TEXT",
-    TIME_KEY: "REAL",
+sql_type_key_to_sqlite_type = {
+    SQL_BOOLEAN_KEY: "TINYINT",
+    SQL_NUMBER_KEY: "REAL",
+    SQL_STRING_KEY: "TEXT",
+    SQL_TIME_KEY: "REAL",
 }
 
 

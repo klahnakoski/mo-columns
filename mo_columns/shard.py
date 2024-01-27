@@ -19,7 +19,7 @@ from jx_sqlite.utils import (
     PARENT,
     ORDER,
 )
-from mo_columns.utils import json_type_key_to_sqlite_type, uuid, python_type_to_sql_type_key
+from mo_columns.utils import sql_type_key_to_sqlite_type, uuid, python_type_to_sql_type_key
 from mo_dots import concat_field, split_field, from_data, Null, is_data, tail_field, join_field, literal_field
 from mo_dots.datas import leaves, Data
 from mo_files import File
@@ -282,7 +282,7 @@ class Shard(object):
 
     def insert(self, documents):
         """
-        SLOWER THEN OTHER INSERT BECAUSE PYTHON DOES TOO MUCH OF THE WORK
+        SLOWER THAN OTHER INSERT BECAUSE PYTHON DOES TOO MUCH OF THE WORK
         """
         column_values = {SQL_ARRAY_KEY: []}
 
@@ -290,7 +290,7 @@ class Shard(object):
             column_values[parent_path].append(key)
             if is_data(doc):
                 for path, value in leaves(doc):
-                    type_key = python_type_to_sql_type_key[type(value)]
+                    type_key = python_type_to_sql_type_key(type(value))
                     full_path = concat_field(parent_path, path, type_key)
                     if type_key is SQL_ARRAY_KEY:
                         column_values.setdefault(full_path, [])
@@ -299,7 +299,7 @@ class Shard(object):
                     else:
                         column_values.setdefault(full_path, []).append((key, value))
             else:
-                type_key = python_type_to_sql_type_key[type(doc)]
+                type_key = python_type_to_sql_type_key(type(doc))
                 full_path = concat_field(parent_path, type_key)
                 if type_key is SQL_ARRAY_KEY:
                     column_values.setdefault(full_path, [])
@@ -371,7 +371,7 @@ class Shard(object):
 
     def _add_column(self, path, db):
         with db.transaction() as t:
-            sqlite_type = json_type_key_to_sqlite_type[split_field(path)[-1]]
+            sqlite_type = sql_type_key_to_sqlite_type[split_field(path)[-1]]
             t.execute(sql_create(
                 path,
                 {**{k: "INTEGER" for k in get_key_columns(path)}, "value": sqlite_type},
@@ -532,7 +532,7 @@ class Shard(object):
             parent.selects.append(sql_alias(
                 quote_column(table_alias, "value"), column_name
             ))
-            parent.columns[literal_field(column_name)] = json_type_key_to_sqlite_type[split_field(column_name)[-1]]
+            parent.columns[literal_field(column_name)] = sql_type_key_to_sqlite_type[split_field(column_name)[-1]]
 
             table_name = quote_column(db_alias, path)
             key_columns = get_key_columns(path)
