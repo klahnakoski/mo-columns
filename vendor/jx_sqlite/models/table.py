@@ -5,10 +5,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http:# mozilla.org/MPL/2.0/.
 #
+from mo_imports import expect
+
 import jx_base
 from jx_sqlite.models.schema import Schema
-from jx_sqlite.query_table import QueryTable
 from mo_logs import Log
+
+QueryTable = expect("QueryTable")
 
 
 class Table(jx_base.Table):

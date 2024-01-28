@@ -27,28 +27,21 @@ from mo_dots import (
     join_field,
     relative_field,
 )
-from mo_future import first
 from mo_json import ARRAY, OBJECT, EXISTS, INTEGER
 from mo_logs import Log, Except
 from mo_sql.utils import SQL_ARRAY_KEY, untype_field
+from mo_sqlite import quote_column
 from mo_sqlite import (
-    SQL_FROM,
-    SQL_SELECT,
-    SQL_ZERO,
     sql_iso,
     sql_list,
     SQL_CREATE,
-    SQL_AS,
     ConcatSQL,
     SQL_ALTER_TABLE,
     SQL_ADD_COLUMN,
     SQL_RENAME_COLUMN,
-    SQL_RENAME_TO,
     SQL_TO,
     TextSQL,
-    SQL_INSERT,
 )
-from mo_sqlite import quote_column
 from mo_times import Date
 
 
@@ -128,9 +121,7 @@ class Snowflake(jx_base.Snowflake):
                         cause=e,
                     )
             else:
-                Log.error(
-                    "Did not add column {{column}}", column=column.es_column, cause=e
-                )
+                Log.error("Did not add column {{column}]", column=column.es_column, cause=e)
 
     def _drop_column(self, column):
         # DROP COLUMN BY RENAMING IT, WITH __ PREFIX TO HIDE IT
@@ -174,10 +165,7 @@ class Snowflake(jx_base.Snowflake):
         # TODO: IF THERE ARE CHILD TABLES, WE MUST UPDATE THEIR RELATIONS TOO?
 
         # LOAD THE COLUMNS
-        parent_columns = [
-            name
-            for _, name, _, _, _, _ in self.namespace.container.db.about(existing_table)
-        ]
+        parent_columns = [name for _, name, _, _, _, _ in self.namespace.container.db.about(existing_table)]
         data = self.namespace.container.db.about(destination_table)
         if not data:
             # DEFINE A NEW TABLE
@@ -212,7 +200,7 @@ class Snowflake(jx_base.Snowflake):
                 json_type=INTEGER,
                 nested_path=[destination_table],
                 last_updated=now,
-                multi=0
+                multi=0,
             ))
             self.namespace.columns.add(jx_base.Column(
                 name=PARENT,
@@ -220,9 +208,9 @@ class Snowflake(jx_base.Snowflake):
                 es_index=destination_table,
                 es_type="INTEGER",
                 json_type=INTEGER,
-                nested_path = [destination_table],
-                last_updated = now,
-                multi=0
+                nested_path=[destination_table],
+                last_updated=now,
+                multi=0,
             ))
             self.namespace.columns.add(jx_base.Column(
                 name=ORDER,
@@ -230,21 +218,19 @@ class Snowflake(jx_base.Snowflake):
                 es_index=destination_table,
                 es_type="INTEGER",
                 json_type=INTEGER,
-                nested_path = [destination_table],
-                last_updated = now,
-                multi=0
+                nested_path=[destination_table],
+                last_updated=now,
+                multi=0,
             ))
             self.namespace.relations.extend(self.namespace.container.db.get_relations(destination_table))
-            self.namespace.columns.primary_keys[destination_table] = UID,
+            self.namespace.columns.primary_keys[destination_table] = (UID,)
 
         # TEST IF THERE IS ANY DATA IN THE NEW NESTED ARRAY
         if not moving_columns:
             return
 
         def new_es_column(c):
-            return concat_field(
-                destination_table, relative_field(c.es_column, old_column_prefix)
-            )
+            return concat_field(destination_table, relative_field(c.es_column, old_column_prefix))
 
         def new_nested_path(c):
             return [destination_table, *c.nested_path]
@@ -269,10 +255,7 @@ class Snowflake(jx_base.Snowflake):
                     + [quote_column(new_es_column(c)) for c in moving_columns]
                 )),
                 SQL_SELECT,
-                sql_list(
-                    [quoted_UID, quoted_UID, SQL_ZERO]
-                    + [quote_column(c.es_column) for c in moving_columns]
-                ),
+                sql_list([quoted_UID, quoted_UID, SQL_ZERO] + [quote_column(c.es_column) for c in moving_columns]),
                 SQL_FROM,
                 quote_column(existing_table),
             ))
@@ -282,19 +265,14 @@ class Snowflake(jx_base.Snowflake):
             tmp_table = "tmp_" + existing_table
 
             t.execute(ConcatSQL(
-                SQL_ALTER_TABLE,
-                quote_column(existing_table),
-                SQL_RENAME_TO,
-                quote_column(tmp_table),
+                SQL_ALTER_TABLE, quote_column(existing_table), SQL_RENAME_TO, quote_column(tmp_table),
             ))
             t.execute(ConcatSQL(
                 SQL_CREATE,
                 quote_column(existing_table),
                 SQL_AS,
                 SQL_SELECT,
-                sql_list([
-                    quote_column(c) for c in parent_columns if c not in old_columns
-                ]),
+                sql_list([quote_column(c) for c in parent_columns if c not in old_columns]),
                 SQL_FROM,
                 quote_column(tmp_table),
             ))
@@ -319,34 +297,11 @@ class Snowflake(jx_base.Snowflake):
     def tables(self):
         return self.namespace.columns.get_query_paths(self.fact_name)
 
-    # def get_table(self, query_path):
-    #     """
-    #     RETURN TABLE FOR query_path (WITH SOME PATTERN MATCHING)
-    #     """
-    #     path, type = untype_field(query_path)
-    #     abs_path = path
-    #
-    #     best = first(p for p in self.query_paths if untype_field(p)[0] == abs_path)
-    #     if not best:
-    #         matching_table = first(
-    #             t for t in self.namespace.get_tables() if untype_field(t)[0] == abs_path
-    #         )
-    #         if matching_table:
-    #             # EXPAND THIS SNOWFLAKE TO INCLUDE THE REQUESTED PATH
-    #             best = [matching_table]
-    #             self.query_paths.insert(0, matching_table)
-    #         else:
-    #             Log.error("Can not find table with name {{table|quote}}", table=best)
-    #
-    #     return Table(best, self)
-
     def get_schema(self, nested_path):
         if nested_path not in self.query_paths:
             for i, q in enumerate(self.query_paths):
                 if startswith_field(nested_path[0], q[0]):
-                    self.query_paths = (
-                        self.query_paths[:i] + [nested_path] + self.query_paths[i:]
-                    )
+                    self.query_paths = self.query_paths[:i] + [nested_path] + self.query_paths[i:]
                     break
         return Schema(nested_path, self)
 

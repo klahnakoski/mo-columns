@@ -27,7 +27,7 @@ from mo_sqlite.utils import quote_column, sql_query, CommandItem, COMMIT, quote_
 
 jx_expression = delay_import("jx_base.jx_expression")
 table2csv = delay_import("jx_python.convert.table2csv")
-Relation = delay_import("mo_sqlite.models.relation.Relation")
+Relation = delay_import("jx_sqlite.models.relation.Relation")
 
 
 DEBUG = False

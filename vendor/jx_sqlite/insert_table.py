@@ -10,6 +10,8 @@
 from typing import Dict, List
 from uuid import uuid4
 
+from jx_sqlite.models.schema import Schema
+
 from jx_sqlite.utils import untyped_column
 
 from jx_base import Column, Facts
@@ -60,7 +62,8 @@ from mo_dots import (
     from_data,
     is_many,
     is_data,
-    to_data, relative_field,
+    to_data,
+    relative_field,
 )
 from mo_future import text, first
 from mo_json import STRUCT, ARRAY, OBJECT, value_to_json_type
@@ -70,13 +73,13 @@ from mo_times import Date
 
 class InsertTable(Facts):
     def add(self, doc):
-        self.insert([doc])
+        return self.insert([doc])
 
     def insert(self, docs):
         if not is_many(docs):
             Log.error("Expecting a list of documents")
         doc_collection = self.flatten_many(docs)
-        self._insert(doc_collection)
+        return self._insert(doc_collection)
 
     def update(self, command):
         """
@@ -306,13 +309,15 @@ class InsertTable(Facts):
                 if json_type is None:
                     continue
 
-                columns = snowflake.get_schema(nested_path).columns + insertion.active_columns
+                columns = Schema(nested_path, snowflake).columns + insertion.active_columns
                 if json_type == ARRAY:
                     curr_column = first(
                         cc for cc in columns if cc.json_type in STRUCT and untyped_column(cc.name)[0] == abs_name
                     )
                     if curr_column:
-                        deeper_insertion = doc_collection.setdefault(concat_field(curr_column.es_index, curr_column.es_column), Insertion())
+                        deeper_insertion = doc_collection.setdefault(
+                            concat_field(curr_column.es_index, curr_column.es_column), Insertion()
+                        )
 
                 else:
                     curr_column = first(cc for cc in columns if cc.json_type == json_type and cc.name == abs_name)
@@ -436,7 +441,7 @@ class InsertTable(Facts):
 
         for doc in docs:
             uid = self.container.next_uid()
-            row = {GUID:  str(uuid4()), UID: uid}
+            row = {GUID: str(uuid4()), UID: uid}
             facts_insertion.rows.append(row)
             _flatten(
                 doc=doc, doc_path=".", nested_path=[self.name], row=row, row_num=0, row_id=uid, parent_id=0,
@@ -470,6 +475,7 @@ class InsertTable(Facts):
 
             with self.container.db.transaction() as t:
                 t.execute(command)
+        return self
 
 
 class Insertion:
@@ -477,5 +483,3 @@ class Insertion:
         self.active_columns = []
         self.rows: List[Dict] = []
         self.query_paths: List[str] = []  # CHILDREN ARRAYS
-
-
