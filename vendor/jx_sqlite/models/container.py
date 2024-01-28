@@ -16,6 +16,7 @@ from jx_sqlite.expressions.sql_select_all_from_op import SqlSelectAllFromOp
 from jx_sqlite.expressions._utils import SQLang
 from jx_sqlite.models.namespace import Namespace
 from jx_sqlite.models.snowflake import Snowflake
+from jx_sqlite.models.table import Table
 from mo_sqlite import (
     SQL_SELECT,
     SQL_FROM,
@@ -209,11 +210,12 @@ class Container(_Container):
         return QueryTable(fact_name, self)
 
     def get_table(self, table_name):
-        snowflake = Snowflake(table_name, self.namespace)
-        return snowflake.get_table([table_name])
+        nested_path = self.namespace.columns.get_nested_path(table_name)
+        return Table(nested_path, self)
 
     def get_snowflake(self, table_name):
-        return Snowflake(table_name, self.namespace)
+        fact_name = first(fact for fact, nps in self.namespace.columns._snowflakes.items() for np in nps if np[0] == table_name)
+        return Snowflake(fact_name, self.namespace)
 
     def close(self):
         self.db.stop()

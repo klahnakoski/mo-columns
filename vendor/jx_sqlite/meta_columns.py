@@ -25,18 +25,13 @@ from mo_dots import (
     is_data,
     is_list,
     startswith_field,
-    tail_field,
-    concat_field, split_field,
-    join_field,
     unwraplist,
     wrap,
-    list_to_data, relative_field,
-)
+    list_to_data, )
 from mo_json import STRUCT, IS_NULL
 from mo_json.typed_encoder import unnest_path, detype
 from mo_logs import Log
-from mo_sql.utils import sql_type_key_to_json_type, SQL_ARRAY_KEY
-from mo_sqlite import sql_query
+from mo_sql.utils import sql_type_key_to_json_type
 from mo_threads import Queue
 from mo_times.dates import Date
 
@@ -99,7 +94,7 @@ class ColumnList(Table, Container):
                 last_nested_path = []
 
             full_nested_path = [table.name] + last_nested_path
-            self._snowflakes.setdefault(full_nested_path[-1], []).append(full_nested_path)
+            self._snowflakes.setdefault(full_nested_path[-1], []).append(table.name)
 
             # LOAD THE COLUMNS
             details = self.db.about(table.name)
@@ -387,6 +382,20 @@ class ColumnList(Table, Container):
         if table_name != META_COLUMNS_NAME:
             Log.error("this container has only the " + META_COLUMNS_NAME)
         return self._all_columns()
+
+    def get_nested_path(self, table_name):
+        for k, v in self._snowflakes.items():
+            if startswith_field(table_name, k):
+                query_paths = v
+                break
+        else:
+            Log.error("not found", table_name=table_name)
+
+        acc = []
+        for query_path in query_paths:
+            if startswith_field(table_name, query_path):
+                acc.append(query_path)
+        return list(reversed(acc))
 
     def get_query_paths(self, fact_name):
         """

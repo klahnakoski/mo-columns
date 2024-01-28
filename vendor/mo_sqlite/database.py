@@ -454,7 +454,7 @@ class Sqlite(DB):
                 # EXECUTE QUERY
                 self.last_command_item = command_item
                 self.debug and Log.note(FORMAT_COMMAND, command=query, **command_item.trace[0])
-                curr = self.db.execute(text(query))
+                curr = self.db.execute(query)
                 result.meta.format = "table"
                 result.header = [d[0] for d in curr.description] if curr.description else None
                 result.data = curr.fetchall()

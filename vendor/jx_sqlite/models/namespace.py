@@ -51,7 +51,7 @@ class Namespace(jx_base.Namespace):
         return self.columns.find_columns(table_name)
 
     def get_tables(self):
-        return self.columns.tables
+        return list(sorted(self.columns.data.keys()))
 
     def _load_relations(self):
         db = self.container.db

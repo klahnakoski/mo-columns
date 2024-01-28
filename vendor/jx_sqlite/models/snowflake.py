@@ -7,31 +7,8 @@
 #
 
 
-
-from typing import List
-
 import jx_base
-from jx_base.models.nested_path import NestedPath
 from jx_sqlite.models.schema import Schema
-from jx_sqlite.models.table import Table
-from mo_sqlite import (
-    SQL_FROM,
-    SQL_SELECT,
-    SQL_ZERO,
-    sql_iso,
-    sql_list,
-    SQL_CREATE,
-    SQL_AS,
-    ConcatSQL,
-    SQL_ALTER_TABLE,
-    SQL_ADD_COLUMN,
-    SQL_RENAME_COLUMN,
-    SQL_RENAME_TO,
-    SQL_TO,
-    TextSQL,
-    SQL_INSERT,
-)
-from mo_sqlite import quote_column
 from jx_sqlite.models.table import Table
 from jx_sqlite.utils import (
     quoted_ORDER,
@@ -54,6 +31,24 @@ from mo_future import first
 from mo_json import ARRAY, OBJECT, EXISTS, INTEGER
 from mo_logs import Log, Except
 from mo_sql.utils import SQL_ARRAY_KEY, untype_field
+from mo_sqlite import (
+    SQL_FROM,
+    SQL_SELECT,
+    SQL_ZERO,
+    sql_iso,
+    sql_list,
+    SQL_CREATE,
+    SQL_AS,
+    ConcatSQL,
+    SQL_ALTER_TABLE,
+    SQL_ADD_COLUMN,
+    SQL_RENAME_COLUMN,
+    SQL_RENAME_TO,
+    SQL_TO,
+    TextSQL,
+    SQL_INSERT,
+)
+from mo_sqlite import quote_column
 from mo_times import Date
 
 
@@ -67,7 +62,10 @@ class Snowflake(jx_base.Snowflake):
             Log.error("{{name}} does not exist", name=fact_name)
         self.fact_name = fact_name  # THE CENTRAL FACT TABLE
         self.namespace = namespace
-        self.query_paths: List[NestedPath] = [[fact_name]]  # REVERSE DEPTH FIRST SEARCH
+
+    @property
+    def query_paths(self):
+        return self.namespace.columns.get_query_paths(self.fact_name)
 
     def __copy__(self):
         Log.error("con not copy")
@@ -319,31 +317,28 @@ class Snowflake(jx_base.Snowflake):
 
     @property
     def tables(self):
-        """
-        :return:  LIST OF (nested_path, full_name) PAIRS
-        """
-        return [(path, concat_field(self.fact_name, path)) for path in self.query_paths]
+        return self.namespace.columns.get_query_paths(self.fact_name)
 
-    def get_table(self, query_path):
-        """
-        RETURN TABLE FOR query_path (WITH SOME PATTERN MATCHING)
-        """
-        path, type = untype_field(query_path)
-        abs_path = concat_field(self.fact_name, path)
-
-        best = first(p for p in self.query_paths if untype_field(p)[0] == abs_path)
-        if not best:
-            matching_table = first(
-                t for t in self.namespace.get_tables() if untype_field(t)[0] == abs_path
-            )
-            if matching_table:
-                # EXPAND THIS SNOWFLAKE TO INCLUDE THE REQUESTED PATH
-                best = [matching_table]
-                self.query_paths.insert(0, matching_table)
-            else:
-                Log.error("Can not find table with name {{table|quote}}", table=best)
-
-        return Table(best, self)
+    # def get_table(self, query_path):
+    #     """
+    #     RETURN TABLE FOR query_path (WITH SOME PATTERN MATCHING)
+    #     """
+    #     path, type = untype_field(query_path)
+    #     abs_path = path
+    #
+    #     best = first(p for p in self.query_paths if untype_field(p)[0] == abs_path)
+    #     if not best:
+    #         matching_table = first(
+    #             t for t in self.namespace.get_tables() if untype_field(t)[0] == abs_path
+    #         )
+    #         if matching_table:
+    #             # EXPAND THIS SNOWFLAKE TO INCLUDE THE REQUESTED PATH
+    #             best = [matching_table]
+    #             self.query_paths.insert(0, matching_table)
+    #         else:
+    #             Log.error("Can not find table with name {{table|quote}}", table=best)
+    #
+    #     return Table(best, self)
 
     def get_schema(self, nested_path):
         if nested_path not in self.query_paths:
@@ -365,10 +360,6 @@ class Snowflake(jx_base.Snowflake):
     @property
     def columns(self):
         return self.namespace.columns.find(self.fact_name)
-
-    @property
-    def query_paths(self):
-        return self.namespace.columns.get_query_paths(self.fact_name)
 
     def values(self, name):
         """

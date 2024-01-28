@@ -7,15 +7,16 @@
 #
 import jx_base
 from jx_sqlite.models.schema import Schema
+from jx_sqlite.query_table import QueryTable
 from mo_logs import Log
 
 
 class Table(jx_base.Table):
-    def __init__(self, nested_path, snowflake):
+    def __init__(self, nested_path, container):
         if not isinstance(nested_path, list):
             Log.error("Expecting list of paths")
         self.nested_path = nested_path
-        self.schema = Schema(nested_path, snowflake)
+        self.container = container
 
     @property
     def name(self):
@@ -24,5 +25,12 @@ class Table(jx_base.Table):
         """
         return self.schema.nested_path[0]
 
+    def query(self, query):
+        return QueryTable(self.nested_path[0], self.container).query(query)
+
     def map(self, mapping):
         return self
+
+    @property
+    def schema(self):
+        return Schema(self.nested_path[0], self.container)

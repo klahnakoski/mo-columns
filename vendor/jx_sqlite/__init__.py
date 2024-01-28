@@ -12,4 +12,4 @@ __all__ = ["Container", "Schema", "Column"]
 
 from jx_base import Column
 from jx_sqlite.models.container import Container
-from jx_sqlite.schema import Schema
+from jx_sqlite.models.schema import Schema

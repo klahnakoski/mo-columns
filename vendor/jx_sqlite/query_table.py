@@ -381,6 +381,11 @@ class QueryTable(GroupbyTable):
 
         return output
 
+    def get_table(self, table_name):
+        if table_name == self.name:
+            return self
+        Log.error("programmer error")
+
     def query_metadata(self, query):
         frum, query["from"] = query["from"], self
         schema = self.snowflake.tables["."].schema
