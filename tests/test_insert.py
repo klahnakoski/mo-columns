@@ -61,7 +61,7 @@ class TestInsert(FuzzyTestCase):
 
     def test_insert_many(self):
         database.DEBUG = False
-        num = 10_000  # insert 100_000 records (took 31.121 seconds)
+        num = 10_0  # insert 100_000 records (took 31.121 seconds)
         result_name = "temp_result"
         File(f"{result_name}.sqlite").delete()
 

@@ -9,6 +9,8 @@
 #
 from typing import List, Dict, Tuple
 
+from mo_sql import SQL_DESC, SQL_ASC
+
 from jx_base import Column, is_op
 from jx_base.expressions import NULL
 from jx_python import jx
@@ -25,7 +27,7 @@ from jx_sqlite.utils import (
     UID,
     PARENT,
     table_alias,
-    untype_field, sort_to_sqlite_order,
+    untype_field,
 )
 from mo_dots import (
     Data,
@@ -493,6 +495,9 @@ class SetOpTable(InsertTable):
         )
 
         return sql
+
+
+sort_to_sqlite_order = {-1: SQL_DESC, 0: SQL_ASC, 1: SQL_ASC}
 
 
 def test_dots(cols):

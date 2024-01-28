@@ -72,7 +72,6 @@ class Container(_Container):
 
         self.setup()
         self.namespace = Namespace(container=self)
-        self.about = QueryTable("meta.about", self)
         self.next_uid = self._gen_ids()  # A DELIGHTFUL SOURCE OF UNIQUE INTEGERS
 
     def _gen_ids(self):
@@ -152,7 +151,7 @@ class Container(_Container):
         :return: Facts
         """
         self.remove_facts(fact_name)
-        self.namespace.columns._snowflakes[fact_name] = ["."]
+        self.namespace.columns._snowflakes[fact_name] = [fact_name]
 
         if uid != UID:
             Log.error("do not know how to handle yet")
@@ -188,9 +187,9 @@ class Container(_Container):
             if uid != UID:
                 Log.error("do not know how to handle yet")
 
-            self.namespace.columns._snowflakes[fact_name] = ["."]
+            self.namespace.columns._snowflakes[fact_name] = [fact_name]
             self.namespace.columns.add(Column(
-                name=concat_field(fact_name, "_id"),
+                name="_id",
                 es_column="_id",
                 es_index=fact_name,
                 es_type=json_type_to_sqlite_type[STRING],
@@ -215,6 +214,9 @@ class Container(_Container):
 
     def get_snowflake(self, table_name):
         return Snowflake(table_name, self.namespace)
+
+    def close(self):
+        self.db.stop()
 
     @property
     def language(self):

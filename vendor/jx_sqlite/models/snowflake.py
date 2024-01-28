@@ -32,6 +32,7 @@ from mo_sqlite import (
     SQL_INSERT,
 )
 from mo_sqlite import quote_column
+from jx_sqlite.models.table import Table
 from jx_sqlite.utils import (
     quoted_ORDER,
     quoted_PARENT,
@@ -124,13 +125,13 @@ class Snowflake(jx_base.Snowflake):
                         break
                 else:
                     Log.error(
-                        "Did not add column {{column}]",
+                        "Did not add column {{column}}",
                         column=column.es_column,
                         cause=e,
                     )
             else:
                 Log.error(
-                    "Did not add column {{column}]", column=column.es_column, cause=e
+                    "Did not add column {{column}}", column=column.es_column, cause=e
                 )
 
     def _drop_column(self, column):
@@ -202,7 +203,9 @@ class Snowflake(jx_base.Snowflake):
             )
             with self.namespace.container.db.transaction() as t:
                 t.execute(command)
-                self.add_table([destination_table] + column.nested_path)
+                self.add_table([destination_table, *column.nested_path])
+
+
             self.namespace.columns.add(jx_base.Column(
                 name=UID,
                 es_column=UID,
@@ -242,11 +245,11 @@ class Snowflake(jx_base.Snowflake):
 
         def new_es_column(c):
             return concat_field(
-                new_nest, relative_field(c.es_column, old_column_prefix)
+                destination_table, relative_field(c.es_column, old_column_prefix)
             )
 
         def new_nested_path(c):
-            return [new_nest] + c.nested_path
+            return [destination_table, *c.nested_path]
 
         with self.namespace.container.db.transaction() as t:
             # MAKE NEW COLUMNS
@@ -321,14 +324,14 @@ class Snowflake(jx_base.Snowflake):
         """
         return [(path, concat_field(self.fact_name, path)) for path in self.query_paths]
 
-    def get_table(self, nested_path):
+    def get_table(self, query_path):
         """
-        RETURN TABLE FOR ABSOLUTE nested_path (WITH SOME PATTERN MATCHING)
+        RETURN TABLE FOR query_path (WITH SOME PATTERN MATCHING)
         """
-        abs_path, _ = \
-            untype_field(nested_path[0])
+        path, type = untype_field(query_path)
+        abs_path = concat_field(self.fact_name, path)
 
-        best = first(p for p in self.query_paths if untype_field(p[0])[0] == abs_path)
+        best = first(p for p in self.query_paths if untype_field(p)[0] == abs_path)
         if not best:
             matching_table = first(
                 t for t in self.namespace.get_tables() if untype_field(t)[0] == abs_path
@@ -362,6 +365,10 @@ class Snowflake(jx_base.Snowflake):
     @property
     def columns(self):
         return self.namespace.columns.find(self.fact_name)
+
+    @property
+    def query_paths(self):
+        return self.namespace.columns.get_query_paths(self.fact_name)
 
     def values(self, name):
         """

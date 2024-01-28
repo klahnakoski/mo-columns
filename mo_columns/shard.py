@@ -15,17 +15,17 @@ from jx_sqlite import Container
 from jx_sqlite.utils import (
     UID,
     GUID,
-    sqlite_type_to_type_key,
     PARENT,
     ORDER,
 )
-from mo_columns.utils import sql_type_key_to_sqlite_type, uuid, python_type_to_sql_type_key
+from mo_columns.utils import uuid
 from mo_dots import concat_field, split_field, from_data, Null, is_data, tail_field, join_field, literal_field
 from mo_dots.datas import leaves, Data
 from mo_files import File
 from mo_json import value2json, JX_IS_NULL
 from mo_sql.utils import SQL_ARRAY_KEY
 from mo_sqlite import *
+from mo_sqlite.types import sqlite_type_to_sql_type_key, sql_type_key_to_sqlite_type, python_type_to_sql_type_key
 from mo_threads import Thread, Lock
 from mo_times import Timer
 
@@ -131,7 +131,7 @@ class Shard(object):
                     WHERE json_tree.type != 'object'
                     UNION ALL
                     SELECT
-                        SUBSTR(path, 1, INSTR(path, '[') - 1) || '.~a~' || SUBSTR(path, INSTR(path, ']') + 1 ),
+                        SUBSTR(path, 1, INSTR(path, '[') - 1) || '.{SQL_ARRAY_KEY}' || SUBSTR(path, INSTR(path, ']') + 1 ),
                         type
                     FROM split
                     WHERE INSTR(path, '[') 
@@ -145,7 +145,7 @@ class Shard(object):
             source.stop()
 
         def extract_column(path, type, please_stop):
-            full_path = concat_field("." if path=="$" else SQL_ARRAY_KEY+path[1:], sqlite_type_to_type_key[type.upper()])
+            full_path = concat_field("." if path=="$" else SQL_ARRAY_KEY+path[1:], sqlite_type_to_sql_type_key[type.upper()])
             key_columns = list(get_key_columns(full_path))
             column_names = list(map(quote_column, key_columns))
 
@@ -191,7 +191,7 @@ class Shard(object):
                                 UNION ALL   
                                 SELECT
                                     rowid,
-                                    SUBSTR(path, 1, INSTR(path, '[') - 1) || '.~a~' || SUBSTR(path, INSTR(path, ']') + 1 ),      
+                                    SUBSTR(path, 1, INSTR(path, '[') - 1) || '.{SQL_ARRAY_KEY}' || SUBSTR(path, INSTR(path, ']') + 1 ),      
                                     json_insert(keys, '$[#]', CAST(SUBSTR(path, INSTR(path,'[')+1, INSTR(path, ']') - INSTR(path, '[') - 1) AS INTEGER)),
                                     atom,
                                     type
@@ -249,7 +249,7 @@ class Shard(object):
                             UNION ALL   
                             SELECT
                                 rowid,
-                                SUBSTR(path, 1, INSTR(path, '[') - 1) || '.~a~' || SUBSTR(path, INSTR(path, ']') + 1 ),      
+                                SUBSTR(path, 1, INSTR(path, '[') - 1) || '.{SQL_ARRAY_KEY}' || SUBSTR(path, INSTR(path, ']') + 1 ),      
                                 json_insert(keys, '$[#]', CAST(SUBSTR(path, INSTR(path,'[')+1, INSTR(path, ']') - INSTR(path, '[') - 1) AS INTEGER)),
                                 atom,
                                 type

@@ -26,14 +26,16 @@ from mo_dots import (
     is_list,
     startswith_field,
     tail_field,
+    concat_field, split_field,
+    join_field,
     unwraplist,
     wrap,
-    list_to_data,
+    list_to_data, relative_field,
 )
 from mo_json import STRUCT, IS_NULL
 from mo_json.typed_encoder import unnest_path, detype
 from mo_logs import Log
-from mo_sql.utils import sql_type_key_to_json_type
+from mo_sql.utils import sql_type_key_to_json_type, SQL_ARRAY_KEY
 from mo_sqlite import sql_query
 from mo_threads import Queue
 from mo_times.dates import Date
@@ -82,33 +84,22 @@ class ColumnList(Table, Container):
 
     def _load_from_database(self):
         # FIND ALL TABLES
-        result = self.db.query(sql_query({
-            "from": "sqlite_master",
-            "where": {"eq": {"type": "table"}},
-            "orderby": "name",
-        }))
-        tables = list_to_data([
-            {k: d for k, d in zip(result.header, row)} for row in result.data
-        ])
+        tables = self.db.get_tables()
         last_nested_path = []
         for table in tables:
             if table.name.startswith("__"):
                 continue
-            base_table, nested_path = tail_field(table.name)
 
             # FIND COMMON ARRAY PATH SUFFIX
-            if nested_path == ".":
-                last_nested_path = []
+            for i, p in enumerate(last_nested_path):
+                if startswith_field(table.name, p):
+                    last_nested_path = last_nested_path[i:]
+                    break
             else:
-                for i, p in enumerate(last_nested_path):
-                    if startswith_field(nested_path, p):
-                        last_nested_path = last_nested_path[i:]
-                        break
-                else:
-                    last_nested_path = []
+                last_nested_path = []
 
-            full_nested_path = [nested_path] + last_nested_path
-            self._snowflakes.setdefault(base_table, []).append(full_nested_path)
+            full_nested_path = [table.name] + last_nested_path
+            self._snowflakes.setdefault(full_nested_path[-1], []).append(full_nested_path)
 
             # LOAD THE COLUMNS
             details = self.db.about(table.name)
